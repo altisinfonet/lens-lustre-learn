@@ -515,6 +515,7 @@ const Index = () => {
                   src="/images/sadhu.jpg"
                   alt="The Ascetic — portrait photography showcasing the depth of human character"
                   className="w-full h-[500px] object-cover"
+                  loading="lazy"
                 />
                 <div className="absolute -bottom-6 -right-6 w-48 h-48 border border-primary/20 transition-all duration-[2s]" />
                 <div className="absolute -top-4 -left-4 w-24 h-24 bg-primary/10" />
@@ -620,6 +621,7 @@ const Index = () => {
                   src={pillar.image}
                   alt={`${pillar.subtitle} — ${pillar.desc}`}
                   className="absolute inset-0 w-full h-full object-cover transition-all duration-[2s] ease-out group-hover:scale-[1.05] brightness-[0.35] group-hover:brightness-[0.2]"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
 
@@ -826,7 +828,7 @@ const Index = () => {
       {/* Quote */}
       <section className="relative py-32 md:py-40 overflow-hidden" aria-label="Photography quote">
         <div className="absolute inset-0">
-          <img src="/images/innocence.jpg" alt="" className="w-full h-full object-cover brightness-[0.15]" aria-hidden="true" />
+          <img src="/images/innocence.jpg" alt="" className="w-full h-full object-cover brightness-[0.15]" aria-hidden="true" loading="lazy" />
         </div>
         <div className="container mx-auto px-6 md:px-12 relative z-10 text-center">
           <motion.blockquote
