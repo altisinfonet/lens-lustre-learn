@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Aperture, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const Login = () => {
   return (
@@ -22,9 +22,9 @@ const Login = () => {
         </Link>
 
         <div className="flex items-center gap-3 mb-12">
-          <Aperture className="h-5 w-5" strokeWidth={1.5} />
+          <img src="/images/logo.png" alt="ArteFoto Global" className="h-8 w-8 object-contain" />
           <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-            Neil Photography
+            ArteFoto Global
           </span>
         </div>
 

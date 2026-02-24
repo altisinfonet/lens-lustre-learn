@@ -60,10 +60,10 @@ const Index = () => {
       {/* Navigation */}
       <nav className="absolute top-0 left-0 right-0 z-50" aria-label="Main navigation">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3" aria-label="Neil Photography Home">
-            <Aperture className="h-6 w-6" strokeWidth={1.5} />
+          <Link to="/" className="flex items-center gap-3" aria-label="ArteFoto Global Home">
+            <img src="/images/logo.png" alt="ArteFoto Global" className="h-8 w-8 object-contain" />
             <span style={{ fontFamily: "var(--font-heading)" }} className="text-sm font-semibold tracking-[0.2em] uppercase">
-              Neil Photography
+              ArteFoto Global
             </span>
           </Link>
           <div className="hidden md:flex items-center gap-10 text-xs tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
@@ -99,7 +99,7 @@ const Index = () => {
           >
             <motion.img
               src={heroSlides[currentSlide].src}
-              alt={`${heroSlides[currentSlide].title} — ${heroSlides[currentSlide].category} photography by Neil Basu`}
+              alt={`${heroSlides[currentSlide].title} — ${heroSlides[currentSlide].category} photography by ArteFoto Global`}
               className="w-full h-full object-cover"
               initial={{ scale: 1.08 }}
               animate={{ scale: 1 }}
@@ -467,7 +467,7 @@ const Index = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-24 md:py-32" aria-label="Join Neil Photography">
+      <section className="py-24 md:py-32" aria-label="Join ArteFoto Global">
         <div className="container mx-auto px-6 md:px-12 text-center">
           <motion.div
             initial="hidden"
@@ -503,9 +503,9 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-12 items-start">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <Aperture className="h-5 w-5 text-primary" strokeWidth={1.5} />
+                <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
                 <span className="text-sm tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-                  Neil Photography
+                  ArteFoto Global
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
@@ -530,7 +530,7 @@ const Index = () => {
                 Create Account <ArrowRight className="h-3 w-3" />
               </Link>
               <p className="text-[10px] text-muted-foreground mt-8" style={{ fontFamily: "var(--font-body)" }}>
-                © 2026 Neil Photography. All rights reserved.
+                © 2026 ArteFoto Global. All rights reserved.
               </p>
             </div>
           </div>
