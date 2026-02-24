@@ -1,7 +1,7 @@
 import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut, Shield, Menu, X, Award, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense, memo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,26 +83,46 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    // Fetch recent competition winners
-    const fetchWinners = async () => {
-      const { data } = await supabase
-        .from("competition_entries")
-        .select("id, title, photos, competition_id, user_id")
-        .eq("status", "winner")
-        .order("created_at", { ascending: false })
-        .limit(6);
+    // Fetch winners and certificates in parallel — single round-trip each
+    const fetchShowcaseData = async () => {
+      const [winnersRes, certsRes] = await Promise.all([
+        supabase
+          .from("competition_entries")
+          .select("id, title, photos, competition_id, user_id")
+          .eq("status", "winner")
+          .order("created_at", { ascending: false })
+          .limit(6),
+        supabase
+          .from("certificates")
+          .select("id, title, type, issued_at, user_id")
+          .order("issued_at", { ascending: false })
+          .limit(6),
+      ]);
 
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map((e) => e.user_id))];
-        const compIds = [...new Set(data.map((e) => e.competition_id))];
-        const [{ data: profiles }, { data: comps }] = await Promise.all([
-          supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds),
-          supabase.from("competitions").select("id, title").in("id", compIds),
-        ]);
-        const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-        const compMap = new Map(comps?.map((c) => [c.id, c.title]) || []);
+      const winnerData = winnersRes.data || [];
+      const certData = certsRes.data || [];
 
-        setWinners(data.map((e) => ({
+      // Collect all unique user/comp IDs and fetch profiles + competitions in one parallel call
+      const allUserIds = [...new Set([
+        ...winnerData.map((e) => e.user_id),
+        ...certData.map((c) => c.user_id),
+      ])];
+      const compIds = [...new Set(winnerData.map((e) => e.competition_id))];
+
+      const [profilesRes, compsRes] = await Promise.all([
+        allUserIds.length > 0
+          ? supabase.from("profiles").select("id, full_name, avatar_url").in("id", allUserIds)
+          : Promise.resolve({ data: [] }),
+        compIds.length > 0
+          ? supabase.from("competitions").select("id, title").in("id", compIds)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const profileMap = new Map((profilesRes.data || []).map((p) => [p.id, p]));
+      const compMap = new Map((compsRes.data || []).map((c) => [c.id, c.title]));
+
+      if (winnerData.length > 0) {
+        setWinners(winnerData.map((e) => ({
           id: e.id,
           title: e.title,
           photos: e.photos || [],
@@ -111,22 +131,9 @@ const Index = () => {
           photographer_avatar: profileMap.get(e.user_id)?.avatar_url || null,
         })));
       }
-    };
 
-    // Fetch recent certificates
-    const fetchCertificates = async () => {
-      const { data } = await supabase
-        .from("certificates")
-        .select("id, title, type, issued_at, user_id")
-        .order("issued_at", { ascending: false })
-        .limit(6);
-
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map((c) => c.user_id))];
-        const { data: profiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds);
-        const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-
-        setCertificates(data.map((c) => ({
+      if (certData.length > 0) {
+        setCertificates(certData.map((c) => ({
           id: c.id,
           title: c.title,
           type: c.type,
@@ -137,8 +144,7 @@ const Index = () => {
       }
     };
 
-    fetchWinners();
-    fetchCertificates();
+    fetchShowcaseData();
   }, []);
 
   return (
@@ -307,6 +313,8 @@ const Index = () => {
               initial={{ scale: 1.08 }}
               animate={{ scale: 1 }}
               transition={{ duration: 8, ease: slowEase }}
+              loading={currentSlide === 0 ? "eager" : "lazy"}
+              fetchPriority={currentSlide === 0 ? "high" : "auto"}
             />
           </motion.div>
         </AnimatePresence>
@@ -415,9 +423,9 @@ const Index = () => {
         <motion.div
           animate={{ x: [0, -1200] }}
           transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
-          className="flex gap-12 whitespace-nowrap"
+          className="flex gap-12 whitespace-nowrap will-change-transform"
         >
-          {Array.from({ length: 8 }).map((_, i) => (
+          {Array.from({ length: 3 }).map((_, i) => (
             <span key={i} className="text-7xl md:text-8xl font-light tracking-tight opacity-[0.06]" style={{ fontFamily: "var(--font-display)" }}>
               Wildlife • Street • Portrait • Aerial • Documentary •
             </span>
