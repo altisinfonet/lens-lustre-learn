@@ -1,12 +1,21 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().trim().email("Please enter a valid email").max(255),
+  password: z.string().min(1, "Password is required").max(72),
+});
 
 const Login = () => {
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<"google" | "apple" | null>(null);
+  const [loading, setLoading] = useState<"google" | "apple" | "email" | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -24,6 +33,28 @@ const Login = () => {
       setError(error instanceof Error ? error.message : String(error));
       setLoading(null);
     }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      setError(result.error.errors[0].message);
+      return;
+    }
+
+    setLoading("email");
+    const { error } = await supabase.auth.signInWithPassword({
+      email: result.data.email,
+      password: result.data.password,
+    });
+
+    if (error) {
+      setError(error.message);
+    }
+    setLoading(null);
   };
 
   return (
@@ -57,6 +88,7 @@ const Login = () => {
         )}
 
         <div className="space-y-4 max-w-sm">
+          {/* OAuth buttons */}
           <button
             onClick={() => handleOAuth("google")}
             disabled={!!loading}
@@ -91,9 +123,71 @@ const Login = () => {
             )}
             Continue with Apple
           </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 py-2">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+              Or sign in with email
+            </span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {/* Email/Password form */}
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div>
+              <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                maxLength={255}
+                className="w-full py-3 px-4 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors"
+                style={{ fontFamily: "var(--font-body)" }}
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                  Password
+                </label>
+                <Link to="/forgot-password" className="text-[10px] tracking-[0.15em] uppercase text-primary hover:underline" style={{ fontFamily: "var(--font-heading)" }}>
+                  Forgot Password?
+                </Link>
+              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Your password"
+                required
+                maxLength={72}
+                className="w-full py-3 px-4 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors"
+                style={{ fontFamily: "var(--font-body)" }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!!loading}
+              className="w-full py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50 flex items-center justify-center gap-3"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {loading === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+              Sign In
+            </button>
+          </form>
         </div>
 
         <p className="text-xs text-muted-foreground mt-10" style={{ fontFamily: "var(--font-body)" }}>
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-primary hover:underline">Create one</Link>
+        </p>
+
+        <p className="text-[10px] text-muted-foreground/60 mt-4" style={{ fontFamily: "var(--font-body)" }}>
           By continuing, you agree to our terms of service and privacy policy.
         </p>
       </div>
