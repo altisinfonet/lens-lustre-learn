@@ -1,8 +1,9 @@
-import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut } from "lucide-react";
+import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut, Shield } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 /* Classic easing — gentle, cinematic transitions */
 const classicEase = [0.4, 0, 0.2, 1] as const;
@@ -48,6 +49,7 @@ const galleryWorks = [
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -73,6 +75,14 @@ const Index = () => {
             <a href="#works" className="hover:opacity-60 transition-opacity duration-500">Works</a>
             <a href="#about" className="hover:opacity-60 transition-opacity duration-500">About</a>
             <a href="#pillars" className="hover:opacity-60 transition-opacity duration-500">Explore</a>
+            <Link to="/competitions" className="hover:opacity-60 transition-opacity duration-500">Competitions</Link>
+            {user && <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500">Dashboard</Link>}
+            {isAdmin && (
+              <Link to="/admin" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
+                <Shield className="h-3 w-3" />
+                Admin
+              </Link>
+            )}
           </div>
           <div className="flex items-center gap-4">
             {user ? (
