@@ -17,16 +17,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const syncProfile = async (user: User) => {
+      const meta = user.user_metadata;
+      if (!meta) return;
+
+      const fullName = meta.full_name || meta.name || null;
+      const avatarUrl = meta.avatar_url || meta.picture || null;
+
+      if (fullName || avatarUrl) {
+        await supabase.from("profiles").upsert(
+          {
+            id: user.id,
+            full_name: fullName,
+            avatar_url: avatarUrl,
+          },
+          { onConflict: "id" }
+        );
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      if (session?.user) {
+        setTimeout(() => syncProfile(session.user), 0);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      if (session?.user) {
+        syncProfile(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
