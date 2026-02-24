@@ -58,7 +58,7 @@ const Index = () => {
   return (
     <main className="min-h-screen bg-background text-foreground overflow-hidden">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 mix-blend-difference" aria-label="Main navigation">
+      <nav className="absolute top-0 left-0 right-0 z-50" aria-label="Main navigation">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3" aria-label="Neil Photography Home">
             <Aperture className="h-6 w-6" strokeWidth={1.5} />
