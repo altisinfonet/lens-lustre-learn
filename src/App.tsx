@@ -16,6 +16,10 @@ import AdminPanel from "./pages/AdminPanel";
 import Journal from "./pages/Journal";
 import JournalArticle from "./pages/JournalArticle";
 import JournalEditor from "./pages/JournalEditor";
+import Courses from "./pages/Courses";
+import CourseDetail from "./pages/CourseDetail";
+import CourseEditor from "./pages/CourseEditor";
+import LessonView from "./pages/LessonView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +45,11 @@ const App = () => (
             <Route path="/journal/new" element={<JournalEditor />} />
             <Route path="/journal/edit/:id" element={<JournalEditor />} />
             <Route path="/journal/:slug" element={<JournalArticle />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/courses/new" element={<CourseEditor />} />
+            <Route path="/courses/edit/:id" element={<CourseEditor />} />
+            <Route path="/courses/:slug" element={<CourseDetail />} />
+            <Route path="/courses/:slug/lessons/:lessonId" element={<LessonView />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
