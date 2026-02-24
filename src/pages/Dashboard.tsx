@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, User, Camera, Trophy, Calendar, ArrowLeft, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle } from "lucide-react";
+import { LogOut, User, Camera, Trophy, Calendar, ArrowLeft, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -257,6 +257,7 @@ const Dashboard = () => {
                   { icon: Trophy, label: "Competitions", desc: "Browse & enter contests", to: "/competitions" },
                   { icon: Camera, label: "My Works", desc: "Manage your portfolio", to: "#" },
                   { icon: Edit2, label: "Edit Profile", desc: "Update your info", to: "/edit-profile" },
+                  { icon: Award, label: "Certificates", desc: "View your achievements", to: "/certificates" },
                   ...(roles.some((r) => r.role === "admin")
                     ? [{ icon: Shield, label: "Admin Panel", desc: "Manage competitions & entries", to: "/admin" }]
                     : []),

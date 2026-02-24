@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, CheckCircle, Circle, DollarSign, GraduationCap, Lock, Play } from "lucide-react";
+import { ArrowLeft, Award, BookOpen, CheckCircle, Circle, DollarSign, GraduationCap, Lock, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,8 @@ const CourseDetail = () => {
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [hasCertificate, setHasCertificate] = useState(false);
+  const [issuingCert, setIssuingCert] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -60,11 +62,13 @@ const CourseDetail = () => {
       setAuthorName(profile?.full_name || null);
 
       if (user) {
-        const [{ data: enrollment }, { data: progress }] = await Promise.all([
+        const [{ data: enrollment }, { data: progress }, { data: certData }] = await Promise.all([
           supabase.from("course_enrollments").select("id").eq("user_id", user.id).eq("course_id", courseData.id).maybeSingle(),
           supabase.from("lesson_progress").select("lesson_id").eq("user_id", user.id).eq("completed", true),
+          supabase.from("certificates").select("id").eq("user_id", user.id).eq("reference_id", courseData.id).eq("type", "course_completion").maybeSingle(),
         ]);
         setEnrolled(!!enrollment);
+        setHasCertificate(!!certData);
         const lessonIds = new Set((lessonData || []).map((l) => l.id));
         setCompletedLessons(new Set(progress?.filter((p) => lessonIds.has(p.lesson_id)).map((p) => p.lesson_id) || []));
       }
@@ -101,6 +105,26 @@ const CourseDetail = () => {
   }
 
   const progressPercent = lessons.length > 0 ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
+  const courseComplete = progressPercent === 100 && lessons.length > 0;
+
+  const handleClaimCertificate = async () => {
+    if (!user || !course || !courseComplete || hasCertificate) return;
+    setIssuingCert(true);
+    const { error } = await supabase.from("certificates").insert({
+      user_id: user.id,
+      title: `${course.title} — Completion Certificate`,
+      description: `Successfully completed all ${lessons.length} lessons in "${course.title}".`,
+      type: "course_completion",
+      reference_id: course.id,
+    });
+    if (error) {
+      toast({ title: "Failed to issue certificate", description: error.message, variant: "destructive" });
+    } else {
+      setHasCertificate(true);
+      toast({ title: "🎉 Certificate earned!", description: "View it in your certificates page." });
+    }
+    setIssuingCert(false);
+  };
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -194,10 +218,31 @@ const CourseDetail = () => {
                   <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}>
                     {completedLessons.size} of {lessons.length} lessons completed
                   </p>
-                  {progressPercent === 100 && (
-                    <div className="mt-3 flex items-center gap-2 text-primary">
-                      <GraduationCap className="h-4 w-4" />
-                      <span className="text-xs" style={{ fontFamily: "var(--font-heading)" }}>Course Complete!</span>
+                  {courseComplete && (
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center gap-2 text-primary">
+                        <GraduationCap className="h-4 w-4" />
+                        <span className="text-xs" style={{ fontFamily: "var(--font-heading)" }}>Course Complete!</span>
+                      </div>
+                      {hasCertificate ? (
+                        <Link
+                          to="/certificates"
+                          className="flex items-center gap-2 text-xs tracking-[0.1em] uppercase text-primary hover:opacity-80 transition-opacity"
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
+                          <Award className="h-3.5 w-3.5" /> View Certificate
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={handleClaimCertificate}
+                          disabled={issuingCert}
+                          className="flex items-center gap-2 text-xs tracking-[0.1em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
+                          <Award className="h-3.5 w-3.5" />
+                          {issuingCert ? "Issuing…" : "Claim Certificate"}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
