@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Award, Download, Calendar } from "lucide-react";
+import { ArrowLeft, Award, Download, Calendar, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { generateCertificatePdf } from "@/lib/generateCertificatePdf";
@@ -160,6 +160,21 @@ const Certificates = () => {
                       >
                         <Download className="h-3 w-3" />
                         PDF
+                      </button>
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}/verify?id=${cert.id}`;
+                          navigator.clipboard.writeText(url).then(() => {
+                            toast({ title: "Link copied!", description: "Verification link copied to clipboard." });
+                          }).catch(() => {
+                            toast({ title: "Copy failed", variant: "destructive" });
+                          });
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2 border border-border text-muted-foreground hover:border-primary hover:text-primary transition-all duration-500"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        <Share2 className="h-3 w-3" />
+                        Share
                       </button>
                       {cert.reference_id && (
                         <Link
