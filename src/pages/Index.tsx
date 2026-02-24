@@ -1,9 +1,10 @@
-import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut, Shield, Menu, X } from "lucide-react";
+import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut, Shield, Menu, X, Award, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { supabase } from "@/integrations/supabase/client";
 
 /* Classic easing — gentle, cinematic transitions */
 const classicEase = [0.4, 0, 0.2, 1] as const;
@@ -47,17 +48,97 @@ const galleryWorks = [
   { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action", size: "normal" as const },
 ];
 
+interface WinnerShowcase {
+  id: string;
+  title: string;
+  photos: string[];
+  competition_title: string;
+  photographer_name: string | null;
+  photographer_avatar: string | null;
+}
+
+interface CertificateShowcase {
+  id: string;
+  title: string;
+  type: string;
+  issued_at: string;
+  recipient_name: string | null;
+  recipient_avatar: string | null;
+}
+
 const Index = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [winners, setWinners] = useState<WinnerShowcase[]>([]);
+  const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 6000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    // Fetch recent competition winners
+    const fetchWinners = async () => {
+      const { data } = await supabase
+        .from("competition_entries")
+        .select("id, title, photos, competition_id, user_id")
+        .eq("status", "winner")
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map((e) => e.user_id))];
+        const compIds = [...new Set(data.map((e) => e.competition_id))];
+        const [{ data: profiles }, { data: comps }] = await Promise.all([
+          supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds),
+          supabase.from("competitions").select("id, title").in("id", compIds),
+        ]);
+        const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
+        const compMap = new Map(comps?.map((c) => [c.id, c.title]) || []);
+
+        setWinners(data.map((e) => ({
+          id: e.id,
+          title: e.title,
+          photos: e.photos || [],
+          competition_title: compMap.get(e.competition_id) || "Competition",
+          photographer_name: profileMap.get(e.user_id)?.full_name || null,
+          photographer_avatar: profileMap.get(e.user_id)?.avatar_url || null,
+        })));
+      }
+    };
+
+    // Fetch recent certificates
+    const fetchCertificates = async () => {
+      const { data } = await supabase
+        .from("certificates")
+        .select("id, title, type, issued_at, user_id")
+        .order("issued_at", { ascending: false })
+        .limit(6);
+
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map((c) => c.user_id))];
+        const { data: profiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds);
+        const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
+
+        setCertificates(data.map((c) => ({
+          id: c.id,
+          title: c.title,
+          type: c.type,
+          issued_at: c.issued_at,
+          recipient_name: profileMap.get(c.user_id)?.full_name || null,
+          recipient_avatar: profileMap.get(c.user_id)?.avatar_url || null,
+        })));
+      }
+    };
+
+    fetchWinners();
+    fetchCertificates();
   }, []);
 
   return (
@@ -563,6 +644,176 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Competition Winners Showcase */}
+      {winners.length > 0 && (
+        <section className="py-24 md:py-32 bg-card/30" aria-label="Competition winners">
+          <div className="container mx-auto px-6 md:px-12">
+            <motion.header
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              className="flex items-end justify-between mb-16"
+            >
+              <div>
+                <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-px bg-primary" />
+                  <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                    Hall of Fame
+                  </span>
+                </motion.div>
+                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                  Competition <em className="italic">Winners</em>
+                </motion.h2>
+              </div>
+              <motion.div variants={fadeIn} custom={2}>
+                <Link
+                  to="/winners"
+                  className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+                </Link>
+              </motion.div>
+            </motion.header>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {winners.map((winner, i) => (
+                <motion.div
+                  key={winner.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                  className="group relative overflow-hidden border border-border hover:border-primary/40 transition-all duration-700"
+                >
+                  {/* Winner photo */}
+                  {winner.photos[0] && (
+                    <div className="relative h-64 overflow-hidden bg-muted">
+                      <img
+                        src={winner.photos[0]}
+                        alt={winner.title}
+                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]"
+                        loading="lazy"
+                      />
+                      <div className="absolute top-3 left-3">
+                        <span
+                          className="text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-yellow-500/90 text-background inline-flex items-center gap-1"
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
+                          <Trophy className="h-3 w-3" /> Winner
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-5">
+                    <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                      {winner.competition_title}
+                    </span>
+                    <h3 className="text-lg font-light tracking-tight mb-3 group-hover:text-primary transition-colors duration-500" style={{ fontFamily: "var(--font-display)" }}>
+                      {winner.title}
+                    </h3>
+
+                    {/* Photographer */}
+                    <div className="flex items-center gap-2.5">
+                      {winner.photographer_avatar ? (
+                        <img src={winner.photographer_avatar} alt="" className="h-7 w-7 rounded-full object-cover border border-border" />
+                      ) : (
+                        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center border border-border">
+                          <User className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      )}
+                      <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                        {winner.photographer_name || "Photographer"}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Certificate Holders Showcase */}
+      {certificates.length > 0 && (
+        <section className="py-24 md:py-32" aria-label="Certified photographers">
+          <div className="container mx-auto px-6 md:px-12">
+            <motion.header
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              className="flex items-end justify-between mb-16"
+            >
+              <div>
+                <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-px bg-primary" />
+                  <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                    Recognition
+                  </span>
+                </motion.div>
+                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                  Certified <em className="italic">Excellence</em>
+                </motion.h2>
+              </div>
+              <motion.div variants={fadeIn} custom={2}>
+                <Link
+                  to="/certificates"
+                  className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+                </Link>
+              </motion.div>
+            </motion.header>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {certificates.map((cert, i) => (
+                <motion.div
+                  key={cert.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                  className="border border-border p-6 hover:border-primary/40 transition-all duration-700 group"
+                >
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Award className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                      {cert.type === "competition_winner" ? "Competition" : cert.type === "course_completion" ? "Course" : "Achievement"}
+                    </span>
+                  </div>
+
+                  <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
+                    {cert.title}
+                  </h3>
+
+                  <p className="text-[10px] text-muted-foreground mb-5" style={{ fontFamily: "var(--font-body)" }}>
+                    Issued {new Date(cert.issued_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  </p>
+
+                  {/* Recipient */}
+                  <div className="flex items-center gap-2.5 pt-4 border-t border-border">
+                    {cert.recipient_avatar ? (
+                      <img src={cert.recipient_avatar} alt="" className="h-7 w-7 rounded-full object-cover border border-border" />
+                    ) : (
+                      <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center border border-border">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                    )}
+                    <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                      {cert.recipient_name || "Photographer"}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Quote */}
       <section className="relative py-32 md:py-40 overflow-hidden" aria-label="Photography quote">
