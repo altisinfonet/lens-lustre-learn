@@ -160,16 +160,14 @@ const Journal = () => {
           </div>
         )}
 
-        {/* Articles grid */}
+        {/* Content */}
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-56 bg-muted mb-4" />
-                <div className="h-4 bg-muted w-3/4 mb-2" />
-                <div className="h-3 bg-muted w-1/2" />
-              </div>
-            ))}
+          <div className="space-y-8">
+            <div className="animate-pulse">
+              <div className="h-80 md:h-[28rem] bg-muted mb-6" />
+              <div className="h-6 bg-muted w-2/3 mb-3" />
+              <div className="h-4 bg-muted w-1/2" />
+            </div>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-24">
@@ -178,64 +176,162 @@ const Journal = () => {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filtered.map((article, i) => (
-              <motion.article
-                key={article.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.8 }}
-              >
-                <Link to={`/journal/${article.slug}`} className="group block">
-                  {article.cover_image_url && (
-                    <div className="relative overflow-hidden mb-4">
-                      <img
-                        src={article.cover_image_url}
-                        alt={article.title}
-                        className="w-full h-56 object-cover transition-transform duration-[1.5s] group-hover:scale-[1.03]"
-                        loading="lazy"
-                      />
+          <>
+            {/* Featured Hero Article */}
+            {(() => {
+              const hero = filtered[0];
+              const rest = filtered.slice(1);
+              return (
+                <>
+                  <motion.article
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1 }}
+                    className="mb-16"
+                  >
+                    <Link to={`/journal/${hero.slug}`} className="group block">
+                      <div className="grid md:grid-cols-2 gap-8 items-center">
+                        {hero.cover_image_url && (
+                          <div className="relative overflow-hidden">
+                            <img
+                              src={hero.cover_image_url}
+                              alt={hero.title}
+                              className="w-full h-72 md:h-[26rem] object-cover transition-transform duration-[1.5s] group-hover:scale-[1.03]"
+                              loading="eager"
+                            />
+                            <div className="absolute top-4 left-4">
+                              <span
+                                className="text-[9px] tracking-[0.25em] uppercase px-3 py-1.5 bg-primary text-primary-foreground"
+                                style={{ fontFamily: "var(--font-heading)" }}
+                              >
+                                Featured
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex flex-col justify-center">
+                          {hero.tags.length > 0 && (
+                            <div className="flex gap-3 mb-4">
+                              {hero.tags.slice(0, 3).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="text-[9px] tracking-[0.2em] uppercase text-primary"
+                                  style={{ fontFamily: "var(--font-heading)" }}
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <h2
+                            className="text-3xl md:text-5xl font-light mb-4 group-hover:text-primary transition-colors duration-500 leading-tight"
+                            style={{ fontFamily: "var(--font-display)" }}
+                          >
+                            {hero.title}
+                          </h2>
+                          {hero.excerpt && (
+                            <p
+                              className="text-sm text-muted-foreground leading-relaxed mb-6 line-clamp-3"
+                              style={{ fontFamily: "var(--font-body)" }}
+                            >
+                              {hero.excerpt}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-4 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                            <span>{hero.profiles?.full_name || "Unknown"}</span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(hero.published_at || hero.created_at).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          <div className="mt-6 flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                            Read Article <ArrowRight className="h-3.5 w-3.5" />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.article>
+
+                  {/* Divider */}
+                  {rest.length > 0 && (
+                    <div className="flex items-center gap-4 mb-12">
+                      <div className="w-12 h-px bg-border" />
+                      <span className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                        More Stories
+                      </span>
+                      <div className="flex-1 h-px bg-border" />
                     </div>
                   )}
-                  {article.tags.length > 0 && (
-                    <div className="flex gap-2 mb-3">
-                      {article.tags.slice(0, 2).map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-[9px] tracking-[0.2em] uppercase text-primary"
-                          style={{ fontFamily: "var(--font-heading)" }}
+
+                  {/* Remaining Articles Grid */}
+                  {rest.length > 0 && (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {rest.map((article, i) => (
+                        <motion.article
+                          key={article.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.1, duration: 0.8 }}
                         >
-                          {tag}
-                        </span>
+                          <Link to={`/journal/${article.slug}`} className="group block">
+                            {article.cover_image_url && (
+                              <div className="relative overflow-hidden mb-4">
+                                <img
+                                  src={article.cover_image_url}
+                                  alt={article.title}
+                                  className="w-full h-56 object-cover transition-transform duration-[1.5s] group-hover:scale-[1.03]"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                            {article.tags.length > 0 && (
+                              <div className="flex gap-2 mb-3">
+                                {article.tags.slice(0, 2).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="text-[9px] tracking-[0.2em] uppercase text-primary"
+                                    style={{ fontFamily: "var(--font-heading)" }}
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <h2
+                              className="text-xl md:text-2xl font-light mb-2 group-hover:text-primary transition-colors duration-500"
+                              style={{ fontFamily: "var(--font-display)" }}
+                            >
+                              {article.title}
+                            </h2>
+                            {article.excerpt && (
+                              <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2" style={{ fontFamily: "var(--font-body)" }}>
+                                {article.excerpt}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                              <span>{article.profiles?.full_name || "Unknown"}</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(article.published_at || article.created_at).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </div>
+                          </Link>
+                        </motion.article>
                       ))}
                     </div>
                   )}
-                  <h2
-                    className="text-xl md:text-2xl font-light mb-2 group-hover:text-primary transition-colors duration-500"
-                    style={{ fontFamily: "var(--font-display)" }}
-                  >
-                    {article.title}
-                  </h2>
-                  {article.excerpt && (
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2" style={{ fontFamily: "var(--font-body)" }}>
-                      {article.excerpt}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-4 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                    <span>{article.profiles?.full_name || "Unknown"}</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {new Date(article.published_at || article.created_at).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                </Link>
-              </motion.article>
-            ))}
-          </div>
+                </>
+              );
+            })()}
+          </>
         )}
       </div>
     </main>
