@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,7 +29,20 @@ interface EntryRow {
   competition_title?: string;
 }
 
-type Tab = "competitions" | "entries";
+interface RoleApp {
+  id: string;
+  user_id: string;
+  requested_role: string;
+  status: string;
+  reason: string | null;
+  portfolio_url: string | null;
+  experience: string | null;
+  admin_message: string | null;
+  created_at: string;
+  profiles: { full_name: string | null } | null;
+}
+
+type Tab = "competitions" | "entries" | "applications";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -42,6 +55,7 @@ const AdminPanel = () => {
   const [tab, setTab] = useState<Tab>("competitions");
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [entries, setEntries] = useState<EntryRow[]>([]);
+  const [roleApps, setRoleApps] = useState<RoleApp[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Form state
@@ -105,11 +119,26 @@ const AdminPanel = () => {
       setEntries([]);
     }
   };
+  const fetchRoleApps = async () => {
+    const { data } = await supabase
+      .from("role_applications")
+      .select("id, user_id, requested_role, status, reason, portfolio_url, experience, admin_message, created_at")
+      .order("created_at", { ascending: false });
+
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map((a) => a.user_id))];
+      const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
+      const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
+      setRoleApps(data.map((a) => ({ ...a, profiles: profileMap.get(a.user_id) || null })));
+    } else {
+      setRoleApps([]);
+    }
+  };
 
   useEffect(() => {
     if (!isAdmin) return;
     setLoading(true);
-    Promise.all([fetchCompetitions(), fetchEntries()]).then(() => setLoading(false));
+    Promise.all([fetchCompetitions(), fetchEntries(), fetchRoleApps()]).then(() => setLoading(false));
   }, [isAdmin]);
 
   const resetForm = () => {
@@ -206,6 +235,39 @@ const AdminPanel = () => {
     }
   };
 
+  const [adminMsg, setAdminMsg] = useState<Record<string, string>>({});
+
+  const handleRoleAppDecision = async (appId: string, decision: "approved" | "rejected") => {
+    const app = roleApps.find((a) => a.id === appId);
+    if (!app || !user) return;
+
+    const { error } = await supabase
+      .from("role_applications")
+      .update({
+        status: decision,
+        admin_message: adminMsg[appId]?.trim() || null,
+        reviewed_by: user.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", appId);
+
+    if (error) {
+      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // If approved, assign the role
+    if (decision === "approved") {
+      await supabase.from("user_roles").insert({
+        user_id: app.user_id,
+        role: app.requested_role as any,
+      });
+    }
+
+    toast({ title: `Application ${decision}` });
+    fetchRoleApps();
+  };
+
   if (adminLoading || loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
@@ -259,7 +321,7 @@ const AdminPanel = () => {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-8">
-          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users]] as const).map(([key, label, Icon]) => (
+          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase]] as const).map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -445,6 +507,108 @@ const AdminPanel = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Applications Tab */}
+        {tab === "applications" && (
+          <div>
+            <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-6" style={{ fontFamily: "var(--font-heading)" }}>
+              {roleApps.length} application{roleApps.length !== 1 ? "s" : ""}
+            </span>
+
+            <div className="space-y-4">
+              {roleApps.map((app) => (
+                <div key={app.id} className="border border-border p-5 md:p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <p className="text-sm font-light" style={{ fontFamily: "var(--font-heading)" }}>
+                        {app.profiles?.full_name || "Unknown User"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                        Requesting: <span className="text-primary uppercase tracking-[0.1em]">{app.requested_role === "content_editor" ? "Content Editor" : "Judge"}</span>
+                      </p>
+                    </div>
+                    <span className={`text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 border ${
+                      app.status === "approved" ? "text-primary border-primary" :
+                      app.status === "rejected" ? "text-destructive border-destructive" :
+                      "text-yellow-500 border-yellow-500"
+                    }`} style={{ fontFamily: "var(--font-heading)" }}>
+                      {app.status}
+                    </span>
+                  </div>
+
+                  {app.reason && (
+                    <div className="mb-3">
+                      <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground block mb-1" style={{ fontFamily: "var(--font-heading)" }}>Reason</span>
+                      <p className="text-xs text-foreground/80 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>{app.reason}</p>
+                    </div>
+                  )}
+                  {app.portfolio_url && (
+                    <div className="mb-3">
+                      <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground block mb-1" style={{ fontFamily: "var(--font-heading)" }}>Portfolio</span>
+                      <a href={app.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline" style={{ fontFamily: "var(--font-body)" }}>{app.portfolio_url}</a>
+                    </div>
+                  )}
+                  {app.experience && (
+                    <div className="mb-3">
+                      <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground block mb-1" style={{ fontFamily: "var(--font-heading)" }}>Experience</span>
+                      <p className="text-xs text-foreground/80 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>{app.experience}</p>
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>
+                    Applied {new Date(app.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
+
+                  {app.status === "pending" && (
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <div>
+                        <label className="block text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                          Admin Message (optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={adminMsg[app.id] || ""}
+                          onChange={(e) => setAdminMsg((prev) => ({ ...prev, [app.id]: e.target.value }))}
+                          placeholder="Optional feedback to the applicant..."
+                          className="w-full bg-transparent border-b border-border focus:border-primary outline-none py-2 text-xs transition-colors duration-500"
+                          style={{ fontFamily: "var(--font-body)" }}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleRoleAppDecision(app.id, "approved")}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-[10px] tracking-[0.15em] uppercase bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
+                          <CheckCircle className="h-3 w-3" /> Approve
+                        </button>
+                        <button
+                          onClick={() => handleRoleAppDecision(app.id, "rejected")}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-[10px] tracking-[0.15em] uppercase border border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all"
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
+                          <XCircle className="h-3 w-3" /> Reject
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {app.admin_message && app.status !== "pending" && (
+                    <div className="border-t border-border pt-3 mt-3">
+                      <p className="text-[10px] text-muted-foreground flex items-start gap-1.5" style={{ fontFamily: "var(--font-body)" }}>
+                        <MessageSquare className="h-3 w-3 mt-0.5 shrink-0" />
+                        {app.admin_message}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {roleApps.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-10" style={{ fontFamily: "var(--font-body)" }}>No role applications yet</p>
+              )}
             </div>
           </div>
         )}

@@ -1,9 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, User, Camera, Trophy, Calendar, ArrowLeft, Edit2, Shield } from "lucide-react";
+import { LogOut, User, Camera, Trophy, Calendar, ArrowLeft, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -27,12 +31,30 @@ interface UserRole {
   role: string;
 }
 
+interface RoleApplication {
+  id: string;
+  requested_role: string;
+  status: string;
+  reason: string | null;
+  admin_message: string | null;
+  created_at: string;
+}
+
 const Dashboard = () => {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Role application state
+  const [applications, setApplications] = useState<RoleApplication[]>([]);
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [applyRole, setApplyRole] = useState<"judge" | "content_editor">("judge");
+  const [applyReason, setApplyReason] = useState("");
+  const [applyPortfolio, setApplyPortfolio] = useState("");
+  const [applyExperience, setApplyExperience] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -44,18 +66,48 @@ const Dashboard = () => {
     if (!user) return;
 
     const fetchData = async () => {
-      const [profileRes, rolesRes] = await Promise.all([
+      const [profileRes, rolesRes, appsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
         supabase.from("user_roles").select("role").eq("user_id", user.id),
+        supabase.from("role_applications").select("id, requested_role, status, reason, admin_message, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data);
       if (rolesRes.data) setRoles(rolesRes.data);
+      if (appsRes.data) setApplications(appsRes.data);
       setLoading(false);
     };
 
     fetchData();
   }, [user]);
+
+  const handleApply = async () => {
+    if (!user) return;
+    if (!applyReason.trim()) {
+      toast({ title: "Please provide a reason", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from("role_applications").insert({
+      user_id: user.id,
+      requested_role: applyRole,
+      reason: applyReason.trim().slice(0, 1000),
+      portfolio_url: applyPortfolio.trim().slice(0, 500) || null,
+      experience: applyExperience.trim().slice(0, 1000) || null,
+    });
+    if (error) {
+      toast({ title: "Application failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Application submitted!", description: "You'll be notified when an admin reviews it." });
+      setShowApplyForm(false);
+      setApplyReason("");
+      setApplyPortfolio("");
+      setApplyExperience("");
+      const { data } = await supabase.from("role_applications").select("id, requested_role, status, reason, admin_message, created_at").eq("user_id", user.id).order("created_at", { ascending: false });
+      if (data) setApplications(data);
+    }
+    setSubmitting(false);
+  };
 
   if (authLoading || loading || !user) {
     return (
@@ -73,6 +125,19 @@ const Dashboard = () => {
 
   const displayName = profile?.full_name || user.email?.split("@")[0] || "Photographer";
   const initials = displayName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+
+  const hasRole = (role: string) => roles.some((r) => r.role === role);
+  const hasPendingApp = (role: string) => applications.some((a) => a.requested_role === role && a.status === "pending");
+  const canApplyFor = (role: string) => !hasRole(role) && !hasPendingApp(role);
+
+  const appStatusIcon = (status: string) => {
+    switch (status) {
+      case "pending": return <Clock className="h-3.5 w-3.5 text-yellow-500" />;
+      case "approved": return <CheckCircle className="h-3.5 w-3.5 text-primary" />;
+      case "rejected": return <XCircle className="h-3.5 w-3.5 text-destructive" />;
+      default: return null;
+    }
+  };
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -102,20 +167,14 @@ const Dashboard = () => {
       </nav>
 
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-20">
-        {/* Back link */}
         <Link to="/" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-10" style={{ fontFamily: "var(--font-heading)" }}>
           <ArrowLeft className="h-3 w-3" /> Home
         </Link>
 
         <div className="grid lg:grid-cols-3 gap-10 lg:gap-16">
           {/* Profile Card */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            className="lg:col-span-1"
-          >
+          <motion.div initial="hidden" animate="visible" className="lg:col-span-1">
             <motion.div variants={fadeUp} custom={0} className="border border-border p-8 md:p-10">
-              {/* Avatar */}
               <div className="flex flex-col items-center text-center mb-8">
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt={displayName} className="w-20 h-20 rounded-full object-cover mb-4" />
@@ -130,7 +189,6 @@ const Dashboard = () => {
                 <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{user.email}</p>
               </div>
 
-              {/* Roles */}
               <div className="flex flex-wrap justify-center gap-2 mb-6">
                 {roles.map((r) => (
                   <span key={r.role} className="text-[9px] tracking-[0.2em] uppercase px-3 py-1 border border-primary/30 text-primary" style={{ fontFamily: "var(--font-heading)" }}>
@@ -139,14 +197,12 @@ const Dashboard = () => {
                 ))}
               </div>
 
-              {/* Bio */}
               {profile?.bio && (
                 <p className="text-sm text-muted-foreground text-center leading-relaxed mb-6" style={{ fontFamily: "var(--font-body)" }}>
                   {profile.bio}
                 </p>
               )}
 
-              {/* Meta */}
               <div className="space-y-3 border-t border-border pt-6">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <Calendar className="h-3.5 w-3.5" />
@@ -162,7 +218,6 @@ const Dashboard = () => {
                 )}
               </div>
 
-              {/* Interests */}
               {profile?.photography_interests && profile.photography_interests.length > 0 && (
                 <div className="mt-6 border-t border-border pt-6">
                   <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>
@@ -181,12 +236,7 @@ const Dashboard = () => {
           </motion.div>
 
           {/* Main content */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            className="lg:col-span-2 space-y-10"
-          >
-            {/* Welcome */}
+          <motion.div initial="hidden" animate="visible" className="lg:col-span-2 space-y-10">
             <motion.div variants={fadeUp} custom={1}>
               <div className="flex items-center gap-4 mb-2">
                 <div className="w-12 h-px bg-primary" />
@@ -224,8 +274,139 @@ const Dashboard = () => {
               </div>
             </motion.div>
 
-            {/* Recent Activity */}
+            {/* Role Applications */}
             <motion.div variants={fadeUp} custom={3}>
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>
+                Role Applications
+              </span>
+
+              {(canApplyFor("judge") || canApplyFor("content_editor")) && !showApplyForm && (
+                <div className="flex flex-wrap gap-3 mb-6">
+                  {canApplyFor("judge") && (
+                    <button
+                      onClick={() => { setApplyRole("judge"); setShowApplyForm(true); }}
+                      className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-3 border border-border hover:border-primary/50 transition-all duration-500"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      <Briefcase className="h-3.5 w-3.5 text-primary" />
+                      Apply as Judge
+                    </button>
+                  )}
+                  {canApplyFor("content_editor") && (
+                    <button
+                      onClick={() => { setApplyRole("content_editor"); setShowApplyForm(true); }}
+                      className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-3 border border-border hover:border-primary/50 transition-all duration-500"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      <Briefcase className="h-3.5 w-3.5 text-primary" />
+                      Apply as Content Editor
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {showApplyForm && (
+                <div className="border border-border p-6 md:p-8 mb-6 space-y-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                      Apply as {applyRole === "judge" ? "Judge" : "Content Editor"}
+                    </span>
+                    <button onClick={() => setShowApplyForm(false)} className="text-muted-foreground hover:text-foreground">
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                      Why do you want this role? *
+                    </label>
+                    <Textarea
+                      value={applyReason}
+                      onChange={(e) => setApplyReason(e.target.value)}
+                      placeholder={applyRole === "judge" ? "Describe your experience in photography judging..." : "Tell us about your writing and photography experience..."}
+                      className="bg-transparent"
+                      maxLength={1000}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                      Portfolio URL
+                    </label>
+                    <Input
+                      value={applyPortfolio}
+                      onChange={(e) => setApplyPortfolio(e.target.value)}
+                      placeholder="https://yourportfolio.com"
+                      className="bg-transparent"
+                      maxLength={500}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                      Relevant Experience
+                    </label>
+                    <Textarea
+                      value={applyExperience}
+                      onChange={(e) => setApplyExperience(e.target.value)}
+                      placeholder="Awards, publications, years of experience..."
+                      className="bg-transparent"
+                      maxLength={1000}
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      onClick={handleApply}
+                      disabled={submitting}
+                      className="text-xs tracking-[0.1em] uppercase bg-primary text-primary-foreground"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      <Send className="h-3.5 w-3.5 mr-1.5" />
+                      {submitting ? "Submitting…" : "Submit Application"}
+                    </Button>
+                    <Button variant="ghost" onClick={() => setShowApplyForm(false)} className="text-xs tracking-[0.1em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {applications.length > 0 ? (
+                <div className="border border-border divide-y divide-border">
+                  {applications.map((app) => (
+                    <div key={app.id} className="flex items-start gap-4 p-5">
+                      <div className="mt-0.5">{appStatusIcon(app.status)}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-light" style={{ fontFamily: "var(--font-heading)" }}>
+                          {app.requested_role === "content_editor" ? "Content Editor" : "Judge"} Application
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5" style={{ fontFamily: "var(--font-body)" }}>
+                          Status: <span className={app.status === "approved" ? "text-primary" : app.status === "rejected" ? "text-destructive" : "text-yellow-500"}>{app.status}</span>
+                        </p>
+                        {app.admin_message && (
+                          <p className="text-[11px] text-muted-foreground mt-2 p-2 bg-muted/50 border-l-2 border-primary" style={{ fontFamily: "var(--font-body)" }}>
+                            Admin: {app.admin_message}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground shrink-0" style={{ fontFamily: "var(--font-body)" }}>
+                        {new Date(app.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                  {canApplyFor("judge") || canApplyFor("content_editor")
+                    ? "No applications yet. Apply for a role above to unlock new features."
+                    : "You already have all available roles."}
+                </p>
+              )}
+            </motion.div>
+
+            {/* Recent Activity */}
+            <motion.div variants={fadeUp} custom={4}>
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>
                 Recent Activity
               </span>
@@ -255,15 +436,9 @@ const Dashboard = () => {
 };
 
 const ActivityItem = ({
-  icon,
-  title,
-  description,
-  time,
+  icon, title, description, time,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  time: string;
+  icon: React.ReactNode; title: string; description: string; time: string;
 }) => (
   <div className="flex items-start gap-4 p-5">
     <div className="mt-0.5 text-primary">{icon}</div>
