@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Clock, Tag, PenLine } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Tag, PenLine, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -20,7 +20,8 @@ interface Article {
 }
 
 const Journal = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,16 +86,25 @@ const Journal = () => {
             <ArrowLeft className="h-4 w-4" />
             Back
           </Link>
-          {canEdit && (
-            <Link
-              to="/journal/new"
-              className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              <PenLine className="h-3.5 w-3.5" />
-              New Article
-            </Link>
-          )}
+          <div className="flex items-center gap-4" style={{ fontFamily: "var(--font-heading)" }}>
+            {canEdit && (
+              <Link
+                to="/journal/new"
+                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                <PenLine className="h-3.5 w-3.5" />
+                New Article
+              </Link>
+            )}
+            {user && (
+              <button
+                onClick={async () => { await signOut(); navigate("/"); }}
+                className="inline-flex items-center gap-1.5 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <LogOut className="h-3 w-3" /> Logout
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

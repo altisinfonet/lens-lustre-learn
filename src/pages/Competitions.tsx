@@ -1,8 +1,9 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar, Trophy, Clock, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Calendar, Trophy, Clock, ArrowRight, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -36,6 +37,8 @@ const statusColors: Record<string, string> = {
 };
 
 const Competitions = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<StatusFilter>("all");
@@ -71,6 +74,14 @@ const Competitions = () => {
           </Link>
           <div className="flex items-center gap-6 text-xs tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
             <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500">Dashboard</Link>
+            {user && (
+              <button
+                onClick={async () => { await signOut(); navigate("/"); }}
+                className="inline-flex items-center gap-1.5 hover:opacity-60 transition-opacity duration-500"
+              >
+                <LogOut className="h-3 w-3" /> Logout
+              </button>
+            )}
           </div>
         </div>
       </nav>
