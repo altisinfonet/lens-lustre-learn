@@ -516,6 +516,13 @@ const AdminPanel = () => {
                         <div className="flex items-center gap-2">
                           <button onClick={() => updateEntryStatus(entry.id, "approved")} className="p-1.5 hover:text-primary transition-colors" title="Approve"><CheckCircle className="h-3.5 w-3.5" /></button>
                           <button onClick={() => updateEntryStatus(entry.id, "rejected")} className="p-1.5 hover:text-destructive transition-colors" title="Reject"><XCircle className="h-3.5 w-3.5" /></button>
+                          <button
+                            onClick={() => updateEntryStatus(entry.id, "winner")}
+                            className={`p-1.5 transition-colors ${entry.status === "winner" ? "text-yellow-500" : "hover:text-yellow-500"}`}
+                            title="Mark as Winner"
+                          >
+                            <Trophy className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
