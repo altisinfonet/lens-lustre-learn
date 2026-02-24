@@ -1,7 +1,8 @@
-import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 /* Classic easing — gentle, cinematic transitions */
 const classicEase = [0.4, 0, 0.2, 1] as const;
@@ -46,6 +47,8 @@ const galleryWorks = [
 ];
 
 const Index = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -72,16 +75,34 @@ const Index = () => {
             <a href="#pillars" className="hover:opacity-60 transition-opacity duration-500">Explore</a>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-xs tracking-[0.15em] uppercase hover:opacity-60 transition-opacity duration-500" style={{ fontFamily: "var(--font-heading)" }}>
-              Login
-            </Link>
-            <Link
-              to="/signup"
-              className="text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-700"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Join
-            </Link>
+            {user ? (
+              <>
+                <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                  {user.user_metadata?.full_name || user.email?.split("@")[0]}
+                </span>
+                <button
+                  onClick={async () => { await signOut(); navigate("/"); }}
+                  className="text-xs tracking-[0.15em] uppercase px-4 py-2 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-700 inline-flex items-center gap-2"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  <LogOut className="h-3 w-3" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="text-xs tracking-[0.15em] uppercase hover:opacity-60 transition-opacity duration-500" style={{ fontFamily: "var(--font-heading)" }}>
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-700"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  Join
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
