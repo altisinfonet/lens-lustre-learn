@@ -87,7 +87,7 @@ const Index = () => {
       </nav>
 
       {/* Hero — Slow crossfade slideshow */}
-      <section className="relative h-screen flex items-center" aria-label="Featured photography">
+      <section className="relative h-screen flex items-end pb-24 md:pb-32 pt-24" aria-label="Featured photography">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
