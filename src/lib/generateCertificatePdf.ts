@@ -5,6 +5,7 @@ interface CertificateData {
   courseTitle: string;
   issueDate: string;
   certificateId: string;
+  type?: "course" | "competition";
 }
 
 export const generateCertificatePdf = ({
@@ -12,6 +13,7 @@ export const generateCertificatePdf = ({
   courseTitle,
   issueDate,
   certificateId,
+  type = "course",
 }: CertificateData) => {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = 297;
@@ -58,12 +60,11 @@ export const generateCertificatePdf = ({
   doc.triangle(cx, accentY - 3, cx - 3, accentY, cx, accentY + 3, "F");
   doc.triangle(cx, accentY - 3, cx + 3, accentY, cx, accentY + 3, "F");
 
-  // --- "CERTIFICATE OF COMPLETION" ---
+  // --- "CERTIFICATE OF ..." ---
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(200, 160, 60);
-  const labelText = "CERTIFICATE OF COMPLETION";
-  // letter-spacing simulation
+  const labelText = type === "competition" ? "CERTIFICATE OF ACHIEVEMENT" : "CERTIFICATE OF COMPLETION";
   const spacedLabel = labelText.split("").join("  ");
   doc.text(spacedLabel, W / 2, 36, { align: "center" });
 
@@ -89,11 +90,14 @@ export const generateCertificatePdf = ({
   doc.setLineWidth(0.3);
   doc.line(W / 2 - nameWidth / 2, 90, W / 2 + nameWidth / 2, 90);
 
-  // --- "has successfully completed" ---
+  // --- "has successfully completed" / "has been awarded winner in" ---
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(180, 180, 180);
-  doc.text("has successfully completed all lessons in", W / 2, 102, { align: "center" });
+  const subtitle = type === "competition"
+    ? "has been awarded winner in"
+    : "has successfully completed all lessons in";
+  doc.text(subtitle, W / 2, 102, { align: "center" });
 
   // --- Course title ---
   doc.setFont("helvetica", "italic");

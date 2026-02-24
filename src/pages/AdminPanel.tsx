@@ -230,8 +230,26 @@ const AdminPanel = () => {
     if (error) {
       toast({ title: "Update failed", description: error.message, variant: "destructive" });
     } else {
+      const entry = entries.find((e) => e.id === entryId);
       setEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, status: newStatus } : e)));
       toast({ title: `Entry ${newStatus}` });
+
+      // Auto-issue competition winner certificate
+      if (newStatus === "winner" && entry) {
+        const compTitle = entry.competition_title || "Competition";
+        const { error: certError } = await supabase.from("certificates").insert({
+          user_id: entry.user_id,
+          title: `${compTitle} — Winner Certificate`,
+          description: `Awarded for the winning entry "${entry.title}" in the "${compTitle}" competition.`,
+          type: "competition_winner",
+          reference_id: entry.competition_id,
+        });
+        if (certError) {
+          toast({ title: "Certificate could not be issued", description: certError.message, variant: "destructive" });
+        } else {
+          toast({ title: "🏆 Winner certificate issued!", description: `Certificate awarded to ${entry.profiles?.full_name || "the photographer"}.` });
+        }
+      }
     }
   };
 

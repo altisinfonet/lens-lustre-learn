@@ -140,12 +140,15 @@ const Certificates = () => {
                       <button
                         onClick={() => {
                           try {
-                            const courseName = cert.title.replace(" — Completion Certificate", "");
+                            const certName = cert.title
+                              .replace(" — Completion Certificate", "")
+                              .replace(" — Winner Certificate", "");
                             const doc = generateCertificatePdf({
                               recipientName: displayName,
-                              courseTitle: courseName,
+                              courseTitle: certName,
                               issueDate: new Date(cert.issued_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
                               certificateId: cert.id,
+                              type: cert.type === "competition_winner" ? "competition" : "course",
                             });
                             doc.save(`ArteFoto-Certificate-${cert.id.slice(0, 8)}.pdf`);
                           } catch {
@@ -160,11 +163,11 @@ const Certificates = () => {
                       </button>
                       {cert.reference_id && (
                         <Link
-                          to={`/courses/${cert.reference_id}`}
+                          to={cert.type === "competition_winner" ? `/competitions/${cert.reference_id}` : `/courses/${cert.reference_id}`}
                           className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-primary transition-colors"
                           style={{ fontFamily: "var(--font-heading)" }}
                         >
-                          View Course
+                          {cert.type === "competition_winner" ? "View Competition" : "View Course"}
                         </Link>
                       )}
                     </div>
