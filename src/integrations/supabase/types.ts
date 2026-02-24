@@ -47,6 +47,133 @@ export type Database = {
         }
         Relationships: []
       }
+      competition_entries: {
+        Row: {
+          competition_id: string
+          created_at: string
+          description: string | null
+          id: string
+          photos: string[]
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          photos?: string[]
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          photos?: string[]
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_entries_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_votes: {
+        Row: {
+          created_at: string
+          entry_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_votes_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "competition_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitions: {
+        Row: {
+          category: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          ends_at: string
+          entry_fee: number | null
+          id: string
+          max_entries_per_user: number | null
+          max_photos_per_entry: number | null
+          prize_info: string | null
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          ends_at: string
+          entry_fee?: number | null
+          id?: string
+          max_entries_per_user?: number | null
+          max_photos_per_entry?: number | null
+          prize_info?: string | null
+          starts_at: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          ends_at?: string
+          entry_fee?: number | null
+          id?: string
+          max_entries_per_user?: number | null
+          max_photos_per_entry?: number | null
+          prize_info?: string | null
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
