@@ -22,6 +22,7 @@ import CourseEditor from "./pages/CourseEditor";
 import LessonView from "./pages/LessonView";
 import Certificates from "./pages/Certificates";
 import VerifyCertificate from "./pages/VerifyCertificate";
+import Winners from "./pages/Winners";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/courses/:slug/lessons/:lessonId" element={<LessonView />} />
             <Route path="/certificates" element={<Certificates />} />
             <Route path="/verify" element={<VerifyCertificate />} />
+            <Route path="/winners" element={<Winners />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
