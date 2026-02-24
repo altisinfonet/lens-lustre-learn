@@ -206,7 +206,7 @@ const Dashboard = () => {
                 {[
                   { icon: Trophy, label: "Competitions", desc: "Browse & enter contests", to: "/competitions" },
                   { icon: Camera, label: "My Works", desc: "Manage your portfolio", to: "#" },
-                  { icon: Edit2, label: "Edit Profile", desc: "Update your info", to: "#" },
+                  { icon: Edit2, label: "Edit Profile", desc: "Update your info", to: "/edit-profile" },
                 ].map((action) => (
                   <Link
                     key={action.label}
