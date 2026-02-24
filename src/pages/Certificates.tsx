@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Award, Download, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { generateCertificatePdf } from "@/lib/generateCertificatePdf";
+import { toast } from "@/hooks/use-toast";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -28,6 +30,7 @@ const Certificates = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,12 +40,12 @@ const Certificates = () => {
   useEffect(() => {
     if (!user) return;
     const fetchCerts = async () => {
-      const { data } = await supabase
-        .from("certificates")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("issued_at", { ascending: false });
-      setCertificates(data || []);
+      const [{ data: certs }, { data: profile }] = await Promise.all([
+        supabase.from("certificates").select("*").eq("user_id", user.id).order("issued_at", { ascending: false }),
+        supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+      ]);
+      setCertificates(certs || []);
+      setDisplayName(profile?.full_name || user.email?.split("@")[0] || "Photographer");
       setLoading(false);
     };
     fetchCerts();
@@ -133,7 +136,28 @@ const Certificates = () => {
                         </span>
                       </div>
                     </div>
-                    <div className="shrink-0 flex flex-col gap-2">
+                    <div className="shrink-0 flex flex-col gap-3 items-end">
+                      <button
+                        onClick={() => {
+                          try {
+                            const courseName = cert.title.replace(" — Completion Certificate", "");
+                            const doc = generateCertificatePdf({
+                              recipientName: displayName,
+                              courseTitle: courseName,
+                              issueDate: new Date(cert.issued_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+                              certificateId: cert.id,
+                            });
+                            doc.save(`ArteFoto-Certificate-${cert.id.slice(0, 8)}.pdf`);
+                          } catch {
+                            toast({ title: "Download failed", variant: "destructive" });
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2 border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-500"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        <Download className="h-3 w-3" />
+                        PDF
+                      </button>
                       {cert.reference_id && (
                         <Link
                           to={`/courses/${cert.reference_id}`}
