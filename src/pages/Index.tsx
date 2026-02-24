@@ -87,7 +87,7 @@ const Index = () => {
       </nav>
 
       {/* Hero — Slow crossfade slideshow */}
-      <section className="relative h-screen flex items-end pb-24 md:pb-32 pt-24" aria-label="Featured photography">
+      <section className="relative h-screen flex items-end pb-20 md:pb-28" aria-label="Featured photography">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -124,7 +124,7 @@ const Index = () => {
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 1.5, delay: 0.8, ease: classicEase }}
-                className="flex items-center gap-4 mb-8"
+                className="flex items-center gap-4 mb-6"
               >
                 <div className="w-16 h-px bg-primary" />
                 <span className="text-xs tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
@@ -136,13 +136,10 @@ const Index = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.8, delay: 1, ease: classicEase }}
-                className="text-6xl md:text-8xl lg:text-9xl font-light leading-[0.9] mb-8 tracking-tight"
+                className="text-5xl md:text-7xl lg:text-8xl font-light leading-[0.9] mb-6 tracking-tight"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Every
-                <br />
-                Frame
-                <br />
+                Every Frame{" "}
                 <em className="text-primary font-light italic">Tells</em>
               </motion.h1>
 
