@@ -16,6 +16,7 @@ const Login = () => {
   const [loading, setLoading] = useState<"google" | "apple" | "email" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -170,6 +171,17 @@ const Login = () => {
                 style={{ fontFamily: "var(--font-body)" }}
               />
             </div>
+            <label className="flex items-center gap-2.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-3.5 w-3.5 rounded-sm border border-border accent-primary cursor-pointer"
+              />
+              <span className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground group-hover:text-foreground transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
+                Remember me
+              </span>
+            </label>
             <button
               type="submit"
               disabled={!!loading}
