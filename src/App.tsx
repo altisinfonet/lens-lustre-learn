@@ -13,6 +13,9 @@ import Competitions from "./pages/Competitions";
 import CompetitionDetail from "./pages/CompetitionDetail";
 import CompetitionSubmit from "./pages/CompetitionSubmit";
 import AdminPanel from "./pages/AdminPanel";
+import Journal from "./pages/Journal";
+import JournalArticle from "./pages/JournalArticle";
+import JournalEditor from "./pages/JournalEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +37,10 @@ const App = () => (
             <Route path="/competitions/:id" element={<CompetitionDetail />} />
             <Route path="/competitions/:id/submit" element={<CompetitionSubmit />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/journal" element={<Journal />} />
+            <Route path="/journal/new" element={<JournalEditor />} />
+            <Route path="/journal/edit/:id" element={<JournalEditor />} />
+            <Route path="/journal/:slug" element={<JournalArticle />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
