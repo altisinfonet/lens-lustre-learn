@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import EditProfile from "./pages/EditProfile";
+import Profile from "./pages/Profile";
 import Competitions from "./pages/Competitions";
 import CompetitionDetail from "./pages/CompetitionDetail";
 import CompetitionSubmit from "./pages/CompetitionSubmit";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/edit-profile" element={<EditProfile />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/competitions" element={<Competitions />} />
             <Route path="/competitions/:id" element={<CompetitionDetail />} />
             <Route path="/competitions/:id/submit" element={<CompetitionSubmit />} />
