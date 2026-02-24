@@ -27,7 +27,7 @@ const Login = () => {
     if (error) {
       setError(error);
     } else {
-      navigate("/");
+      navigate("/dashboard");
     }
   };
 
