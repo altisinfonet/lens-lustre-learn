@@ -77,6 +77,7 @@ const Index = () => {
             <a href="#pillars" className="hover:opacity-60 transition-opacity duration-500">Explore</a>
             <Link to="/competitions" className="hover:opacity-60 transition-opacity duration-500">Competitions</Link>
             <Link to="/journal" className="hover:opacity-60 transition-opacity duration-500">Journal</Link>
+            <Link to="/courses" className="hover:opacity-60 transition-opacity duration-500">Courses</Link>
             {user && <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500">Dashboard</Link>}
             {isAdmin && (
               <Link to="/admin" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
@@ -161,6 +162,7 @@ const Index = () => {
                 <a href="#pillars" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Explore</a>
                 <Link to="/competitions" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Competitions</Link>
                 <Link to="/journal" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Journal</Link>
+                <Link to="/courses" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Courses</Link>
                 {user && (
                   <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Dashboard</Link>
                 )}
