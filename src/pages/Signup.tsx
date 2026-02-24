@@ -207,6 +207,35 @@ const Signup = () => {
                 className="w-full py-3 px-4 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors"
                 style={{ fontFamily: "var(--font-body)" }}
               />
+              {/* Password strength indicator */}
+              {password.length > 0 && (() => {
+                let score = 0;
+                if (password.length >= 8) score++;
+                if (password.length >= 12) score++;
+                if (/[A-Z]/.test(password)) score++;
+                if (/[0-9]/.test(password)) score++;
+                if (/[^A-Za-z0-9]/.test(password)) score++;
+                const label = score <= 1 ? "Weak" : score <= 2 ? "Fair" : score <= 3 ? "Good" : "Strong";
+                const colors = ["bg-destructive", "bg-destructive", "bg-yellow-500", "bg-primary", "bg-green-500"];
+                const textColors = ["text-destructive", "text-destructive", "text-yellow-500", "text-primary", "text-green-500"];
+                return (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex gap-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-1 flex-1 rounded-full transition-all duration-500 ${
+                            i < score ? colors[score - 1] : "bg-border"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className={`text-[9px] tracking-[0.15em] uppercase ${textColors[score - 1] || "text-muted-foreground"}`} style={{ fontFamily: "var(--font-heading)" }}>
+                      {label}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
             <button
               type="submit"
