@@ -1,4 +1,4 @@
-import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut, Shield } from "lucide-react";
+import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut, Shield, Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -52,7 +52,7 @@ const Index = () => {
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
-
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
@@ -84,7 +84,7 @@ const Index = () => {
               </Link>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {user ? (
               <>
                 <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
@@ -114,8 +114,93 @@ const Index = () => {
               </>
             )}
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden p-2 hover:opacity-60 transition-opacity"
+            aria-label="Open menu"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
         </div>
       </nav>
+
+      {/* Mobile menu overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-background/60 backdrop-blur-sm z-[60]"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              className="fixed top-0 right-0 bottom-0 w-72 bg-card border-l border-border z-[70] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-border">
+                <span style={{ fontFamily: "var(--font-heading)" }} className="text-xs font-semibold tracking-[0.2em] uppercase">
+                  Menu
+                </span>
+                <button onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="flex flex-col p-6 gap-6 flex-1" style={{ fontFamily: "var(--font-heading)" }}>
+                <a href="#works" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Works</a>
+                <a href="#about" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">About</a>
+                <a href="#pillars" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Explore</a>
+                <Link to="/competitions" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Competitions</Link>
+                {user && (
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Dashboard</Link>
+                )}
+                {isAdmin && (
+                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
+                    <Shield className="h-3.5 w-3.5" />
+                    Admin
+                  </Link>
+                )}
+
+                <div className="h-px bg-border my-2" />
+
+                {user ? (
+                  <>
+                    <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground">
+                      {user.user_metadata?.full_name || user.email?.split("@")[0]}
+                    </span>
+                    <button
+                      onClick={async () => { await signOut(); setMobileMenuOpen(false); navigate("/"); }}
+                      className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors inline-flex items-center gap-2"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Login</Link>
+                    <Link
+                      to="/signup"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-sm tracking-[0.15em] uppercase px-5 py-2.5 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-500 text-center"
+                    >
+                      Join
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Hero — Slow crossfade slideshow */}
       <section className="relative h-screen flex items-end pb-20 md:pb-28" aria-label="Featured photography">
