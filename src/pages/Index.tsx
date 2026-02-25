@@ -464,7 +464,7 @@ const Index = () => {
           {/* Instagram-style grid with featured hero image */}
           <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 auto-rows-[1fr] gap-1.5">
             {galleryWorks.map((work, i) => {
-              const isHero = i === 0;
+              const isHero = i === 0 || (i > 0 && i % 20 === 0);
               return (
                 <motion.div
                   key={`${work.title}-${i}`}
