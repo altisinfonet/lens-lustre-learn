@@ -1,7 +1,8 @@
-import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User } from "lucide-react";
+import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
-import { useEffect, useState, lazy, Suspense, memo } from "react";
+import { useEffect, useState, useCallback, lazy, Suspense, memo } from "react";
+import Lightbox from "@/components/Lightbox";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -83,6 +84,16 @@ const Index = () => {
   const [winners, setWinners] = useState<WinnerShowcase[]>([]);
   const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
   const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const openLightbox = useCallback((index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  }, []);
+  const closeLightbox = useCallback(() => setLightboxOpen(false), []);
+  const prevLightbox = useCallback(() => setLightboxIndex((i) => (i - 1 + galleryWorks.length) % galleryWorks.length), []);
+  const nextLightbox = useCallback(() => setLightboxIndex((i) => (i + 1) % galleryWorks.length), []);
 
   // Preload next hero slide for smooth transition
   useEffect(() => {
@@ -325,71 +336,119 @@ const Index = () => {
         </motion.div>
       </div>
 
-      {/* Featured Works */}
-      <section id="works" className="py-24 md:py-32" aria-label="Selected photography works">
-        <div className="container mx-auto px-6 md:px-12">
+      {/* Featured Works — Redesigned */}
+      <section id="works" className="py-28 md:py-40 relative" aria-label="Selected photography works">
+        {/* Background accent */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-card/30 to-transparent pointer-events-none" />
+
+        <div className="container mx-auto px-6 md:px-12 relative z-10">
           <motion.header
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
-            className="flex items-end justify-between mb-16"
+            className="text-center mb-20"
           >
-            <div>
-              <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-px bg-primary" />
-                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Portfolio
-                </span>
-              </motion.div>
-              <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                Selected <em className="italic">Works</em>
-              </motion.h2>
-            </div>
-            <motion.div variants={fadeIn} custom={2} className="hidden md:block">
-              <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                10 Photographs
+            <motion.div variants={fadeUp} custom={0} className="flex items-center justify-center gap-4 mb-6">
+              <div className="w-16 h-px bg-primary" />
+              <span className="text-[10px] tracking-[0.4em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                Portfolio
               </span>
+              <div className="w-16 h-px bg-primary" />
             </motion.div>
+            <motion.h2
+              variants={fadeUp}
+              custom={1}
+              className="text-5xl md:text-7xl lg:text-8xl font-light tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Selected <em className="italic text-primary">Works</em>
+            </motion.h2>
+            <motion.p
+              variants={fadeIn}
+              custom={2}
+              className="text-sm text-muted-foreground mt-4 max-w-md mx-auto"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              A curated collection of moments frozen in time — click any image to explore
+            </motion.p>
           </motion.header>
 
-          {/* Masonry grid */}
-          <div className="columns-2 md:columns-3 gap-3 md:gap-4 space-y-3 md:space-y-4">
+          {/* Masonry gallery with lightbox */}
+          <div className="columns-2 md:columns-3 gap-4 md:gap-5 space-y-4 md:space-y-5">
             {galleryWorks.map((work, i) => (
               <motion.article
                 key={work.title}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
-                transition={{ delay: (i % 3) * 0.15, duration: 1.2, ease: slowEase }}
-                className="group relative overflow-hidden break-inside-avoid cursor-pointer"
+                transition={{ delay: (i % 3) * 0.12, duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
+                className="group relative overflow-hidden break-inside-avoid cursor-pointer rounded-sm"
+                onClick={() => openLightbox(i)}
               >
                 <figure className="relative overflow-hidden">
                   <img
                     src={work.src}
                     alt={`${work.title} — ${work.category} photography`}
-                    className={`w-full object-cover transition-all duration-[1.5s] ease-out group-hover:scale-[1.03] group-hover:brightness-[0.6] ${
-                      work.size === "tall" ? "h-[450px] md:h-[550px]" : work.size === "wide" ? "h-[250px] md:h-[300px]" : "h-[280px] md:h-[380px]"
+                    className={`w-full object-cover transition-all duration-[2s] ease-out group-hover:scale-105 group-hover:brightness-[0.4] ${
+                      work.size === "tall" ? "h-[480px] md:h-[600px]" : work.size === "wide" ? "h-[260px] md:h-[320px]" : "h-[300px] md:h-[400px]"
                     }`}
                     loading="lazy"
                   />
-                  <figcaption className="absolute inset-0 flex flex-col justify-end p-5 opacity-0 group-hover:opacity-100 transition-opacity duration-[1s]">
-                    <div className="transform translate-y-3 group-hover:translate-y-0 transition-transform duration-[1s]">
-                      <span className="text-[9px] tracking-[0.3em] uppercase text-primary block mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                  {/* Persistent bottom gradient */}
+                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
+
+                  {/* Hover overlay content */}
+                  <figcaption className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                    <motion.div className="flex flex-col items-center text-center px-4">
+                      <div className="w-14 h-14 rounded-full border-2 border-primary/60 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
+                        <Expand className="h-5 w-5 text-primary" />
+                      </div>
+                      <span
+                        className="text-[9px] tracking-[0.4em] uppercase text-primary mb-2"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
                         {work.category}
                       </span>
-                      <h3 className="text-xl font-light" style={{ fontFamily: "var(--font-display)" }}>{work.title}</h3>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Eye className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>View</span>
-                      </div>
-                    </div>
+                      <h3
+                        className="text-xl md:text-2xl font-light text-foreground"
+                        style={{ fontFamily: "var(--font-display)" }}
+                      >
+                        {work.title}
+                      </h3>
+                    </motion.div>
                   </figcaption>
+
+                  {/* Bottom label always visible */}
+                  <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between opacity-100 group-hover:opacity-0 transition-opacity duration-500">
+                    <span
+                      className="text-[9px] tracking-[0.25em] uppercase text-foreground/80"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {work.title}
+                    </span>
+                    <span
+                      className="text-[8px] tracking-[0.2em] uppercase text-muted-foreground"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {work.category}
+                    </span>
+                  </div>
                 </figure>
               </motion.article>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Lightbox */}
+      <Lightbox
+        images={galleryWorks}
+        currentIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={closeLightbox}
+        onPrev={prevLightbox}
+        onNext={nextLightbox}
+      />
 
       {/* Philosophy — Split layout */}
       <section id="about" className="py-24 md:py-32 relative" aria-label="Our philosophy">
