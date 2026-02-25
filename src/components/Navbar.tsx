@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogOut, Shield, Menu, X } from "lucide-react";
+import { LogOut, Shield, Menu, X, Sun, Moon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import GlobalSearch from "@/components/GlobalSearch";
+import { useTheme } from "@/hooks/useTheme";
 
 interface NavbarProps {
   /** When true the nav is rendered absolute/transparent over a hero section */
@@ -24,6 +25,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const isHome = location.pathname === "/";
 
@@ -84,6 +86,13 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
 
           {/* Desktop right */}
           <div className="hidden md:flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full border border-border hover:border-primary hover:text-primary transition-all duration-500"
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
             <GlobalSearch />
             {user ? (
               <>
@@ -165,7 +174,16 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
               </div>
 
               <div className="flex flex-col p-6 gap-6 flex-1" style={{ fontFamily: "var(--font-heading)" }}>
-                <div className="mb-2"><GlobalSearch /></div>
+                <div className="flex items-center gap-3 mb-2">
+                  <GlobalSearch />
+                  <button
+                    onClick={toggleTheme}
+                    className="p-2 rounded-full border border-border hover:border-primary hover:text-primary transition-all duration-500"
+                    aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                  >
+                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  </button>
+                </div>
                 {isHome && (
                   <>
                     <a href="#works" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Works</a>
