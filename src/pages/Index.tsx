@@ -35,18 +35,24 @@ const heroSlides = [
   { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action" },
 ];
 
-const galleryWorks = [
-  { src: "/images/lives-on-life.jpg", title: "Lives on Life", category: "Aerial", size: "tall" as const },
-  { src: "/images/sadhu.jpg", title: "The Ascetic", category: "Portrait", size: "normal" as const },
-  { src: "/images/hero-1.jpg", title: "Breakfast", category: "Wildlife", size: "normal" as const },
-  { src: "/images/after-prayer.jpg", title: "After the Prayer", category: "Street", size: "wide" as const },
-  { src: "/images/innocence.jpg", title: "Innocence", category: "Portrait", size: "normal" as const },
-  { src: "/images/life-in-summer.jpg", title: "Life in Summer", category: "Street", size: "normal" as const },
-  { src: "/images/hero-3.jpg", title: "Morning Snacks", category: "Wildlife", size: "normal" as const },
-  { src: "/images/portrait-1.jpg", title: "The Holy Dip", category: "Portrait", size: "tall" as const },
-  { src: "/images/hero-4.jpg", title: "The Brunch", category: "Wildlife", size: "normal" as const },
-  { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action", size: "normal" as const },
+const baseGalleryWorks = [
+  { src: "/images/lives-on-life.jpg", title: "Lives on Life", category: "Aerial" },
+  { src: "/images/sadhu.jpg", title: "The Ascetic", category: "Portrait" },
+  { src: "/images/hero-1.jpg", title: "Breakfast", category: "Wildlife" },
+  { src: "/images/after-prayer.jpg", title: "After the Prayer", category: "Street" },
+  { src: "/images/innocence.jpg", title: "Innocence", category: "Portrait" },
+  { src: "/images/life-in-summer.jpg", title: "Life in Summer", category: "Street" },
+  { src: "/images/hero-3.jpg", title: "Morning Snacks", category: "Wildlife" },
+  { src: "/images/portrait-1.jpg", title: "The Holy Dip", category: "Portrait" },
+  { src: "/images/hero-4.jpg", title: "The Brunch", category: "Wildlife" },
+  { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action" },
 ];
+
+// Generate 100+ thumbnails by repeating base images
+const galleryWorks = Array.from({ length: 120 }, (_, i) => {
+  const base = baseGalleryWorks[i % baseGalleryWorks.length];
+  return { ...base, title: `${base.title} ${Math.floor(i / baseGalleryWorks.length) + 1}` };
+});
 
 interface WinnerShowcase {
   id: string;
@@ -439,68 +445,29 @@ const Index = () => {
             </motion.p>
           </motion.header>
 
-          {/* Masonry gallery with lightbox */}
-          <div className="columns-2 md:columns-3 gap-4 md:gap-5 space-y-4 md:space-y-5">
+          {/* Compact thumbnail grid for 100+ images */}
+          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
             {galleryWorks.map((work, i) => (
-              <motion.article
-                key={work.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ delay: (i % 3) * 0.12, duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
-                className="group relative overflow-hidden break-inside-avoid cursor-pointer rounded-sm"
+              <motion.div
+                key={`${work.title}-${i}`}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true, margin: "-20px" }}
+                transition={{ delay: (i % 14) * 0.02, duration: 0.5 }}
+                className="group relative aspect-square overflow-hidden rounded-sm cursor-pointer bg-muted"
                 onClick={() => openLightbox(i)}
               >
-                <figure className="relative overflow-hidden">
-                  <img
-                    src={work.src}
-                    alt={`${work.title} — ${work.category} photography`}
-                    className={`w-full object-cover transition-all duration-[2s] ease-out group-hover:scale-105 group-hover:brightness-[0.4] ${
-                      work.size === "tall" ? "h-[480px] md:h-[600px]" : work.size === "wide" ? "h-[260px] md:h-[320px]" : "h-[300px] md:h-[400px]"
-                    }`}
-                    loading="lazy"
-                  />
-                  {/* Persistent bottom gradient */}
-                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
-
-                  {/* Hover overlay content */}
-                  <figcaption className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                    <motion.div className="flex flex-col items-center text-center px-4">
-                      <div className="w-14 h-14 rounded-full border-2 border-primary/60 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
-                        <Expand className="h-5 w-5 text-primary" />
-                      </div>
-                      <span
-                        className="text-[9px] tracking-[0.4em] uppercase text-primary mb-2"
-                        style={{ fontFamily: "var(--font-heading)" }}
-                      >
-                        {work.category}
-                      </span>
-                      <h3
-                        className="text-xl md:text-2xl font-light text-foreground"
-                        style={{ fontFamily: "var(--font-display)" }}
-                      >
-                        {work.title}
-                      </h3>
-                    </motion.div>
-                  </figcaption>
-
-                  {/* Bottom label always visible */}
-                  <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between opacity-100 group-hover:opacity-0 transition-opacity duration-500">
-                    <span
-                      className="text-[9px] tracking-[0.25em] uppercase text-foreground/80"
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {work.title}
-                    </span>
-                    <span
-                      className="text-[8px] tracking-[0.2em] uppercase text-muted-foreground"
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {work.category}
-                    </span>
-                  </div>
-                </figure>
-              </motion.article>
+                <img
+                  src={work.src}
+                  alt={`${work.title} — ${work.category}`}
+                  className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-75"
+                  loading="lazy"
+                />
+                {/* Hover tooltip */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/60">
+                  <Expand className="h-3.5 w-3.5 text-primary" />
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
