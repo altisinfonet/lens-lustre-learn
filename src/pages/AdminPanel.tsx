@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import GlobalSearch from "@/components/GlobalSearch";
 import { toast } from "@/hooks/use-toast";
 
 interface Competition {
@@ -319,9 +320,12 @@ const AdminPanel = () => {
             <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
             <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>ArteFoto Global</span>
           </Link>
-          <Link to="/dashboard" className="text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-heading)" }}>
-            Dashboard
-          </Link>
+          <div className="flex items-center gap-4">
+            <GlobalSearch />
+            <Link to="/dashboard" className="text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-heading)" }}>
+              Dashboard
+            </Link>
+          </div>
         </div>
       </nav>
 

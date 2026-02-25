@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import GlobalSearch from "@/components/GlobalSearch";
 
 const CompetitionSubmit = () => {
   const { id } = useParams<{ id: string }>();
@@ -140,6 +141,7 @@ const CompetitionSubmit = () => {
             <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
             <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>ArteFoto Global</span>
           </Link>
+          <GlobalSearch />
         </div>
       </nav>
 

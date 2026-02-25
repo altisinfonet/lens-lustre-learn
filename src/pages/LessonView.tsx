@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import GlobalSearch from "@/components/GlobalSearch";
 
 interface Lesson {
   id: string;
@@ -117,7 +118,8 @@ const LessonView = () => {
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Courses", to: "/courses" }, { label: course.title, to: `/courses/${slug}` }, { label: lesson.title }]} />
-          <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+          <span className="text-[10px] text-muted-foreground flex items-center gap-3" style={{ fontFamily: "var(--font-heading)" }}>
+            <GlobalSearch />
             {currentIndex + 1} / {allLessons.length}
           </span>
         </div>

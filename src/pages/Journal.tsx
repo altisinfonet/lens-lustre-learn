@@ -6,6 +6,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import GlobalSearch from "@/components/GlobalSearch";
 
 interface Article {
   id: string;
@@ -85,6 +86,7 @@ const Journal = () => {
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Journal" }]} />
           <div className="flex items-center gap-4" style={{ fontFamily: "var(--font-heading)" }}>
+            <GlobalSearch />
             {canEdit && (
               <Link
                 to="/journal/new"

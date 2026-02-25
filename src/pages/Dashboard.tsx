@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import GlobalSearch from "@/components/GlobalSearch";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -158,6 +159,7 @@ const Dashboard = () => {
             </span>
           </Link>
           <div className="flex items-center gap-4">
+            <GlobalSearch />
             <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground hidden sm:inline" style={{ fontFamily: "var(--font-heading)" }}>
               {displayName}
             </span>

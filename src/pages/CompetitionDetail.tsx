@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import GlobalSearch from "@/components/GlobalSearch";
 
 interface Competition {
   id: string;
@@ -163,6 +164,7 @@ const CompetitionDetail = () => {
             <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
             <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>ArteFoto Global</span>
           </Link>
+          <GlobalSearch />
         </div>
       </nav>
 

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import GlobalSearch from "@/components/GlobalSearch";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -87,6 +88,7 @@ const Winners = () => {
             </span>
           </Link>
           <div className="flex items-center gap-6 text-xs tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
+            <GlobalSearch />
             <Link to="/competitions" className="hover:opacity-60 transition-opacity duration-500">Competitions</Link>
             <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500">Dashboard</Link>
             {user && (

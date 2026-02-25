@@ -5,6 +5,7 @@ import { Award, CheckCircle, Search, XCircle, Calendar, Shield } from "lucide-re
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import GlobalSearch from "@/components/GlobalSearch";
 import { Button } from "@/components/ui/button";
 
 interface VerifiedCert {
@@ -63,8 +64,9 @@ const VerifyCertificate = () => {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="bg-card border-b border-border">
-        <div className="container mx-auto px-6 md:px-12 py-6">
+        <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Verify Certificate" }]} />
+          <GlobalSearch />
         </div>
       </div>
 
