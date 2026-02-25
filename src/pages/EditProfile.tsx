@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { KeyRound, Loader2, Mail, Save, X } from "lucide-react";
+import { Facebook, Instagram, Globe, KeyRound, Loader2, Mail, Save, X } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +37,9 @@ const EditProfile = () => {
   const [bio, setBio] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -49,7 +52,7 @@ const EditProfile = () => {
     const fetch = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, bio, portfolio_url, photography_interests")
+        .select("full_name, bio, portfolio_url, photography_interests, facebook_url, instagram_url, website_url")
         .eq("id", user.id)
         .single();
       if (data) {
@@ -57,6 +60,9 @@ const EditProfile = () => {
         setBio(data.bio || "");
         setPortfolioUrl(data.portfolio_url || "");
         setInterests(data.photography_interests || []);
+        setFacebookUrl((data as any).facebook_url || "");
+        setInstagramUrl((data as any).instagram_url || "");
+        setWebsiteUrl((data as any).website_url || "");
       }
       setLoading(false);
     };
@@ -88,8 +94,11 @@ const EditProfile = () => {
         bio: bio.trim() || null,
         portfolio_url: portfolioUrl.trim() || null,
         photography_interests: interests.length > 0 ? interests : null,
+        facebook_url: facebookUrl.trim() || null,
+        instagram_url: instagramUrl.trim() || null,
+        website_url: websiteUrl.trim() || null,
         updated_at: new Date().toISOString(),
-      })
+      } as any)
       .eq("id", user.id);
     setSaving(false);
 
@@ -174,6 +183,60 @@ const EditProfile = () => {
               placeholder="https://your-portfolio.com"
               style={{ fontFamily: "var(--font-body)" }}
             />
+          </div>
+
+          {/* Social Media Links */}
+          <div className="border border-border p-8">
+            <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-6" style={{ fontFamily: "var(--font-heading)" }}>
+              Social Media Links
+            </span>
+
+            <div className="space-y-5">
+              <div>
+                <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <Facebook className="h-3 w-3" /> Facebook URL
+                </label>
+                <input
+                  type="url"
+                  value={facebookUrl}
+                  onChange={(e) => setFacebookUrl(e.target.value)}
+                  maxLength={500}
+                  className="w-full bg-transparent border-b border-border focus:border-primary outline-none py-3 text-sm transition-colors duration-500"
+                  placeholder="https://facebook.com/yourprofile"
+                  style={{ fontFamily: "var(--font-body)" }}
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <Instagram className="h-3 w-3" /> Instagram URL
+                </label>
+                <input
+                  type="url"
+                  value={instagramUrl}
+                  onChange={(e) => setInstagramUrl(e.target.value)}
+                  maxLength={500}
+                  className="w-full bg-transparent border-b border-border focus:border-primary outline-none py-3 text-sm transition-colors duration-500"
+                  placeholder="https://instagram.com/yourhandle"
+                  style={{ fontFamily: "var(--font-body)" }}
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <Globe className="h-3 w-3" /> Website URL
+                </label>
+                <input
+                  type="url"
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  maxLength={500}
+                  className="w-full bg-transparent border-b border-border focus:border-primary outline-none py-3 text-sm transition-colors duration-500"
+                  placeholder="https://yourwebsite.com"
+                  style={{ fontFamily: "var(--font-body)" }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Photography Interests */}
