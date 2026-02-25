@@ -917,6 +917,11 @@ const Index = () => {
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                      <div className="absolute top-3 left-3">
+                        <span className="text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-primary text-primary-foreground inline-flex items-center gap-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+                          <Eye className="h-3 w-3" /> Featured
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <div className="h-64 md:h-80 bg-gradient-to-br from-muted to-background flex items-center justify-center">
