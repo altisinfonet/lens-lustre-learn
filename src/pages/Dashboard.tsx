@@ -192,6 +192,18 @@ const Dashboard = () => {
                     Admin
                   </span>
                 )}
+                {hasRole("judge") && (
+                  <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-accent text-accent-foreground rounded-full mt-1" style={{ fontFamily: "var(--font-heading)" }}>
+                    <Award className="h-3 w-3" />
+                    Judge
+                  </span>
+                )}
+                {hasRole("content_editor") && (
+                  <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-secondary text-secondary-foreground rounded-full mt-1" style={{ fontFamily: "var(--font-heading)" }}>
+                    <Edit2 className="h-3 w-3" />
+                    Contributor
+                  </span>
+                )}
                 <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{user.email}</p>
               </div>
 
