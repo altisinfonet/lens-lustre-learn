@@ -35,7 +35,7 @@ const heroSlides = [
   { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action" },
 ];
 
-const baseGalleryWorks = [
+const fallbackGalleryWorks = [
   { src: "/images/lives-on-life.jpg", title: "Lives on Life", category: "Aerial" },
   { src: "/images/sadhu.jpg", title: "The Ascetic", category: "Portrait" },
   { src: "/images/hero-1.jpg", title: "Breakfast", category: "Wildlife" },
@@ -48,11 +48,11 @@ const baseGalleryWorks = [
   { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action" },
 ];
 
-// Generate 100+ thumbnails by repeating base images
-const galleryWorks = Array.from({ length: 120 }, (_, i) => {
-  const base = baseGalleryWorks[i % baseGalleryWorks.length];
-  return { ...base, title: `${base.title} ${Math.floor(i / baseGalleryWorks.length) + 1}` };
-});
+interface PortfolioImage {
+  src: string;
+  title: string;
+  category: string;
+}
 
 interface WinnerShowcase {
   id: string;
@@ -114,6 +114,7 @@ const Index = () => {
   const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionPreview[]>([]);
   const [courses, setCourses] = useState<CoursePreview[]>([]);
+  const [galleryWorks, setGalleryWorks] = useState<PortfolioImage[]>(fallbackGalleryWorks);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -122,8 +123,8 @@ const Index = () => {
     setLightboxOpen(true);
   }, []);
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);
-  const prevLightbox = useCallback(() => setLightboxIndex((i) => (i - 1 + galleryWorks.length) % galleryWorks.length), []);
-  const nextLightbox = useCallback(() => setLightboxIndex((i) => (i + 1) % galleryWorks.length), []);
+  const prevLightbox = useCallback(() => setLightboxIndex((i) => (i - 1 + galleryWorks.length) % galleryWorks.length), [galleryWorks.length]);
+  const nextLightbox = useCallback(() => setLightboxIndex((i) => (i + 1) % galleryWorks.length), [galleryWorks.length]);
 
   // Preload next hero slide for smooth transition
   useEffect(() => {
@@ -142,7 +143,7 @@ const Index = () => {
   useEffect(() => {
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
-      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes] = await Promise.all([
+      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes] = await Promise.all([
         supabase
           .from("competition_entries")
           .select("id, title, photos, competition_id, user_id")
@@ -172,6 +173,11 @@ const Index = () => {
           .eq("status", "published")
           .order("created_at", { ascending: false })
           .limit(4),
+        supabase
+          .from("portfolio_images")
+          .select("id, title, category, image_url, sort_order")
+          .eq("is_visible", true)
+          .order("sort_order", { ascending: true }),
       ]);
 
       const winnerData = winnersRes.data || [];
@@ -261,6 +267,16 @@ const Index = () => {
           cover_image_url: c.cover_image_url,
           is_free: c.is_free,
           author_name: profileMap.get(c.author_id)?.full_name || null,
+        })));
+      }
+
+      // Set portfolio images from database (fallback to hardcoded if empty)
+      const portfolioData = portfolioRes.data || [];
+      if (portfolioData.length > 0) {
+        setGalleryWorks(portfolioData.map((p) => ({
+          src: p.image_url,
+          title: p.title,
+          category: p.category,
         })));
       }
     };
