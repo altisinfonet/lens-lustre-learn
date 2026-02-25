@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Edit2, ExternalLink, Globe, LogOut, User } from "lucide-react";
+import { Camera, Edit2, ExternalLink, Globe, KeyRound, LogOut, Mail, User } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import GlobalSearch from "@/components/GlobalSearch";
+import { toast } from "@/hooks/use-toast";
 
 interface ProfileData {
   full_name: string | null;
@@ -21,6 +22,21 @@ const Profile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sendingReset, setSendingReset] = useState(false);
+
+  const handlePasswordReset = async () => {
+    if (!user?.email) return;
+    setSendingReset(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setSendingReset(false);
+    if (error) {
+      toast({ title: "Failed to send reset email", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Password reset email sent", description: "Check your inbox for the reset link." });
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -214,7 +230,52 @@ const Profile = () => {
             </motion.div>
           )}
 
-          {/* Empty state for incomplete profile */}
+          {/* Account Settings */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="mb-12 border border-border p-8"
+          >
+            <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-6" style={{ fontFamily: "var(--font-heading)" }}>
+              Account Settings
+            </span>
+
+            {/* Email (read-only) */}
+            <div className="mb-6">
+              <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                Email Address
+              </span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail className="h-3.5 w-3.5" />
+                <span style={{ fontFamily: "var(--font-body)" }}>{user?.email}</span>
+                <span className="text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 border border-border text-muted-foreground/60 ml-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  Cannot be changed
+                </span>
+              </div>
+            </div>
+
+            {/* Change Password */}
+            <div>
+              <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                Password
+              </span>
+              <p className="text-xs text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
+                We'll send a password reset link to your email address.
+              </p>
+              <button
+                onClick={handlePasswordReset}
+                disabled={sendingReset}
+                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 disabled:opacity-50"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                <KeyRound className="h-3 w-3" />
+                {sendingReset ? "Sending…" : "Send Reset Link"}
+              </button>
+            </div>
+          </motion.div>
+
+
           {!profile?.bio && !profile?.portfolio_url && (!profile?.photography_interests || profile.photography_interests.length === 0) && (
             <motion.div
               initial={{ opacity: 0 }}

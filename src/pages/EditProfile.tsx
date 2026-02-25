@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2, Save, X } from "lucide-react";
+import { KeyRound, Loader2, Mail, Save, X } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,21 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
+
+  const handlePasswordReset = async () => {
+    if (!user?.email) return;
+    setSendingReset(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setSendingReset(false);
+    if (error) {
+      toast({ title: "Failed to send reset email", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Password reset email sent", description: "Check your inbox for the reset link." });
+    }
+  };
 
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
@@ -203,7 +218,48 @@ const EditProfile = () => {
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Account Settings */}
+          <div className="border border-border p-8">
+            <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-6" style={{ fontFamily: "var(--font-heading)" }}>
+              Account Settings
+            </span>
+
+            {/* Email (read-only) */}
+            <div className="mb-6">
+              <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                Email Address
+              </span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail className="h-3.5 w-3.5" />
+                <span style={{ fontFamily: "var(--font-body)" }}>{user?.email}</span>
+                <span className="text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 border border-border text-muted-foreground/60 ml-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  Cannot be changed
+                </span>
+              </div>
+            </div>
+
+            {/* Change Password */}
+            <div>
+              <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                Password
+              </span>
+              <p className="text-xs text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
+                We'll send a password reset link to your email address.
+              </p>
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                disabled={sendingReset}
+                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 disabled:opacity-50"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                <KeyRound className="h-3 w-3" />
+                {sendingReset ? "Sending…" : "Send Reset Link"}
+              </button>
+            </div>
+          </div>
+
+
           <div className="flex items-center gap-4 pt-4 border-t border-border">
             <button
               type="submit"
