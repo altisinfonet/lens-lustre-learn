@@ -41,7 +41,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
       >
         <div className="container mx-auto px-6 md:px-12 py-5 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3" aria-label="ArteFoto Global Home">
+          <Link to="/" className="flex items-center gap-3 shrink-0 relative z-10" aria-label="ArteFoto Global Home">
             <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
             <span
               className="text-sm font-semibold tracking-[0.2em] uppercase"
@@ -53,7 +53,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
 
           {/* Desktop links */}
           <div
-            className="hidden md:flex items-center gap-8 text-xs tracking-[0.15em] uppercase"
+            className="hidden md:flex items-center gap-6 lg:gap-8 text-xs tracking-[0.15em] uppercase flex-shrink-0"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             {isHome && (
