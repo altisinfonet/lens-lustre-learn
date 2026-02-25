@@ -4,8 +4,10 @@ import { LogOut, Shield, Menu, X, Sun, Moon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import GlobalSearch from "@/components/GlobalSearch";
 import { useTheme } from "@/hooks/useTheme";
+import { Badge } from "@/components/ui/badge";
 
 interface NavbarProps {
   /** When true the nav is rendered absolute/transparent over a hero section */
@@ -22,6 +24,7 @@ const navLinks = [
 const Navbar = ({ transparent = false }: NavbarProps) => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { hasRole } = useUserRoles();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -97,10 +100,19 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
             {user ? (
               <>
                 <span
-                  className="text-xs tracking-[0.15em] uppercase text-muted-foreground"
+                  className="text-xs tracking-[0.15em] uppercase text-muted-foreground flex items-center gap-2"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
                   {user.user_metadata?.full_name || user.email?.split("@")[0]}
+                  {hasRole("admin") ? (
+                    <Badge variant="default" className="text-[9px] px-1.5 py-0">Admin</Badge>
+                  ) : hasRole("registered_photographer") ? (
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Photographer</Badge>
+                  ) : hasRole("student") ? (
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Student</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0">Guest</Badge>
+                  )}
                 </span>
                 <button
                   onClick={async () => { await signOut(); navigate("/"); }}
@@ -218,8 +230,17 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
 
                 {user ? (
                   <>
-                    <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground">
+                    <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground flex items-center gap-2 flex-wrap">
                       {user.user_metadata?.full_name || user.email?.split("@")[0]}
+                      {hasRole("admin") ? (
+                        <Badge variant="default" className="text-[9px] px-1.5 py-0">Admin</Badge>
+                      ) : hasRole("registered_photographer") ? (
+                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Photographer</Badge>
+                      ) : hasRole("student") ? (
+                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Student</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0">Guest</Badge>
+                      )}
                     </span>
                     <button
                       onClick={async () => { await signOut(); setMobileMenuOpen(false); navigate("/"); }}
