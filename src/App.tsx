@@ -26,6 +26,7 @@ import LessonView from "./pages/LessonView";
 import Certificates from "./pages/Certificates";
 import VerifyCertificate from "./pages/VerifyCertificate";
 import Winners from "./pages/Winners";
+import PublicProfile from "./pages/PublicProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:userId" element={<PublicProfile />} />
             <Route path="/competitions" element={<Competitions />} />
             <Route path="/competitions/:id" element={<CompetitionDetail />} />
             <Route path="/competitions/:id/submit" element={<CompetitionSubmit />} />
