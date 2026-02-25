@@ -77,6 +77,28 @@ interface JournalPreview {
   author_name: string | null;
 }
 
+interface CompetitionPreview {
+  id: string;
+  title: string;
+  category: string;
+  cover_image_url: string | null;
+  status: string;
+  starts_at: string;
+  ends_at: string;
+  prize_info: string | null;
+}
+
+interface CoursePreview {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  difficulty: string;
+  cover_image_url: string | null;
+  is_free: boolean;
+  author_name: string | null;
+}
+
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -84,6 +106,8 @@ const Index = () => {
   const [winners, setWinners] = useState<WinnerShowcase[]>([]);
   const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
   const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
+  const [competitions, setCompetitions] = useState<CompetitionPreview[]>([]);
+  const [courses, setCourses] = useState<CoursePreview[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -112,7 +136,7 @@ const Index = () => {
   useEffect(() => {
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
-      const [winnersRes, certsRes, articlesRes] = await Promise.all([
+      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes] = await Promise.all([
         supabase
           .from("competition_entries")
           .select("id, title, photos, competition_id, user_id")
@@ -130,18 +154,32 @@ const Index = () => {
           .eq("status", "published")
           .order("published_at", { ascending: false })
           .limit(4),
+        supabase
+          .from("competitions")
+          .select("id, title, category, cover_image_url, status, starts_at, ends_at, prize_info")
+          .in("status", ["active", "upcoming"])
+          .order("starts_at", { ascending: true })
+          .limit(4),
+        supabase
+          .from("courses")
+          .select("id, title, slug, category, difficulty, cover_image_url, is_free, author_id")
+          .eq("status", "published")
+          .order("created_at", { ascending: false })
+          .limit(4),
       ]);
 
       const winnerData = winnersRes.data || [];
       const certData = certsRes.data || [];
-
       const articleData = articlesRes.data || [];
+      const compsListData = compsListRes.data || [];
+      const coursesData = coursesRes.data || [];
 
       // Collect all unique user/comp IDs and fetch profiles + competitions in one parallel call
       const allUserIds = [...new Set([
         ...winnerData.map((e) => e.user_id),
         ...certData.map((c) => c.user_id),
         ...articleData.map((a) => a.author_id),
+        ...coursesData.map((c) => c.author_id),
       ])];
       const compIds = [...new Set(winnerData.map((e) => e.competition_id))];
 
@@ -189,6 +227,34 @@ const Index = () => {
           tags: a.tags || [],
           published_at: a.published_at,
           author_name: profileMap.get(a.author_id)?.full_name || null,
+        })));
+      }
+
+      // Set competitions
+      if (compsListData.length > 0) {
+        setCompetitions(compsListData.map((c) => ({
+          id: c.id,
+          title: c.title,
+          category: c.category,
+          cover_image_url: c.cover_image_url,
+          status: c.status,
+          starts_at: c.starts_at,
+          ends_at: c.ends_at,
+          prize_info: c.prize_info,
+        })));
+      }
+
+      // Set courses
+      if (coursesData.length > 0) {
+        setCourses(coursesData.map((c) => ({
+          id: c.id,
+          title: c.title,
+          slug: c.slug,
+          category: c.category,
+          difficulty: c.difficulty,
+          cover_image_url: c.cover_image_url,
+          is_free: c.is_free,
+          author_name: profileMap.get(c.author_id)?.full_name || null,
         })));
       }
     };
@@ -606,9 +672,187 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Active Competitions Showcase */}
+      <section className="py-24 md:py-32 bg-card/30" aria-label="Active competitions">
+        <div className="container mx-auto px-6 md:px-12">
+          <motion.header
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="flex items-end justify-between mb-16"
+          >
+            <div>
+              <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-px bg-primary" />
+                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                  Compete Now
+                </span>
+              </motion.div>
+              <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                Live <em className="italic">Competitions</em>
+              </motion.h2>
+            </div>
+            <motion.div variants={fadeIn} custom={2}>
+              <Link
+                to="/competitions"
+                className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+              </Link>
+            </motion.div>
+          </motion.header>
+
+          {competitions.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {competitions.map((comp, i) => (
+                <motion.div
+                  key={comp.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                >
+                  <Link to={`/competitions/${comp.id}`} className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
+                    <div className="relative h-48 overflow-hidden bg-muted">
+                      {comp.cover_image_url ? (
+                        <img src={comp.cover_image_url} alt={comp.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-primary/10 to-muted flex items-center justify-center">
+                          <Trophy className="h-10 w-10 text-primary/30" />
+                        </div>
+                      )}
+                      <div className="absolute top-3 left-3">
+                        <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 inline-flex items-center gap-1 ${comp.status === "active" ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"}`} style={{ fontFamily: "var(--font-heading)" }}>
+                          {comp.status === "active" ? "● Live" : "Upcoming"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-5">
+                      <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                        {comp.category}
+                      </span>
+                      <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
+                        {comp.title}
+                      </h3>
+                      {comp.prize_info && (
+                        <p className="text-[10px] text-muted-foreground line-clamp-1 mb-2" style={{ fontFamily: "var(--font-body)" }}>
+                          🏆 {comp.prize_info}
+                        </p>
+                      )}
+                      <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                        {comp.status === "active" ? `Ends ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : `Starts ${new Date(comp.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                      </span>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 border border-dashed border-border rounded-sm">
+              <Trophy className="h-10 w-10 text-primary/30 mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>New competitions coming soon</p>
+              <Link to="/competitions" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                Browse All <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Featured Courses */}
+      <section className="py-24 md:py-32" aria-label="Featured courses">
+        <div className="container mx-auto px-6 md:px-12">
+          <motion.header
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="flex items-end justify-between mb-16"
+          >
+            <div>
+              <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-px bg-primary" />
+                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                  Learn
+                </span>
+              </motion.div>
+              <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                Featured <em className="italic">Courses</em>
+              </motion.h2>
+            </div>
+            <motion.div variants={fadeIn} custom={2}>
+              <Link
+                to="/courses"
+                className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+              </Link>
+            </motion.div>
+          </motion.header>
+
+          {courses.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {courses.map((course, i) => (
+                <motion.div
+                  key={course.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                >
+                  <Link to={`/courses/${course.slug}`} className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
+                    <div className="relative h-48 overflow-hidden bg-muted">
+                      {course.cover_image_url ? (
+                        <img src={course.cover_image_url} alt={course.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-secondary/10 to-muted flex items-center justify-center">
+                          <BookOpen className="h-10 w-10 text-secondary/30" />
+                        </div>
+                      )}
+                      <div className="absolute top-3 right-3">
+                        <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 ${course.is_free ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground"}`} style={{ fontFamily: "var(--font-heading)" }}>
+                          {course.is_free ? "Free" : "Premium"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[9px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                          {course.category}
+                        </span>
+                        <span className="text-muted-foreground/30">·</span>
+                        <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                          {course.difficulty}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
+                        {course.title}
+                      </h3>
+                      {course.author_name && (
+                        <span className="text-[9px] tracking-[0.1em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                          by {course.author_name}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 border border-dashed border-border rounded-sm">
+              <BookOpen className="h-10 w-10 text-secondary/30 mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>Courses coming soon</p>
+              <Link to="/courses" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                Browse All <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Competition Winners Showcase */}
-      {winners.length > 0 && (
-        <section className="py-24 md:py-32 bg-card/30" aria-label="Competition winners">
+      <section className="py-24 md:py-32 bg-card/30" aria-label="Competition winners">
           <div className="container mx-auto px-6 md:px-12">
             <motion.header
               initial="hidden"
@@ -638,6 +882,7 @@ const Index = () => {
               </motion.div>
             </motion.header>
 
+          {winners.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {winners.map((winner, i) => (
                 <motion.div
@@ -693,13 +938,20 @@ const Index = () => {
                 </motion.div>
               ))}
             </div>
+          ) : (
+            <div className="text-center py-16 border border-dashed border-border rounded-sm">
+              <Trophy className="h-10 w-10 text-primary/30 mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>Winners will be showcased here</p>
+              <Link to="/competitions" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                View Competitions <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
           </div>
         </section>
-      )}
 
       {/* Certificate Holders Showcase */}
-      {certificates.length > 0 && (
-        <section className="py-24 md:py-32" aria-label="Certified photographers">
+      <section className="py-24 md:py-32" aria-label="Certified photographers">
           <div className="container mx-auto px-6 md:px-12">
             <motion.header
               initial="hidden"
@@ -729,6 +981,7 @@ const Index = () => {
               </motion.div>
             </motion.header>
 
+          {certificates.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {certificates.map((cert, i) => (
                 <motion.div
@@ -772,13 +1025,20 @@ const Index = () => {
                 </motion.div>
               ))}
             </div>
+          ) : (
+            <div className="text-center py-16 border border-dashed border-border rounded-sm">
+              <Award className="h-10 w-10 text-primary/30 mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>Certificates of excellence will appear here</p>
+              <Link to="/courses" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                Start Learning <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
           </div>
         </section>
-      )}
 
       {/* Journal Preview */}
-      {journalArticles.length > 0 && (
-        <section className="py-24 md:py-32 bg-card/30" aria-label="Latest from the journal">
+      <section className="py-24 md:py-32 bg-card/30" aria-label="Latest from the journal">
           <div className="container mx-auto px-6 md:px-12">
             <motion.header
               initial="hidden"
@@ -808,6 +1068,7 @@ const Index = () => {
               </motion.div>
             </motion.header>
 
+          {journalArticles.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-6">
               {/* Featured / first article — large card */}
               <motion.article
@@ -929,9 +1190,17 @@ const Index = () => {
                 ))}
               </div>
             </div>
+          ) : (
+            <div className="text-center py-16 border border-dashed border-border rounded-sm">
+              <Newspaper className="h-10 w-10 text-primary/30 mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>Stories and insights coming soon</p>
+              <Link to="/journal" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                Visit Journal <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
           </div>
         </section>
-      )}
 
       {/* Quote */}
       <section className="relative py-32 md:py-40 overflow-hidden" aria-label="Photography quote">
