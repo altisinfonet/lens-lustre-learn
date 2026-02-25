@@ -1,10 +1,8 @@
-import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut, Shield, Menu, X, Award, User } from "lucide-react";
-import GlobalSearch from "@/components/GlobalSearch";
+import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
 import { useEffect, useState, lazy, Suspense, memo } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 
 /* Classic easing — gentle, cinematic transitions */
@@ -79,11 +77,9 @@ interface JournalPreview {
 }
 
 const Index = () => {
-  const { user, signOut } = useAuth();
-  const { isAdmin } = useIsAdmin();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [winners, setWinners] = useState<WinnerShowcase[]>([]);
   const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
   const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
@@ -184,158 +180,6 @@ const Index = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground overflow-hidden">
-      {/* Navigation */}
-      <nav className="absolute top-0 left-0 right-0 z-50" aria-label="Main navigation">
-        <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3" aria-label="ArteFoto Global Home">
-            <img src="/images/logo.png" alt="ArteFoto Global" className="h-8 w-8 object-contain" />
-            <span style={{ fontFamily: "var(--font-heading)" }} className="text-sm font-semibold tracking-[0.2em] uppercase">
-              ArteFoto Global
-            </span>
-          </Link>
-          <div className="hidden md:flex items-center gap-10 text-xs tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-            <a href="#works" className="hover:opacity-60 transition-opacity duration-500">Works</a>
-            <a href="#about" className="hover:opacity-60 transition-opacity duration-500">About</a>
-            <a href="#pillars" className="hover:opacity-60 transition-opacity duration-500">Explore</a>
-            <Link to="/competitions" className="hover:opacity-60 transition-opacity duration-500">Competitions</Link>
-            <Link to="/journal" className="hover:opacity-60 transition-opacity duration-500">Journal</Link>
-            <Link to="/courses" className="hover:opacity-60 transition-opacity duration-500">Courses</Link>
-            <Link to="/winners" className="hover:opacity-60 transition-opacity duration-500">Winners</Link>
-            {user && <Link to="/profile" className="hover:opacity-60 transition-opacity duration-500">Profile</Link>}
-            {user && <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500">Dashboard</Link>}
-            {isAdmin && (
-              <Link to="/admin" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
-                <Shield className="h-3 w-3" />
-                Admin
-              </Link>
-            )}
-          </div>
-          <div className="hidden md:flex items-center gap-4">
-            <GlobalSearch />
-            {user ? (
-              <>
-                <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                  {user.user_metadata?.full_name || user.email?.split("@")[0]}
-                </span>
-                <button
-                  onClick={async () => { await signOut(); navigate("/"); }}
-                  className="text-xs tracking-[0.15em] uppercase px-4 py-2 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-700 inline-flex items-center gap-2"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  <LogOut className="h-3 w-3" />
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="text-xs tracking-[0.15em] uppercase hover:opacity-60 transition-opacity duration-500" style={{ fontFamily: "var(--font-heading)" }}>
-                  Login
-                </Link>
-                <Link
-                  to="/signup"
-                  className="text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-700"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  Join
-                </Link>
-              </>
-            )}
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden p-2 hover:opacity-60 transition-opacity"
-            aria-label="Open menu"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile menu overlay */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="fixed inset-0 bg-background/60 backdrop-blur-sm z-[60]"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed top-0 right-0 bottom-0 w-72 bg-card border-l border-border z-[70] flex flex-col"
-            >
-              <div className="flex items-center justify-between p-6 border-b border-border">
-                <span style={{ fontFamily: "var(--font-heading)" }} className="text-xs font-semibold tracking-[0.2em] uppercase">
-                  Menu
-                </span>
-                <button onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="flex flex-col p-6 gap-6 flex-1" style={{ fontFamily: "var(--font-heading)" }}>
-                <div className="mb-2"><GlobalSearch /></div>
-                <a href="#works" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Works</a>
-                <a href="#about" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">About</a>
-                <a href="#pillars" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Explore</a>
-                <Link to="/competitions" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Competitions</Link>
-                <Link to="/journal" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Journal</Link>
-                <Link to="/courses" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Courses</Link>
-                <Link to="/winners" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Winners</Link>
-                {user && (
-                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Profile</Link>
-                )}
-                {user && (
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Dashboard</Link>
-                )}
-                {isAdmin && (
-                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
-                    <Shield className="h-3.5 w-3.5" />
-                    Admin
-                  </Link>
-                )}
-
-                <div className="h-px bg-border my-2" />
-
-                {user ? (
-                  <>
-                    <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground">
-                      {user.user_metadata?.full_name || user.email?.split("@")[0]}
-                    </span>
-                    <button
-                      onClick={async () => { await signOut(); setMobileMenuOpen(false); navigate("/"); }}
-                      className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors inline-flex items-center gap-2"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Login</Link>
-                    <Link
-                      to="/signup"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-sm tracking-[0.15em] uppercase px-5 py-2.5 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-500 text-center"
-                    >
-                      Join
-                    </Link>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
       {/* Hero — Slow crossfade slideshow */}
       <section className="relative h-screen flex items-end pb-20 md:pb-28" aria-label="Featured photography">
         <AnimatePresence mode="wait">

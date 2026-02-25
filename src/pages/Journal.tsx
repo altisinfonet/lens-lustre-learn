@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Clock, Tag, PenLine, LogOut } from "lucide-react";
+import { ArrowRight, Clock, Tag, PenLine } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import GlobalSearch from "@/components/GlobalSearch";
 
 interface Article {
   id: string;
@@ -22,8 +21,7 @@ interface Article {
 }
 
 const Journal = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,12 +79,11 @@ const Journal = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* Header */}
+      {/* Sub-header with actions */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Journal" }]} />
           <div className="flex items-center gap-4" style={{ fontFamily: "var(--font-heading)" }}>
-            <GlobalSearch />
             {canEdit && (
               <Link
                 to="/journal/new"
@@ -95,14 +92,6 @@ const Journal = () => {
                 <PenLine className="h-3.5 w-3.5" />
                 New Article
               </Link>
-            )}
-            {user && (
-              <button
-                onClick={async () => { await signOut(); navigate("/"); }}
-                className="inline-flex items-center gap-1.5 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <LogOut className="h-3 w-3" /> Logout
-              </button>
             )}
           </div>
         </div>
