@@ -461,30 +461,45 @@ const Index = () => {
             </motion.p>
           </motion.header>
 
-          {/* Compact thumbnail grid for 100+ images */}
-          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
-            {galleryWorks.map((work, i) => (
-              <motion.div
-                key={`${work.title}-${i}`}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true, margin: "-20px" }}
-                transition={{ delay: (i % 14) * 0.02, duration: 0.5 }}
-                className="group relative aspect-square overflow-hidden rounded-sm cursor-pointer bg-muted"
-                onClick={() => openLightbox(i)}
-              >
-                <img
-                  src={work.src}
-                  alt={`${work.title} — ${work.category}`}
-                  className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-75"
-                  loading="lazy"
-                />
-                {/* Hover tooltip */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/60">
-                  <Expand className="h-3.5 w-3.5 text-primary" />
-                </div>
-              </motion.div>
-            ))}
+          {/* Instagram-style grid with featured hero image */}
+          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 auto-rows-[1fr] gap-1.5">
+            {galleryWorks.map((work, i) => {
+              const isHero = i === 0;
+              return (
+                <motion.div
+                  key={`${work.title}-${i}`}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true, margin: "-20px" }}
+                  transition={{ delay: (i % 14) * 0.02, duration: 0.5 }}
+                  className={`group relative overflow-hidden rounded-sm cursor-pointer bg-muted ${
+                    isHero
+                      ? "col-span-5 row-span-5 sm:row-span-6 md:row-span-8 aspect-auto"
+                      : "aspect-square"
+                  }`}
+                  onClick={() => openLightbox(i)}
+                >
+                  <img
+                    src={work.src}
+                    alt={`${work.title} — ${work.category}`}
+                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-75"
+                    loading={isHero ? "eager" : "lazy"}
+                  />
+                  {/* Hover overlay */}
+                  <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/60 ${
+                    isHero ? "flex-col gap-2" : ""
+                  }`}>
+                    <Expand className={isHero ? "h-6 w-6 text-primary" : "h-3.5 w-3.5 text-primary"} />
+                    {isHero && (
+                      <>
+                        <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>{work.category}</span>
+                        <span className="text-lg font-light text-foreground" style={{ fontFamily: "var(--font-display)" }}>{work.title}</span>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
