@@ -108,6 +108,9 @@ interface ProfileData {
   portfolio_url: string | null;
   photography_interests: string[] | null;
   created_at: string;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  website_url: string | null;
 }
 
 interface CompEntry {
@@ -140,14 +143,16 @@ const PublicProfile = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<{ src: string; title: string; desc?: string } | null>(null);
+  const [isVerifiedPhotographer, setIsVerifiedPhotographer] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
-      const [profileRes, entriesRes, certsRes] = await Promise.all([
-        supabase.from("profiles").select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at").eq("id", userId).maybeSingle(),
+      const [profileRes, entriesRes, certsRes, rolesRes] = await Promise.all([
+        supabase.from("profiles").select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, website_url").eq("id", userId).maybeSingle(),
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
+        supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "registered_photographer" as any).maybeSingle(),
       ]);
 
       if (!profileRes.data) {
@@ -159,6 +164,7 @@ const PublicProfile = () => {
       setProfile(profileRes.data);
       setEntries((entriesRes.data as any) || []);
       setCertificates(certsRes.data || []);
+      setIsVerifiedPhotographer(!!rolesRes.data);
       setLoading(false);
     };
     load();
@@ -224,11 +230,17 @@ const PublicProfile = () => {
                 </span>
               </div>
               <h1
-                className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight mb-4"
+                className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight mb-2"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 {displayName}
               </h1>
+              {isVerifiedPhotographer && (
+                <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.25em] uppercase px-4 py-1.5 bg-primary/15 text-primary rounded-full mb-4" style={{ fontFamily: "var(--font-heading)" }}>
+                  <Camera className="h-3 w-3" />
+                  Verified Photographer
+                </span>
+              )}
               <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-6" style={{ fontFamily: "var(--font-heading)" }}>
                 <span>Member since {memberSince}</span>
                 {entries.length > 0 && (
