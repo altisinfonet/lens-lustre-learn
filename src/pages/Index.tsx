@@ -1,4 +1,5 @@
 import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, LogOut, Shield, Menu, X, Award, User } from "lucide-react";
+import GlobalSearch from "@/components/GlobalSearch";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
 import { useEffect, useState, lazy, Suspense, memo } from "react";
@@ -176,6 +177,7 @@ const Index = () => {
             )}
           </div>
           <div className="hidden md:flex items-center gap-4">
+            <GlobalSearch />
             {user ? (
               <>
                 <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
@@ -246,6 +248,7 @@ const Index = () => {
               </div>
 
               <div className="flex flex-col p-6 gap-6 flex-1" style={{ fontFamily: "var(--font-heading)" }}>
+                <div className="mb-2"><GlobalSearch /></div>
                 <a href="#works" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Works</a>
                 <a href="#about" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">About</a>
                 <a href="#pillars" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Explore</a>

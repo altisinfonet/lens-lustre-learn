@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import GlobalSearch from "@/components/GlobalSearch";
 
 interface ProfileData {
   full_name: string | null;
@@ -69,6 +70,7 @@ const Profile = () => {
             </span>
           </Link>
           <div className="flex items-center gap-6 text-xs tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
+            <GlobalSearch />
             <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500">Dashboard</Link>
             {user && (
               <button

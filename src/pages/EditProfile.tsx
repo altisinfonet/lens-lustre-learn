@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import GlobalSearch from "@/components/GlobalSearch";
 import { toast } from "@/hooks/use-toast";
 
 const INTEREST_OPTIONS = [
@@ -107,6 +108,7 @@ const EditProfile = () => {
               ArteFoto Global
             </span>
           </Link>
+          <GlobalSearch />
         </div>
       </nav>
 
