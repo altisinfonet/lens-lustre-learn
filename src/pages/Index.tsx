@@ -153,6 +153,8 @@ const Index = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
