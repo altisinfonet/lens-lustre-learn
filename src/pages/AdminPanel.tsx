@@ -53,7 +53,19 @@ interface PortfolioRow {
   created_at: string;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio";
+interface AdminComment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  article_id: string | null;
+  entry_id: string | null;
+  parent_id: string | null;
+  profile_name: string | null;
+  context_title: string | null;
+}
+
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -68,6 +80,7 @@ const AdminPanel = () => {
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [roleApps, setRoleApps] = useState<RoleApp[]>([]);
   const [portfolioImages, setPortfolioImages] = useState<PortfolioRow[]>([]);
+  const [adminComments, setAdminComments] = useState<AdminComment[]>([]);
   const [portfolioUploading, setPortfolioUploading] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -156,6 +169,59 @@ const AdminPanel = () => {
     setPortfolioImages(data || []);
   };
 
+  const fetchAdminComments = async () => {
+    const { data } = await supabase
+      .from("comments")
+      .select("id, user_id, content, created_at, article_id, entry_id, parent_id")
+      .order("created_at", { ascending: false });
+
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map((c) => c.user_id))];
+      const articleIds = [...new Set(data.filter((c) => c.article_id).map((c) => c.article_id!))];
+      const entryIds = [...new Set(data.filter((c) => c.entry_id).map((c) => c.entry_id!))];
+
+      const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
+      const profileMap = new Map<string, string | null>(profiles?.map((p: any) => [p.id, p.full_name]) || []);
+
+      let articleMap = new Map<string, string>();
+      if (articleIds.length > 0) {
+        const { data: articles } = await supabase.from("journal_articles").select("id, title").in("id", articleIds);
+        articleMap = new Map(articles?.map((a: any) => [a.id, a.title]) || []);
+      }
+
+      let entryMap = new Map<string, string>();
+      if (entryIds.length > 0) {
+        const { data: entries } = await supabase.from("competition_entries").select("id, title").in("id", entryIds);
+        entryMap = new Map(entries?.map((e: any) => [e.id, e.title]) || []);
+      }
+
+      setAdminComments(
+        data.map((c) => ({
+          ...c,
+          profile_name: profileMap.get(c.user_id) ?? null,
+          context_title: c.article_id
+            ? articleMap.get(c.article_id) || "Article"
+            : c.entry_id
+            ? entryMap.get(c.entry_id) || "Entry"
+            : null,
+        }))
+      );
+    } else {
+      setAdminComments([]);
+    }
+  };
+
+  const deleteAdminComment = async (commentId: string) => {
+    if (!confirm("Delete this comment? This cannot be undone.")) return;
+    const { error } = await supabase.from("comments").delete().eq("id", commentId);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Comment deleted" });
+      setAdminComments((prev) => prev.filter((c) => c.id !== commentId));
+    }
+  };
+
   const handlePortfolioUpload = async (files: FileList) => {
     if (!user || files.length === 0) return;
     setPortfolioUploading(true);
@@ -212,7 +278,7 @@ const AdminPanel = () => {
   useEffect(() => {
     if (!isAdmin) return;
     setLoading(true);
-    Promise.all([fetchCompetitions(), fetchEntries(), fetchRoleApps(), fetchPortfolio()]).then(() => setLoading(false));
+    Promise.all([fetchCompetitions(), fetchEntries(), fetchRoleApps(), fetchPortfolio(), fetchAdminComments()]).then(() => setLoading(false));
   }, [isAdmin]);
 
   const resetForm = () => {
@@ -398,7 +464,7 @@ const AdminPanel = () => {
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["portfolio", "Portfolio", Image]] as const).map(([key, label, Icon]) => (
+          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["portfolio", "Portfolio", Image], ["comments", "Comments", MessageSquare]] as const).map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -753,6 +819,62 @@ const AdminPanel = () => {
               <div className="text-center py-16 border border-dashed border-border rounded">
                 <Image className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
                 <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>No portfolio images yet. Upload your first batch above.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Comments Tab */}
+        {tab === "comments" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                {adminComments.length} comment{adminComments.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {adminComments.length > 0 ? (
+              <div className="space-y-0 divide-y divide-border border border-border">
+                {adminComments.map((c) => (
+                  <div key={c.id} className="p-5 flex flex-col md:flex-row md:items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1.5">
+                        <span className="text-xs font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+                          {c.profile_name || "Anonymous"}
+                        </span>
+                        {c.parent_id && (
+                          <span className="text-[9px] tracking-[0.1em] uppercase text-muted-foreground px-1.5 py-0.5 border border-border" style={{ fontFamily: "var(--font-heading)" }}>
+                            Reply
+                          </span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(c.created_at).toLocaleDateString()} {new Date(c.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground/85 leading-relaxed mb-1.5 line-clamp-3" style={{ fontFamily: "var(--font-body)" }}>
+                        {c.content}
+                      </p>
+                      {c.context_title && (
+                        <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                          On: <em>{c.context_title}</em> ({c.article_id ? "Journal" : "Competition Entry"})
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => deleteAdminComment(c.id)}
+                      className="shrink-0 inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase text-destructive hover:text-destructive/70 transition-colors"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 border border-dashed border-border rounded">
+                <MessageSquare className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>No comments yet.</p>
               </div>
             )}
           </div>
