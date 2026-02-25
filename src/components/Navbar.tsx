@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogOut, Shield, Menu, X, Sun, Moon } from "lucide-react";
+import { LogOut, Shield, Menu, X, Sun, Moon, Scale } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -83,6 +83,12 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
               <Link to="/admin" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
                 <Shield className="h-3 w-3" />
                 Admin
+              </Link>
+            )}
+            {(hasRole("judge") || isAdmin) && (
+              <Link to="/judge" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
+                <Scale className="h-3 w-3" />
+                Judge
               </Link>
             )}
           </div>
@@ -223,6 +229,12 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                   <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
                     <Shield className="h-3.5 w-3.5" />
                     Admin
+                  </Link>
+                )}
+                {(hasRole("judge") || isAdmin) && (
+                  <Link to="/judge" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
+                    <Scale className="h-3.5 w-3.5" />
+                    Judge
                   </Link>
                 )}
 

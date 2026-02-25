@@ -245,6 +245,21 @@ const CompetitionDetail = () => {
                               🏆 Winner
                             </span>
                           )}
+                          {(entry as any).placement === "1st_runner_up" && (
+                            <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-muted-foreground/90 text-background" style={{ fontFamily: "var(--font-heading)" }}>
+                              🥈 1st Runner Up
+                            </span>
+                          )}
+                          {(entry as any).placement === "2nd_runner_up" && (
+                            <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-amber-700/90 text-background" style={{ fontFamily: "var(--font-heading)" }}>
+                              🥉 2nd Runner Up
+                            </span>
+                          )}
+                          {(entry as any).placement === "most_viewed" && (
+                            <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-primary/90 text-primary-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                              👁 Most Viewed
+                            </span>
+                          )}
                         </div>
                       )}
                       <div className="p-4">
