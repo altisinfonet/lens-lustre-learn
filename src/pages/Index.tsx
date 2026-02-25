@@ -659,7 +659,7 @@ const Index = () => {
                       />
                       <div className="absolute top-3 left-3">
                         <span
-                          className="text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-yellow-500/90 text-background inline-flex items-center gap-1"
+                          className="text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-primary/90 text-primary-foreground inline-flex items-center gap-1"
                           style={{ fontFamily: "var(--font-heading)" }}
                         >
                           <Trophy className="h-3 w-3" /> Winner
