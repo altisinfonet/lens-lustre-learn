@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Clock, Tag, PenLine, LogOut } from "lucide-react";
+import { ArrowRight, Clock, Tag, PenLine, LogOut } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -82,10 +83,7 @@ const Journal = () => {
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
+          <Breadcrumbs items={[{ label: "Journal" }]} />
           <div className="flex items-center gap-4" style={{ fontFamily: "var(--font-heading)" }}>
             {canEdit && (
               <Link

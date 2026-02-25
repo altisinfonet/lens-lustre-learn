@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Edit2, ExternalLink, Globe, LogOut, User } from "lucide-react";
+import { Camera, Edit2, ExternalLink, Globe, LogOut, User } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,13 +83,7 @@ const Profile = () => {
       </nav>
 
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-20 max-w-3xl">
-        <Link
-          to="/dashboard"
-          className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          <ArrowLeft className="h-3 w-3" /> Dashboard
-        </Link>
+        <Breadcrumbs items={[{ label: "Dashboard", to: "/dashboard" }, { label: "Profile" }]} className="mb-12" />
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

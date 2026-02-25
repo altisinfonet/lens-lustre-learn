@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, User, Camera, Trophy, Calendar, ArrowLeft, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award } from "lucide-react";
+import { LogOut, User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -173,9 +174,7 @@ const Dashboard = () => {
       </nav>
 
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-20">
-        <Link to="/" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-10" style={{ fontFamily: "var(--font-heading)" }}>
-          <ArrowLeft className="h-3 w-3" /> Home
-        </Link>
+        <Breadcrumbs items={[{ label: "Dashboard" }]} className="mb-10" />
 
         <div className="grid lg:grid-cols-3 gap-10 lg:gap-16">
           {/* Profile Card */}

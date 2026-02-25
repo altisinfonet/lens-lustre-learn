@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Tag } from "lucide-react";
+import { Clock, Tag } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Article {
@@ -70,10 +71,7 @@ const JournalArticle = () => {
       {/* Back nav */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6">
-          <Link to="/journal" className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
-            <ArrowLeft className="h-4 w-4" />
-            Journal
-          </Link>
+          <Breadcrumbs items={[{ label: "Journal", to: "/journal" }, { label: article.title }]} />
         </div>
       </div>
 

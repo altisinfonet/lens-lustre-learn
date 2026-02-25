@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Clock, DollarSign, GraduationCap, PenLine, LogOut } from "lucide-react";
+import { BookOpen, Clock, DollarSign, GraduationCap, PenLine, LogOut } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -95,9 +96,7 @@ const Courses = () => {
     <main className="min-h-screen bg-background text-foreground">
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Link>
+          <Breadcrumbs items={[{ label: "Courses" }]} />
           <div className="flex items-center gap-4" style={{ fontFamily: "var(--font-heading)" }}>
             {canEdit && (
               <Link to="/courses/new" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity">

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Award, CheckCircle, Search, XCircle, Calendar, Shield } from "lucide-react";
+import { Award, CheckCircle, Search, XCircle, Calendar, Shield } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -63,13 +64,7 @@ const VerifyCertificate = () => {
     <main className="min-h-screen bg-background text-foreground">
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6">
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            <ArrowLeft className="h-4 w-4" /> Home
-          </Link>
+          <Breadcrumbs items={[{ label: "Verify Certificate" }]} />
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, CheckCircle, Circle } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -115,9 +116,7 @@ const LessonView = () => {
     <main className="min-h-screen bg-background text-foreground">
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
-          <Link to={`/courses/${slug}`} className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
-            <ArrowLeft className="h-4 w-4" /> {course.title}
-          </Link>
+          <Breadcrumbs items={[{ label: "Courses", to: "/courses" }, { label: course.title, to: `/courses/${slug}` }, { label: lesson.title }]} />
           <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
             {currentIndex + 1} / {allLessons.length}
           </span>
