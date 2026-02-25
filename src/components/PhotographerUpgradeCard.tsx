@@ -1,0 +1,159 @@
+import { useState } from "react";
+import { Camera, CheckCircle, Instagram, Facebook, Globe } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { z } from "zod";
+
+const urlSchema = z.string().url("Must be a valid URL").max(500);
+
+interface Props {
+  onUpgraded: () => void;
+}
+
+const PhotographerUpgradeCard = ({ onUpgraded }: Props) => {
+  const { user } = useAuth();
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleUpgrade = async () => {
+    if (!user) return;
+
+    // At least one link required
+    const fb = facebookUrl.trim();
+    const ig = instagramUrl.trim();
+    const web = websiteUrl.trim();
+
+    if (!fb && !ig && !web) {
+      toast({ title: "Please provide at least one social media link", variant: "destructive" });
+      return;
+    }
+
+    // Validate URLs
+    const links = [
+      { val: fb, label: "Facebook" },
+      { val: ig, label: "Instagram" },
+      { val: web, label: "Website" },
+    ].filter((l) => l.val);
+
+    for (const link of links) {
+      const result = urlSchema.safeParse(link.val);
+      if (!result.success) {
+        toast({ title: `Invalid ${link.label} URL`, description: result.error.errors[0]?.message, variant: "destructive" });
+        return;
+      }
+    }
+
+    setSubmitting(true);
+
+    // Save social links to profile
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({
+        facebook_url: fb || null,
+        instagram_url: ig || null,
+        website_url: web || null,
+      })
+      .eq("id", user.id);
+
+    if (profileError) {
+      toast({ title: "Failed to save links", description: profileError.message, variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
+
+    // Auto-assign registered_photographer role
+    const { error: roleError } = await supabase
+      .from("user_roles")
+      .insert({ user_id: user.id, role: "registered_photographer" as any });
+
+    if (roleError && !roleError.message.includes("duplicate")) {
+      toast({ title: "Failed to upgrade", description: roleError.message, variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
+
+    toast({ title: "🎉 You're now a Registered Photographer!", description: "You can now submit to competitions and build your portfolio." });
+    setSubmitting(false);
+    onUpgraded();
+  };
+
+  return (
+    <div className="border border-primary/30 p-8 md:p-10 bg-primary/5">
+      <div className="flex items-center gap-3 mb-4">
+        <Camera className="h-5 w-5 text-primary" />
+        <span
+          className="text-[10px] tracking-[0.3em] uppercase text-primary"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          Become a Registered Photographer
+        </span>
+      </div>
+
+      <p className="text-sm text-muted-foreground mb-6 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+        Submit at least one social media or portfolio link to verify yourself as a photographer.
+        This unlocks competition submissions and a verified public portfolio.
+      </p>
+
+      <div className="space-y-4 mb-6">
+        <div>
+          <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+            <Facebook className="h-3 w-3" /> Facebook URL
+          </label>
+          <Input
+            value={facebookUrl}
+            onChange={(e) => setFacebookUrl(e.target.value)}
+            placeholder="https://facebook.com/yourprofile"
+            className="bg-transparent"
+            maxLength={500}
+          />
+        </div>
+        <div>
+          <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+            <Instagram className="h-3 w-3" /> Instagram URL
+          </label>
+          <Input
+            value={instagramUrl}
+            onChange={(e) => setInstagramUrl(e.target.value)}
+            placeholder="https://instagram.com/yourhandle"
+            className="bg-transparent"
+            maxLength={500}
+          />
+        </div>
+        <div>
+          <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+            <Globe className="h-3 w-3" /> Website / Portfolio URL
+          </label>
+          <Input
+            value={websiteUrl}
+            onChange={(e) => setWebsiteUrl(e.target.value)}
+            placeholder="https://yourportfolio.com"
+            className="bg-transparent"
+            maxLength={500}
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={handleUpgrade}
+        disabled={submitting}
+        className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
+        style={{ fontFamily: "var(--font-heading)" }}
+      >
+        {submitting ? (
+          <span className="animate-pulse">Verifying…</span>
+        ) : (
+          <>
+            <CheckCircle className="h-3.5 w-3.5" />
+            Upgrade to Photographer
+          </>
+        )}
+      </button>
+    </div>
+  );
+};
+
+export default PhotographerUpgradeCard;

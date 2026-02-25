@@ -416,31 +416,40 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          facebook_url: string | null
           full_name: string | null
           id: string
+          instagram_url: string | null
           photography_interests: string[] | null
           portfolio_url: string | null
           updated_at: string
+          website_url: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          facebook_url?: string | null
           full_name?: string | null
           id: string
+          instagram_url?: string | null
           photography_interests?: string[] | null
           portfolio_url?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          facebook_url?: string | null
           full_name?: string | null
           id?: string
+          instagram_url?: string | null
           photography_interests?: string[] | null
           portfolio_url?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -532,7 +541,12 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "user" | "judge" | "content_editor" | "admin"
+      app_role:
+        | "user"
+        | "judge"
+        | "content_editor"
+        | "admin"
+        | "registered_photographer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -660,7 +674,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["user", "judge", "content_editor", "admin"],
+      app_role: [
+        "user",
+        "judge",
+        "content_editor",
+        "admin",
+        "registered_photographer",
+      ],
     },
   },
 } as const

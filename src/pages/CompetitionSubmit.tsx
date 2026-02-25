@@ -1,15 +1,17 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { Upload, X, Loader2, ImagePlus } from "lucide-react";
+import { Upload, X, Loader2, ImagePlus, Camera } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { toast } from "@/hooks/use-toast";
 
 
 const CompetitionSubmit = () => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
+  const { hasRole, loading: rolesLoading } = useUserRoles();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -124,10 +126,34 @@ const CompetitionSubmit = () => {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading || loading || rolesLoading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}>Loading...</div>
+      </main>
+    );
+  }
+
+  if (!hasRole("registered_photographer") && !hasRole("admin")) {
+    return (
+      <main className="min-h-screen bg-background text-foreground">
+        <div className="container mx-auto px-6 md:px-12 py-12 md:py-20 max-w-2xl">
+          <Breadcrumbs items={[{ label: "Competitions", to: "/competitions" }]} className="mb-10" />
+          <div className="border border-border p-10 text-center">
+            <Camera className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+            <h2 className="text-xl font-light mb-3" style={{ fontFamily: "var(--font-display)" }}>Registered Photographers Only</h2>
+            <p className="text-sm text-muted-foreground mb-6" style={{ fontFamily: "var(--font-body)" }}>
+              You need to verify your photographer profile before submitting to competitions. Go to your dashboard and add your social media links.
+            </p>
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Go to Dashboard
+            </Link>
+          </div>
+        </div>
       </main>
     );
   }

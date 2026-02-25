@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import PhotographerUpgradeCard from "@/components/PhotographerUpgradeCard";
 
 
 const fadeUp = {
@@ -202,6 +203,17 @@ const Dashboard = () => {
                         <TooltipContent><p>Assigned {getRoleDate("content_editor")}</p></TooltipContent>
                       </Tooltip>
                     )}
+                    {hasRole("registered_photographer") && (
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-primary/20 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
+                            <Camera className="h-3 w-3" />
+                            Verified Photographer
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Verified {getRoleDate("registered_photographer")}</p></TooltipContent>
+                      </Tooltip>
+                    )}
                   </div>
                 </TooltipProvider>
                 <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{user.email}</p>
@@ -294,8 +306,20 @@ const Dashboard = () => {
               </div>
             </motion.div>
 
+            {/* Photographer Upgrade */}
+            {!hasRole("registered_photographer") && (
+              <motion.div variants={fadeUp} custom={3}>
+                <PhotographerUpgradeCard onUpgraded={() => {
+                  // Refresh roles
+                  supabase.from("user_roles").select("role, created_at").eq("user_id", user.id).then(({ data }) => {
+                    if (data) setRoles(data);
+                  });
+                }} />
+              </motion.div>
+            )}
+
             {/* Role Applications */}
-            <motion.div variants={fadeUp} custom={3}>
+            <motion.div variants={fadeUp} custom={4}>
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>
                 Role Applications
               </span>
