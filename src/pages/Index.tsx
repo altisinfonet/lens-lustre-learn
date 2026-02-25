@@ -502,18 +502,19 @@ const Index = () => {
           {(() => {
             const categories = ["All", ...Array.from(new Set(galleryWorks.map(w => w.category)))];
             const filtered = activeCategory === "All" ? galleryWorks : galleryWorks.filter(w => w.category === activeCategory);
-            // Build lightbox index map: filtered index → original index
-            const filteredIndexMap = activeCategory === "All"
-              ? filtered.map((_, i) => i)
-              : filtered.map(w => galleryWorks.indexOf(w));
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+            const safePage = Math.min(currentPage, totalPages);
+            const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+            // Build lightbox index map: paged index → original galleryWorks index
+            const filteredIndexMap = paged.map(w => galleryWorks.indexOf(w));
 
             // Generate stable random featured indices
             const featuredSet = new Set<number>([0]);
             let next = 0;
-            while (next < filtered.length) {
+            while (next < paged.length) {
               const gap = 12 + ((next * 7 + 13) % 14);
               next += gap;
-              if (next < filtered.length) featuredSet.add(next);
+              if (next < paged.length) featuredSet.add(next);
             }
 
             return (
@@ -522,7 +523,7 @@ const Index = () => {
                   {categories.map((cat) => (
                     <button
                       key={cat}
-                      onClick={() => setActiveCategory(cat)}
+                      onClick={() => { setActiveCategory(cat); setCurrentPage(1); }}
                       className={`text-[10px] tracking-[0.25em] uppercase px-4 py-2 border transition-all duration-500 ${
                         activeCategory === cat
                           ? "border-primary bg-primary/10 text-primary"
@@ -540,7 +541,7 @@ const Index = () => {
                   className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 auto-rows-[1fr] gap-1 sm:gap-1.5"
                 >
                   <AnimatePresence mode="popLayout">
-                    {filtered.map((work, i) => {
+                    {paged.map((work, i) => {
                       const isHero = featuredSet.has(i);
                       return (
                         <motion.div
@@ -579,6 +580,42 @@ const Index = () => {
                     })}
                   </AnimatePresence>
                 </motion.div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-12">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={safePage <= 1}
+                      className="text-[10px] tracking-[0.2em] uppercase px-4 py-2 border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      Prev
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-9 h-9 text-[11px] border transition-all duration-300 ${
+                          safePage === page
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                        }`}
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={safePage >= totalPages}
+                      className="text-[10px] tracking-[0.2em] uppercase px-4 py-2 border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </>
             );
           })()}
