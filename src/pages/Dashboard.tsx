@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut, User, Camera, Trophy, Calendar, ArrowLeft, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,7 @@ interface Profile {
 
 interface UserRole {
   role: string;
+  created_at: string;
 }
 
 interface RoleApplication {
@@ -68,7 +70,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       const [profileRes, rolesRes, appsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
-        supabase.from("user_roles").select("role").eq("user_id", user.id),
+        supabase.from("user_roles").select("role, created_at").eq("user_id", user.id),
         supabase.from("role_applications").select("id, requested_role, status, reason, admin_message, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
 
@@ -127,6 +129,10 @@ const Dashboard = () => {
   const initials = displayName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
   const hasRole = (role: string) => roles.some((r) => r.role === role);
+  const getRoleDate = (role: string) => {
+    const r = roles.find((r) => r.role === role);
+    return r ? new Date(r.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "";
+  };
   const hasPendingApp = (role: string) => applications.some((a) => a.requested_role === role && a.status === "pending");
   const canApplyFor = (role: string) => !hasRole(role) && !hasPendingApp(role);
 
@@ -186,24 +192,43 @@ const Dashboard = () => {
                 <h1 className="text-2xl font-light tracking-tight mb-1" style={{ fontFamily: "var(--font-display)" }}>
                   {displayName}
                 </h1>
-                {hasRole("admin") && (
-                  <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-primary text-primary-foreground rounded-full mt-1" style={{ fontFamily: "var(--font-heading)" }}>
-                    <Shield className="h-3 w-3" />
-                    Admin
-                  </span>
-                )}
-                {hasRole("judge") && (
-                  <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-accent text-accent-foreground rounded-full mt-1" style={{ fontFamily: "var(--font-heading)" }}>
-                    <Award className="h-3 w-3" />
-                    Judge
-                  </span>
-                )}
-                {hasRole("content_editor") && (
-                  <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-secondary text-secondary-foreground rounded-full mt-1" style={{ fontFamily: "var(--font-heading)" }}>
-                    <Edit2 className="h-3 w-3" />
-                    Contributor
-                  </span>
-                )}
+                <TooltipProvider>
+                  <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                    {hasRole("admin") && (
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-primary text-primary-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
+                            <Shield className="h-3 w-3" />
+                            Admin
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Assigned {getRoleDate("admin")}</p></TooltipContent>
+                      </Tooltip>
+                    )}
+                    {hasRole("judge") && (
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-accent text-accent-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
+                            <Award className="h-3 w-3" />
+                            Judge
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Assigned {getRoleDate("judge")}</p></TooltipContent>
+                      </Tooltip>
+                    )}
+                    {hasRole("content_editor") && (
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-secondary text-secondary-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
+                            <Edit2 className="h-3 w-3" />
+                            Contributor
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Assigned {getRoleDate("content_editor")}</p></TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                </TooltipProvider>
                 <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{user.email}</p>
               </div>
 
