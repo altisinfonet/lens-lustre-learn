@@ -499,45 +499,50 @@ const Index = () => {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 auto-rows-[1fr] gap-1 sm:gap-1.5">
-                  {filtered.map((work, i) => {
-                    const isHero = featuredSet.has(i);
-                    return (
                 <motion.div
-                  key={`${work.title}-${i}`}
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true, margin: "-20px" }}
-                  transition={{ delay: (i % 14) * 0.02, duration: 0.5 }}
-                  className={`group relative overflow-hidden rounded-sm cursor-pointer bg-muted ${
-                    isHero
-                      ? "col-span-3 row-span-3 sm:col-span-4 sm:row-span-4 md:col-span-4 md:row-span-5 lg:col-span-5 lg:row-span-6 aspect-auto"
-                      : "aspect-square"
-                  }`}
-                  onClick={() => openLightbox(filteredIndexMap[i])}
+                  layout
+                  className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 auto-rows-[1fr] gap-1 sm:gap-1.5"
                 >
-                  <img
-                    src={work.src}
-                    alt={`${work.title} — ${work.category}`}
-                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-75"
-                    loading={isHero ? "eager" : "lazy"}
-                  />
-                  {/* Hover overlay */}
-                  <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/60 ${
-                    isHero ? "flex-col gap-2" : ""
-                  }`}>
-                    <Expand className={isHero ? "h-6 w-6 text-primary" : "h-3.5 w-3.5 text-primary"} />
-                    {isHero && (
-                      <>
-                        <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>{work.category}</span>
-                        <span className="text-lg font-light text-foreground" style={{ fontFamily: "var(--font-display)" }}>{work.title}</span>
-                      </>
-                    )}
-                  </div>
+                  <AnimatePresence mode="popLayout">
+                    {filtered.map((work, i) => {
+                      const isHero = featuredSet.has(i);
+                      return (
+                        <motion.div
+                          key={`${work.src}-${work.title}`}
+                          layout
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(i * 0.015, 0.6) }}
+                          className={`group relative overflow-hidden rounded-sm cursor-pointer bg-muted ${
+                            isHero
+                              ? "col-span-3 row-span-3 sm:col-span-4 sm:row-span-4 md:col-span-4 md:row-span-5 lg:col-span-5 lg:row-span-6 aspect-auto"
+                              : "aspect-square"
+                          }`}
+                          onClick={() => openLightbox(filteredIndexMap[i])}
+                        >
+                          <img
+                            src={work.src}
+                            alt={`${work.title} — ${work.category}`}
+                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-75"
+                            loading={isHero ? "eager" : "lazy"}
+                          />
+                          <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/60 ${
+                            isHero ? "flex-col gap-2" : ""
+                          }`}>
+                            <Expand className={isHero ? "h-6 w-6 text-primary" : "h-3.5 w-3.5 text-primary"} />
+                            {isHero && (
+                              <>
+                                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>{work.category}</span>
+                                <span className="text-lg font-light text-foreground" style={{ fontFamily: "var(--font-display)" }}>{work.title}</span>
+                              </>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
                 </motion.div>
-              );
-            })}
-                </div>
               </>
             );
           })()}
