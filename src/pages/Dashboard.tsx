@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award } from "lucide-react";
+import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import GlobalSearch from "@/components/GlobalSearch";
+
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -45,7 +45,7 @@ interface RoleApplication {
 }
 
 const Dashboard = () => {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
@@ -149,32 +149,6 @@ const Dashboard = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <nav className="border-b border-border" aria-label="Dashboard navigation">
-        <div className="container mx-auto px-6 md:px-12 py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3" aria-label="ArteFoto Global Home">
-            <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
-            <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-              ArteFoto Global
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <GlobalSearch />
-            <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground hidden sm:inline" style={{ fontFamily: "var(--font-heading)" }}>
-              {displayName}
-            </span>
-            <button
-              onClick={async () => { await signOut(); navigate("/"); }}
-              className="text-xs tracking-[0.15em] uppercase px-4 py-2 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-700 inline-flex items-center gap-2"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              <LogOut className="h-3 w-3" />
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
-
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-20">
         <Breadcrumbs items={[{ label: "Dashboard" }]} className="mb-10" />
 

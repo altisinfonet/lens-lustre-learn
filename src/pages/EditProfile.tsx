@@ -4,7 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import GlobalSearch from "@/components/GlobalSearch";
 import { toast } from "@/hooks/use-toast";
 
 const INTEREST_OPTIONS = [
@@ -114,19 +113,6 @@ const EditProfile = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <nav className="border-b border-border">
-        <div className="container mx-auto px-6 md:px-12 py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
-            <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-              ArteFoto Global
-            </span>
-          </Link>
-          <GlobalSearch />
-        </div>
-      </nav>
-
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-20 max-w-2xl">
         <Breadcrumbs items={[{ label: "Dashboard", to: "/dashboard" }, { label: "Edit Profile" }]} className="mb-10" />
 

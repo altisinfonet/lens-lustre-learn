@@ -100,7 +100,6 @@ const MiniCarousel = ({
   );
 };
 import { supabase } from "@/integrations/supabase/client";
-import GlobalSearch from "@/components/GlobalSearch";
 
 interface ProfileData {
   full_name: string | null;
@@ -193,23 +192,6 @@ const PublicProfile = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <nav className="border-b border-border">
-        <div className="container mx-auto px-6 md:px-12 py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
-            <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-              ArteFoto Global
-            </span>
-          </Link>
-          <div className="flex items-center gap-6 text-xs tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-            <GlobalSearch />
-            <Link to="/competitions" className="hover:opacity-60 transition-opacity duration-500 hidden md:block">Competitions</Link>
-            <Link to="/journal" className="hover:opacity-60 transition-opacity duration-500 hidden md:block">Journal</Link>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Background ambient */}

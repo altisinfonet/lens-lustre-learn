@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import GlobalSearch from "@/components/GlobalSearch";
 import { toast } from "@/hooks/use-toast";
 
 interface Competition {
@@ -313,22 +312,6 @@ const AdminPanel = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <nav className="border-b border-border">
-        <div className="container mx-auto px-6 md:px-12 py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
-            <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>ArteFoto Global</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <GlobalSearch />
-            <Link to="/dashboard" className="text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-heading)" }}>
-              Dashboard
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-16">
         <Breadcrumbs items={[{ label: "Dashboard", to: "/dashboard" }, { label: "Admin Panel" }]} className="mb-8" />
 

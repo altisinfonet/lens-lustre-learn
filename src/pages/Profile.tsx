@@ -1,11 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Edit2, ExternalLink, Globe, KeyRound, LogOut, Mail, User } from "lucide-react";
+import { Camera, Edit2, ExternalLink, Globe, KeyRound, Mail, User } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import GlobalSearch from "@/components/GlobalSearch";
 import { toast } from "@/hooks/use-toast";
 
 interface ProfileData {
@@ -18,7 +17,7 @@ interface ProfileData {
 }
 
 const Profile = () => {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,30 +75,6 @@ const Profile = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <nav className="border-b border-border">
-        <div className="container mx-auto px-6 md:px-12 py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
-            <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-              ArteFoto Global
-            </span>
-          </Link>
-          <div className="flex items-center gap-6 text-xs tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-            <GlobalSearch />
-            <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500">Dashboard</Link>
-            {user && (
-              <button
-                onClick={async () => { await signOut(); navigate("/"); }}
-                className="inline-flex items-center gap-1.5 hover:opacity-60 transition-opacity duration-500"
-              >
-                <LogOut className="h-3 w-3" /> Logout
-              </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-20 max-w-3xl">
         <Breadcrumbs items={[{ label: "Dashboard", to: "/dashboard" }, { label: "Profile" }]} className="mb-12" />
 
