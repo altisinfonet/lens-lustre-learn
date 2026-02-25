@@ -461,10 +461,21 @@ const Index = () => {
             </motion.p>
           </motion.header>
 
-          {/* Instagram-style grid with featured hero image */}
+          {/* Instagram-style grid with randomized featured images */}
+          {(() => {
+            // Generate stable random featured indices (~1 per 15-25 images)
+            const featuredSet = new Set<number>([0]);
+            let next = 0;
+            while (next < galleryWorks.length) {
+              // Pseudo-random gap between 12 and 25 based on current index
+              const gap = 12 + ((next * 7 + 13) % 14);
+              next += gap;
+              if (next < galleryWorks.length) featuredSet.add(next);
+            }
+            return (
           <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 auto-rows-[1fr] gap-1.5">
             {galleryWorks.map((work, i) => {
-              const isHero = i === 0 || (i > 0 && i % 20 === 0);
+              const isHero = featuredSet.has(i);
               return (
                 <motion.div
                   key={`${work.title}-${i}`}
@@ -501,6 +512,8 @@ const Index = () => {
               );
             })}
           </div>
+            );
+          })()}
         </div>
       </section>
 
