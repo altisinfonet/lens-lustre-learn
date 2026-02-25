@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2, Lock } from "lucide-react";
+import { CheckCircle, Loader2, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -12,6 +12,7 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRecovery, setIsRecovery] = useState(false);
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,7 +53,7 @@ const ResetPassword = () => {
     if (error) {
       setError(error.message);
     } else {
-      navigate("/dashboard");
+      setSuccess(true);
     }
     setLoading(false);
   };
@@ -71,6 +72,40 @@ const ResetPassword = () => {
           <Link to="/forgot-password" className="text-xs tracking-[0.15em] uppercase text-primary hover:underline" style={{ fontFamily: "var(--font-heading)" }}>
             Request New Link
           </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (success) {
+    return (
+      <main className="min-h-screen bg-background text-foreground flex items-center justify-center px-6">
+        <div className="max-w-md text-center">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-8">
+            <CheckCircle className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-light tracking-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
+            Password <em className="italic text-primary">Updated</em>
+          </h1>
+          <p className="text-sm text-muted-foreground mb-8 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+            Your password has been successfully changed. You can now sign in with your new password.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Go to Dashboard
+            </Link>
+            <Link
+              to="/profile"
+              className="text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              View Profile
+            </Link>
+          </div>
         </div>
       </main>
     );
