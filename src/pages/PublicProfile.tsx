@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Camera, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User } from "lucide-react";
-import { motion } from "framer-motion";
+import { Camera, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import GlobalSearch from "@/components/GlobalSearch";
 
@@ -17,6 +17,7 @@ interface ProfileData {
 interface CompEntry {
   id: string;
   title: string;
+  description: string | null;
   photos: string[];
   status: string;
   competition: { title: string } | null;
@@ -42,13 +43,14 @@ const PublicProfile = () => {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState<{ src: string; title: string; desc?: string } | null>(null);
 
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
       const [profileRes, entriesRes, certsRes] = await Promise.all([
         supabase.from("profiles").select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at").eq("id", userId).maybeSingle(),
-        supabase.from("competition_entries").select("id, title, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
+        supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
       ]);
 
@@ -215,99 +217,209 @@ const PublicProfile = () => {
           </motion.section>
         )}
 
-        {/* Photo Gallery */}
-        {galleryPhotos.length > 0 && (
-          <motion.section {...fadeUp(0.3)} className="py-12 md:py-16 border-t border-border">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  Gallery
-                </span>
-                <h2 className="text-2xl md:text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                  Featured <em className="italic text-primary">Work</em>
-                </h2>
-              </div>
-              <Camera className="h-5 w-5 text-muted-foreground/30" />
-            </div>
-
-            <div className="columns-2 md:columns-3 gap-4 space-y-4">
-              {galleryPhotos.map((photo, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.05 * i, ease: [0.4, 0, 0.2, 1] }}
-                  className="break-inside-avoid group relative overflow-hidden"
-                >
-                  <img
-                    src={photo}
-                    alt={`Work ${i + 1}`}
-                    className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
-        )}
-
-        {/* Competition Submissions */}
+        {/* ═══ Selected Works — Immersive Gallery ═══ */}
         {entries.length > 0 && (
-          <motion.section {...fadeUp(0.35)} className="py-12 md:py-16 border-t border-border">
-            <div className="flex items-center justify-between mb-8">
+          <motion.section {...fadeUp(0.3)} className="py-16 md:py-24 border-t border-border">
+            {/* Section header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12 md:mb-16">
               <div>
-                <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  Competitions
+                <span className="text-[9px] tracking-[0.3em] uppercase text-primary block mb-3" style={{ fontFamily: "var(--font-heading)" }}>
+                  Selected Works
                 </span>
-                <h2 className="text-2xl md:text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                  Contest <em className="italic text-primary">Entries</em>
+                <h2 className="text-3xl md:text-5xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                  Through the <em className="italic text-primary">Lens</em>
                 </h2>
               </div>
-              <Trophy className="h-5 w-5 text-muted-foreground/30" />
+              <p className="text-xs text-muted-foreground max-w-xs" style={{ fontFamily: "var(--font-body)" }}>
+                A curated collection of competition entries and award-winning photographs.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {entries.map((entry, i) => (
+            {/* Hero piece — first entry, cinematic */}
+            {(() => {
+              const hero = entries[0];
+              if (!hero || !hero.photos[0]) return null;
+              return (
                 <motion.div
-                  key={entry.id}
-                  initial={{ opacity: 0, y: 16 }}
+                  initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.06 * i }}
-                  className="group border border-border overflow-hidden hover:border-primary/30 transition-all duration-500"
+                  transition={{ duration: 0.9, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                  className="relative group cursor-pointer mb-8"
+                  onClick={() => setLightboxPhoto({ src: hero.photos[0], title: hero.title, desc: hero.description || undefined })}
                 >
-                  {entry.photos[0] && (
-                    <div className="relative overflow-hidden aspect-[4/3]">
-                      <img
-                        src={entry.photos[0]}
-                        alt={entry.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                      {entry.status === "winner" && (
-                        <div className="absolute top-3 left-3">
-                          <span className="text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-primary text-primary-foreground inline-flex items-center gap-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-                            <Trophy className="h-3 w-3" /> Winner
+                  <div className="relative overflow-hidden aspect-[21/9]">
+                    <img
+                      src={hero.photos[0]}
+                      alt={hero.title}
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-transparent" />
+
+                    <div className="absolute top-5 right-5 h-10 w-10 rounded-full bg-background/40 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 border border-border/50">
+                      <Expand className="h-4 w-4 text-foreground" />
+                    </div>
+
+                    {hero.status === "winner" && (
+                      <div className="absolute top-5 left-5">
+                        <span className="text-[9px] tracking-[0.2em] uppercase px-4 py-1.5 bg-primary text-primary-foreground inline-flex items-center gap-2 shadow-lg" style={{ fontFamily: "var(--font-heading)" }}>
+                          <Award className="h-3.5 w-3.5" /> Award Winner
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-8 h-px bg-primary" />
+                        {hero.competition && (
+                          <span className="text-[9px] tracking-[0.2em] uppercase text-primary/80" style={{ fontFamily: "var(--font-heading)" }}>
+                            {(hero.competition as any).title}
                           </span>
-                        </div>
+                        )}
+                      </div>
+                      <h3 className="text-2xl md:text-4xl font-light tracking-tight text-foreground" style={{ fontFamily: "var(--font-display)" }}>
+                        {hero.title}
+                      </h3>
+                      {hero.description && (
+                        <p className="text-sm text-muted-foreground mt-2 max-w-lg line-clamp-2" style={{ fontFamily: "var(--font-body)" }}>
+                          {hero.description}
+                        </p>
                       )}
                     </div>
-                  )}
-                  <div className="p-5">
-                    <h3 className="text-sm font-medium mb-1 tracking-wide" style={{ fontFamily: "var(--font-heading)" }}>
-                      {entry.title}
-                    </h3>
-                    {entry.competition && (
-                      <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                        {(entry.competition as any).title}
-                      </p>
-                    )}
                   </div>
                 </motion.div>
-              ))}
+              );
+            })()}
+
+            {/* Asymmetric grid */}
+            {entries.length > 1 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                {entries.slice(1).map((entry, i) => {
+                  const isLarge = i === 0 || i === 3;
+                  return (
+                    <motion.div
+                      key={entry.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.08 * i, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                      className={`group relative cursor-pointer overflow-hidden ${isLarge ? "col-span-2 row-span-2" : "col-span-1"}`}
+                      onClick={() => entry.photos[0] && setLightboxPhoto({ src: entry.photos[0], title: entry.title, desc: entry.description || undefined })}
+                    >
+                      <div className={`relative overflow-hidden ${isLarge ? "aspect-square" : "aspect-[3/4]"}`}>
+                        <img
+                          src={entry.photos[0]}
+                          alt={entry.title}
+                          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
+
+                        {entry.status === "winner" && (
+                          <div className="absolute top-3 left-3 z-10">
+                            <span className="text-[8px] tracking-[0.2em] uppercase px-2.5 py-1 bg-primary text-primary-foreground inline-flex items-center gap-1" style={{ fontFamily: "var(--font-heading)" }}>
+                              <Trophy className="h-2.5 w-2.5" /> Winner
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                          <h3 className={`font-medium tracking-wide text-foreground mb-1 ${isLarge ? "text-lg md:text-xl" : "text-xs md:text-sm"}`} style={{ fontFamily: "var(--font-heading)" }}>
+                            {entry.title}
+                          </h3>
+                          {entry.competition && (
+                            <p className="text-[9px] tracking-[0.1em] uppercase text-primary/70" style={{ fontFamily: "var(--font-heading)" }}>
+                              {(entry.competition as any).title}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="absolute top-3 right-3 h-7 w-7 rounded-full bg-background/30 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
+                          <Expand className="h-3 w-3 text-foreground" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Stats bar */}
+            <div className="flex items-center justify-center gap-8 md:gap-16 mt-12 md:mt-16 py-6 border-t border-b border-border/50">
+              <div className="text-center">
+                <span className="text-2xl md:text-3xl font-light text-foreground block" style={{ fontFamily: "var(--font-display)" }}>
+                  {entries.length}
+                </span>
+                <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                  Works
+                </span>
+              </div>
+              <div className="h-8 w-px bg-border/50" />
+              <div className="text-center">
+                <span className="text-2xl md:text-3xl font-light text-primary block" style={{ fontFamily: "var(--font-display)" }}>
+                  {entries.filter(e => e.status === "winner").length}
+                </span>
+                <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                  Awards
+                </span>
+              </div>
+              <div className="h-8 w-px bg-border/50" />
+              <div className="text-center">
+                <span className="text-2xl md:text-3xl font-light text-foreground block" style={{ fontFamily: "var(--font-display)" }}>
+                  {new Set(entries.map(e => (e.competition as any)?.title).filter(Boolean)).size}
+                </span>
+                <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                  Competitions
+                </span>
+              </div>
             </div>
           </motion.section>
         )}
+
+        {/* Lightbox */}
+        <AnimatePresence>
+          {lightboxPhoto && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 z-50 bg-background/95 backdrop-blur-md flex items-center justify-center p-6 cursor-pointer"
+              onClick={() => setLightboxPhoto(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                className="max-w-5xl w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  src={lightboxPhoto.src}
+                  alt={lightboxPhoto.title}
+                  className="w-full max-h-[75vh] object-contain"
+                />
+                <div className="mt-6 text-center">
+                  <h3 className="text-xl md:text-2xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                    {lightboxPhoto.title}
+                  </h3>
+                  {lightboxPhoto.desc && (
+                    <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto" style={{ fontFamily: "var(--font-body)" }}>
+                      {lightboxPhoto.desc}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => setLightboxPhoto(null)}
+                    className="mt-6 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-300"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Certificates */}
         {certificates.length > 0 && (
