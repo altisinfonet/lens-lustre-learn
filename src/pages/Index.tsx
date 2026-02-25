@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback, lazy, Suspense, memo } from "react";
 import Lightbox from "@/components/Lightbox";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 /* Classic easing — gentle, cinematic transitions */
 const classicEase = [0.4, 0, 0.2, 1] as const;
@@ -1303,6 +1304,45 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border py-16" role="contentinfo">
         <div className="container mx-auto px-6 md:px-12">
+          {/* Newsletter */}
+          <div className="mb-16 pb-12 border-b border-border">
+            <div className="max-w-md mx-auto text-center">
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>Newsletter</span>
+              <h3 className="text-lg tracking-wide mb-2" style={{ fontFamily: "var(--font-display)" }}>Stay Inspired</h3>
+              <p className="text-xs text-muted-foreground mb-6 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+                Get competition updates, featured works, and photography insights delivered to your inbox.
+              </p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  const email = (form.elements.namedItem("newsletter_email") as HTMLInputElement).value;
+                  if (email) {
+                    toast({ title: "Subscribed!", description: "You'll receive our latest updates soon." });
+                    form.reset();
+                  }
+                }}
+                className="flex gap-2 max-w-sm mx-auto"
+              >
+                <input
+                  name="newsletter_email"
+                  type="email"
+                  required
+                  placeholder="your@email.com"
+                  className="flex-1 h-10 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  style={{ fontFamily: "var(--font-body)" }}
+                />
+                <button
+                  type="submit"
+                  className="h-10 px-5 rounded-md bg-primary text-primary-foreground text-[10px] tracking-[0.2em] uppercase hover:bg-primary/90 transition-colors duration-300"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  Subscribe
+                </button>
+              </form>
+            </div>
+          </div>
+
           <div className="grid md:grid-cols-3 gap-12 items-start">
             <div>
               <div className="flex items-center gap-3 mb-4">
