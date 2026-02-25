@@ -36,6 +36,8 @@ const heroSlides = [
   { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action" },
 ];
 
+const ITEMS_PER_PAGE = 20;
+
 const fallbackGalleryWorks = [
   { src: "/images/lives-on-life.jpg", title: "Lives on Life", category: "Aerial" },
   { src: "/images/sadhu.jpg", title: "The Ascetic", category: "Portrait" },
@@ -47,6 +49,38 @@ const fallbackGalleryWorks = [
   { src: "/images/portrait-1.jpg", title: "The Holy Dip", category: "Portrait" },
   { src: "/images/hero-4.jpg", title: "The Brunch", category: "Wildlife" },
   { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action" },
+  // New uploads
+  { src: "/images/twilight-boats.jpg", title: "Twilight Boats", category: "Landscape" },
+  { src: "/images/the-hand.jpg", title: "The Hand", category: "Fine Art" },
+  { src: "/images/the-craftsman.jpg", title: "The Craftsman", category: "Documentary" },
+  { src: "/images/devotion.jpg", title: "Devotion", category: "Documentary" },
+  { src: "/images/hercules.jpg", title: "Hercules", category: "Action" },
+  { src: "/images/behind-the-veil.jpg", title: "Behind the Veil", category: "Fine Art" },
+  { src: "/images/wall-art.jpg", title: "Wall Art", category: "Street" },
+  { src: "/images/dry-earth.jpg", title: "Dry Earth", category: "Portrait" },
+  { src: "/images/frozen-love.jpg", title: "Frozen Love", category: "Fine Art" },
+  { src: "/images/pottery.jpg", title: "Pottery", category: "Documentary" },
+  // Extended collection
+  { src: "/images/sadhu.jpg", title: "Eternal Gaze", category: "Portrait" },
+  { src: "/images/lives-on-life.jpg", title: "Above the Delta", category: "Aerial" },
+  { src: "/images/hero-1.jpg", title: "Dawn Feast", category: "Wildlife" },
+  { src: "/images/twilight-boats.jpg", title: "Still Waters", category: "Landscape" },
+  { src: "/images/the-hand.jpg", title: "Reaching Out", category: "Fine Art" },
+  { src: "/images/pottery.jpg", title: "Earth & Hands", category: "Documentary" },
+  { src: "/images/hero-3.jpg", title: "Feathered Grace", category: "Wildlife" },
+  { src: "/images/hercules.jpg", title: "The Wrestler", category: "Action" },
+  { src: "/images/wall-art.jpg", title: "Living Canvas", category: "Street" },
+  { src: "/images/dry-earth.jpg", title: "Crown of Nature", category: "Portrait" },
+  { src: "/images/frozen-love.jpg", title: "Golden Bloom", category: "Fine Art" },
+  { src: "/images/the-craftsman.jpg", title: "Forge & Steam", category: "Documentary" },
+  { src: "/images/after-prayer.jpg", title: "Sacred Moments", category: "Street" },
+  { src: "/images/devotion.jpg", title: "Faithful Souls", category: "Documentary" },
+  { src: "/images/life-in-summer.jpg", title: "Monsoon Fields", category: "Street" },
+  { src: "/images/innocence.jpg", title: "Pure Light", category: "Portrait" },
+  { src: "/images/hero-4.jpg", title: "River Dance", category: "Wildlife" },
+  { src: "/images/portrait-1.jpg", title: "Morning Ritual", category: "Portrait" },
+  { src: "/images/hero-2.jpg", title: "Aerial Hunt", category: "Action" },
+  { src: "/images/twilight-boats.jpg", title: "Blue Hour", category: "Landscape" },
 ];
 
 interface PortfolioImage {
