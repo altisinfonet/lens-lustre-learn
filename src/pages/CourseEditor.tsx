@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import GlobalSearch from "@/components/GlobalSearch";
+
 
 interface LessonDraft {
   id?: string;
@@ -182,7 +182,6 @@ const CourseEditor = () => {
         <div className="container mx-auto px-6 md:px-12 py-4 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Courses", to: "/courses" }, { label: courseId ? "Edit Course" : "New Course" }]} />
           <div className="flex items-center gap-3">
-            <GlobalSearch />
             <Button variant="outline" size="sm" onClick={() => handleSave("draft")} disabled={saving} className="text-xs tracking-[0.1em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
               <Save className="h-3.5 w-3.5 mr-1.5" /> Save Draft
             </Button>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import GlobalSearch from "@/components/GlobalSearch";
+
 
 const JournalEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -176,7 +176,6 @@ const JournalEditor = () => {
         <div className="container mx-auto px-6 md:px-12 py-4 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Journal", to: "/journal" }, { label: id ? "Edit Article" : "New Article" }]} />
           <div className="flex items-center gap-3">
-            <GlobalSearch />
             <Button
               variant="outline"
               size="sm"

@@ -84,6 +84,13 @@ const Index = () => {
   const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
   const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
 
+  // Preload next hero slide for smooth transition
+  useEffect(() => {
+    const nextIdx = (currentSlide + 1) % heroSlides.length;
+    const img = new Image();
+    img.src = heroSlides[nextIdx].src;
+  }, [currentSlide]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
