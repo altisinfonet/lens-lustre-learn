@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +43,17 @@ interface RoleApp {
   profiles: { full_name: string | null } | null;
 }
 
-type Tab = "competitions" | "entries" | "applications";
+interface PortfolioRow {
+  id: string;
+  title: string;
+  category: string;
+  image_url: string;
+  sort_order: number;
+  is_visible: boolean;
+  created_at: string;
+}
+
+type Tab = "competitions" | "entries" | "applications" | "portfolio";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -57,6 +67,8 @@ const AdminPanel = () => {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [roleApps, setRoleApps] = useState<RoleApp[]>([]);
+  const [portfolioImages, setPortfolioImages] = useState<PortfolioRow[]>([]);
+  const [portfolioUploading, setPortfolioUploading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Form state
@@ -136,10 +148,71 @@ const AdminPanel = () => {
     }
   };
 
+  const fetchPortfolio = async () => {
+    const { data } = await supabase
+      .from("portfolio_images")
+      .select("id, title, category, image_url, sort_order, is_visible, created_at")
+      .order("sort_order", { ascending: true });
+    setPortfolioImages(data || []);
+  };
+
+  const handlePortfolioUpload = async (files: FileList) => {
+    if (!user || files.length === 0) return;
+    setPortfolioUploading(true);
+    const currentMax = portfolioImages.length > 0 ? Math.max(...portfolioImages.map(p => p.sort_order)) : 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const ext = file.name.split('.').pop();
+      const filePath = `${Date.now()}-${i}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("portfolio-images")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        toast({ title: `Upload failed: ${file.name}`, description: uploadError.message, variant: "destructive" });
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage.from("portfolio-images").getPublicUrl(filePath);
+
+      await supabase.from("portfolio_images").insert({
+        title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+        category: "General",
+        image_url: urlData.publicUrl,
+        sort_order: currentMax + i + 1,
+        uploaded_by: user.id,
+      });
+    }
+
+    setPortfolioUploading(false);
+    toast({ title: `${files.length} image(s) uploaded` });
+    fetchPortfolio();
+  };
+
+  const deletePortfolioImage = async (id: string, imageUrl: string) => {
+    // Extract file path from URL
+    const urlParts = imageUrl.split("/portfolio-images/");
+    const filePath = urlParts.length > 1 ? urlParts[urlParts.length - 1] : null;
+
+    if (filePath) {
+      await supabase.storage.from("portfolio-images").remove([filePath]);
+    }
+    await supabase.from("portfolio_images").delete().eq("id", id);
+    toast({ title: "Image deleted" });
+    fetchPortfolio();
+  };
+
+  const togglePortfolioVisibility = async (id: string, currentVisible: boolean) => {
+    await supabase.from("portfolio_images").update({ is_visible: !currentVisible }).eq("id", id);
+    setPortfolioImages(prev => prev.map(p => p.id === id ? { ...p, is_visible: !currentVisible } : p));
+  };
+
   useEffect(() => {
     if (!isAdmin) return;
     setLoading(true);
-    Promise.all([fetchCompetitions(), fetchEntries(), fetchRoleApps()]).then(() => setLoading(false));
+    Promise.all([fetchCompetitions(), fetchEntries(), fetchRoleApps(), fetchPortfolio()]).then(() => setLoading(false));
   }, [isAdmin]);
 
   const resetForm = () => {
@@ -324,8 +397,8 @@ const AdminPanel = () => {
         </h1>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8">
-          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase]] as const).map(([key, label, Icon]) => (
+        <div className="flex flex-wrap gap-2 mb-8">
+          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["portfolio", "Portfolio", Image]] as const).map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -621,6 +694,67 @@ const AdminPanel = () => {
                 <p className="text-sm text-muted-foreground text-center py-10" style={{ fontFamily: "var(--font-body)" }}>No role applications yet</p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Portfolio Tab */}
+        {tab === "portfolio" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                {portfolioImages.length} image{portfolioImages.length !== 1 ? "s" : ""}
+              </span>
+              <label className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity duration-500 cursor-pointer" style={{ fontFamily: "var(--font-heading)" }}>
+                {portfolioUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                Upload Images
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files && handlePortfolioUpload(e.target.files)}
+                  disabled={portfolioUploading}
+                />
+              </label>
+            </div>
+
+            <p className="text-xs text-muted-foreground mb-6" style={{ fontFamily: "var(--font-body)" }}>
+              Upload multiple images at once. They will appear in the Portfolio section on the homepage. You can toggle visibility or delete images.
+            </p>
+
+            {portfolioImages.length > 0 ? (
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                {portfolioImages.map((img) => (
+                  <div key={img.id} className={`group relative aspect-square overflow-hidden rounded-sm border ${img.is_visible ? "border-border" : "border-destructive/40 opacity-50"}`}>
+                    <img src={img.image_url} alt={img.title} className="w-full h-full object-cover" loading="lazy" />
+                    <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-1.5">
+                      <span className="text-[8px] tracking-wider uppercase text-foreground truncate max-w-full px-1" style={{ fontFamily: "var(--font-heading)" }}>{img.category}</span>
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => togglePortfolioVisibility(img.id, img.is_visible)}
+                          className={`p-1 rounded ${img.is_visible ? "text-primary" : "text-muted-foreground"}`}
+                          title={img.is_visible ? "Hide" : "Show"}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deletePortfolioImage(img.id, img.image_url)}
+                          className="p-1 rounded text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 border border-dashed border-border rounded">
+                <Image className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>No portfolio images yet. Upload your first batch above.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
