@@ -418,7 +418,7 @@ const Index = () => {
           className="flex gap-12 whitespace-nowrap will-change-transform"
         >
           {Array.from({ length: 3 }).map((_, i) => (
-            <span key={i} className="text-7xl md:text-8xl font-light tracking-tight opacity-[0.06]" style={{ fontFamily: "var(--font-display)" }}>
+            <span key={i} className="text-7xl md:text-8xl font-light tracking-tight text-foreground opacity-[0.12]" style={{ fontFamily: "var(--font-display)" }}>
               Wildlife • Street • Portrait • Aerial • Documentary •
             </span>
           ))}
