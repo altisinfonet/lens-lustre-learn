@@ -5,9 +5,8 @@ import { Award, Download, Calendar, Share2 } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { generateCertificatePdf } from "@/lib/generateCertificatePdf";
 import { toast } from "@/hooks/use-toast";
-import GlobalSearch from "@/components/GlobalSearch";
+
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -66,7 +65,6 @@ const Certificates = () => {
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Dashboard", to: "/dashboard" }, { label: "Certificates" }]} />
-          <GlobalSearch />
         </div>
       </div>
 
@@ -135,8 +133,9 @@ const Certificates = () => {
                     </div>
                     <div className="shrink-0 flex flex-col gap-3 items-end">
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           try {
+                            const { generateCertificatePdf } = await import("@/lib/generateCertificatePdf");
                             const certName = cert.title
                               .replace(" — Completion Certificate", "")
                               .replace(" — Winner Certificate", "");

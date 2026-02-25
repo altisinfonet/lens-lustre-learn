@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Clock, Tag } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
-import GlobalSearch from "@/components/GlobalSearch";
+
 
 interface Article {
   id: string;
@@ -73,7 +73,6 @@ const JournalArticle = () => {
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Journal", to: "/journal" }, { label: article.title }]} />
-          <GlobalSearch />
         </div>
       </div>
 
