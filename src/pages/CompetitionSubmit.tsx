@@ -139,16 +139,16 @@ const CompetitionSubmit = () => {
     );
   }
 
-  if (!hasRole("registered_photographer") && !hasRole("admin")) {
+  if (!hasRole("registered_photographer") && !hasRole("student") && !hasRole("admin")) {
     return (
       <main className="min-h-screen bg-background text-foreground">
         <div className="container mx-auto px-6 md:px-12 py-12 md:py-20 max-w-2xl">
           <Breadcrumbs items={[{ label: "Competitions", to: "/competitions" }]} className="mb-10" />
           <div className="border border-border p-10 text-center">
             <Camera className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <h2 className="text-xl font-light mb-3" style={{ fontFamily: "var(--font-display)" }}>Registered Photographers Only</h2>
+            <h2 className="text-xl font-light mb-3" style={{ fontFamily: "var(--font-display)" }}>Verified Members Only</h2>
             <p className="text-sm text-muted-foreground mb-6" style={{ fontFamily: "var(--font-body)" }}>
-              You need to verify your photographer profile before submitting to competitions. Go to your dashboard and add your social media links.
+              You need to be a Registered Photographer or Student to submit to competitions. Go to your dashboard to verify your profile with social media links, or enroll in a course.
             </p>
             <Link
               to="/dashboard"
