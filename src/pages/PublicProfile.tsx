@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Camera, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight } from "lucide-react";
+import { Camera, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 /* ── Mini Carousel on hover ── */
@@ -257,19 +257,58 @@ const PublicProfile = () => {
                 )}
               </div>
 
-              {profile.portfolio_url && (
-                <a
-                  href={profile.portfolio_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  <Globe className="h-3 w-3" />
-                  {profile.portfolio_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                  <ExternalLink className="h-3 w-3 opacity-50" />
-                </a>
-              )}
+              <div className="flex flex-wrap items-center gap-3">
+                {profile.portfolio_url && (
+                  <a
+                    href={profile.portfolio_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <Globe className="h-3 w-3" />
+                    {profile.portfolio_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    <ExternalLink className="h-3 w-3 opacity-50" />
+                  </a>
+                )}
+                {profile.facebook_url && (
+                  <a
+                    href={profile.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase px-4 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <Facebook className="h-3.5 w-3.5" />
+                    Facebook
+                  </a>
+                )}
+                {profile.instagram_url && (
+                  <a
+                    href={profile.instagram_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase px-4 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <Instagram className="h-3.5 w-3.5" />
+                    Instagram
+                  </a>
+                )}
+                {profile.website_url && !profile.portfolio_url && (
+                  <a
+                    href={profile.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase px-4 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <Globe className="h-3 w-3" />
+                    Website
+                    <ExternalLink className="h-3 w-3 opacity-50" />
+                  </a>
+                )}
+              </div>
             </div>
           </motion.div>
         </div>
