@@ -116,6 +116,7 @@ const Index = () => {
   const [courses, setCourses] = useState<CoursePreview[]>([]);
   const [galleryWorks, setGalleryWorks] = useState<PortfolioImage[]>(fallbackGalleryWorks);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const openLightbox = useCallback((index: number) => {
@@ -461,22 +462,47 @@ const Index = () => {
             </motion.p>
           </motion.header>
 
-          {/* Instagram-style grid with randomized featured images */}
+          {/* Category filter tabs */}
           {(() => {
-            // Generate stable random featured indices (~1 per 15-25 images)
+            const categories = ["All", ...Array.from(new Set(galleryWorks.map(w => w.category)))];
+            const filtered = activeCategory === "All" ? galleryWorks : galleryWorks.filter(w => w.category === activeCategory);
+            // Build lightbox index map: filtered index → original index
+            const filteredIndexMap = activeCategory === "All"
+              ? filtered.map((_, i) => i)
+              : filtered.map(w => galleryWorks.indexOf(w));
+
+            // Generate stable random featured indices
             const featuredSet = new Set<number>([0]);
             let next = 0;
-            while (next < galleryWorks.length) {
-              // Pseudo-random gap between 12 and 25 based on current index
+            while (next < filtered.length) {
               const gap = 12 + ((next * 7 + 13) % 14);
               next += gap;
-              if (next < galleryWorks.length) featuredSet.add(next);
+              if (next < filtered.length) featuredSet.add(next);
             }
+
             return (
-          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 auto-rows-[1fr] gap-1.5">
-            {galleryWorks.map((work, i) => {
-              const isHero = featuredSet.has(i);
-              return (
+              <>
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={`text-[10px] tracking-[0.25em] uppercase px-4 py-2 border transition-all duration-500 ${
+                        activeCategory === cat
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                      }`}
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 auto-rows-[1fr] gap-1.5">
+                  {filtered.map((work, i) => {
+                    const isHero = featuredSet.has(i);
+                    return (
                 <motion.div
                   key={`${work.title}-${i}`}
                   initial={{ opacity: 0 }}
@@ -488,7 +514,7 @@ const Index = () => {
                       ? "col-span-5 row-span-5 sm:row-span-6 md:row-span-8 aspect-auto"
                       : "aspect-square"
                   }`}
-                  onClick={() => openLightbox(i)}
+                  onClick={() => openLightbox(filteredIndexMap[i])}
                 >
                   <img
                     src={work.src}
@@ -511,7 +537,8 @@ const Index = () => {
                 </motion.div>
               );
             })}
-          </div>
+                </div>
+              </>
             );
           })()}
         </div>
