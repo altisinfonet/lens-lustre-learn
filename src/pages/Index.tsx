@@ -36,6 +36,8 @@ const heroSlides = [
   { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action" },
 ];
 
+const ITEMS_PER_PAGE = 20;
+
 const fallbackGalleryWorks = [
   { src: "/images/lives-on-life.jpg", title: "Lives on Life", category: "Aerial" },
   { src: "/images/sadhu.jpg", title: "The Ascetic", category: "Portrait" },
@@ -47,6 +49,38 @@ const fallbackGalleryWorks = [
   { src: "/images/portrait-1.jpg", title: "The Holy Dip", category: "Portrait" },
   { src: "/images/hero-4.jpg", title: "The Brunch", category: "Wildlife" },
   { src: "/images/hero-2.jpg", title: "Flying Food", category: "Action" },
+  // New uploads
+  { src: "/images/twilight-boats.jpg", title: "Twilight Boats", category: "Landscape" },
+  { src: "/images/the-hand.jpg", title: "The Hand", category: "Fine Art" },
+  { src: "/images/the-craftsman.jpg", title: "The Craftsman", category: "Documentary" },
+  { src: "/images/devotion.jpg", title: "Devotion", category: "Documentary" },
+  { src: "/images/hercules.jpg", title: "Hercules", category: "Action" },
+  { src: "/images/behind-the-veil.jpg", title: "Behind the Veil", category: "Fine Art" },
+  { src: "/images/wall-art.jpg", title: "Wall Art", category: "Street" },
+  { src: "/images/dry-earth.jpg", title: "Dry Earth", category: "Portrait" },
+  { src: "/images/frozen-love.jpg", title: "Frozen Love", category: "Fine Art" },
+  { src: "/images/pottery.jpg", title: "Pottery", category: "Documentary" },
+  // Extended collection
+  { src: "/images/sadhu.jpg", title: "Eternal Gaze", category: "Portrait" },
+  { src: "/images/lives-on-life.jpg", title: "Above the Delta", category: "Aerial" },
+  { src: "/images/hero-1.jpg", title: "Dawn Feast", category: "Wildlife" },
+  { src: "/images/twilight-boats.jpg", title: "Still Waters", category: "Landscape" },
+  { src: "/images/the-hand.jpg", title: "Reaching Out", category: "Fine Art" },
+  { src: "/images/pottery.jpg", title: "Earth & Hands", category: "Documentary" },
+  { src: "/images/hero-3.jpg", title: "Feathered Grace", category: "Wildlife" },
+  { src: "/images/hercules.jpg", title: "The Wrestler", category: "Action" },
+  { src: "/images/wall-art.jpg", title: "Living Canvas", category: "Street" },
+  { src: "/images/dry-earth.jpg", title: "Crown of Nature", category: "Portrait" },
+  { src: "/images/frozen-love.jpg", title: "Golden Bloom", category: "Fine Art" },
+  { src: "/images/the-craftsman.jpg", title: "Forge & Steam", category: "Documentary" },
+  { src: "/images/after-prayer.jpg", title: "Sacred Moments", category: "Street" },
+  { src: "/images/devotion.jpg", title: "Faithful Souls", category: "Documentary" },
+  { src: "/images/life-in-summer.jpg", title: "Monsoon Fields", category: "Street" },
+  { src: "/images/innocence.jpg", title: "Pure Light", category: "Portrait" },
+  { src: "/images/hero-4.jpg", title: "River Dance", category: "Wildlife" },
+  { src: "/images/portrait-1.jpg", title: "Morning Ritual", category: "Portrait" },
+  { src: "/images/hero-2.jpg", title: "Aerial Hunt", category: "Action" },
+  { src: "/images/twilight-boats.jpg", title: "Blue Hour", category: "Landscape" },
 ];
 
 interface PortfolioImage {
@@ -119,6 +153,7 @@ const Index = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
@@ -467,18 +502,19 @@ const Index = () => {
           {(() => {
             const categories = ["All", ...Array.from(new Set(galleryWorks.map(w => w.category)))];
             const filtered = activeCategory === "All" ? galleryWorks : galleryWorks.filter(w => w.category === activeCategory);
-            // Build lightbox index map: filtered index → original index
-            const filteredIndexMap = activeCategory === "All"
-              ? filtered.map((_, i) => i)
-              : filtered.map(w => galleryWorks.indexOf(w));
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+            const safePage = Math.min(currentPage, totalPages);
+            const paged = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+            // Build lightbox index map: paged index → original galleryWorks index
+            const filteredIndexMap = paged.map(w => galleryWorks.indexOf(w));
 
             // Generate stable random featured indices
             const featuredSet = new Set<number>([0]);
             let next = 0;
-            while (next < filtered.length) {
+            while (next < paged.length) {
               const gap = 12 + ((next * 7 + 13) % 14);
               next += gap;
-              if (next < filtered.length) featuredSet.add(next);
+              if (next < paged.length) featuredSet.add(next);
             }
 
             return (
@@ -487,7 +523,7 @@ const Index = () => {
                   {categories.map((cat) => (
                     <button
                       key={cat}
-                      onClick={() => setActiveCategory(cat)}
+                      onClick={() => { setActiveCategory(cat); setCurrentPage(1); }}
                       className={`text-[10px] tracking-[0.25em] uppercase px-4 py-2 border transition-all duration-500 ${
                         activeCategory === cat
                           ? "border-primary bg-primary/10 text-primary"
@@ -505,7 +541,7 @@ const Index = () => {
                   className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 auto-rows-[1fr] gap-1 sm:gap-1.5"
                 >
                   <AnimatePresence mode="popLayout">
-                    {filtered.map((work, i) => {
+                    {paged.map((work, i) => {
                       const isHero = featuredSet.has(i);
                       return (
                         <motion.div
@@ -544,6 +580,42 @@ const Index = () => {
                     })}
                   </AnimatePresence>
                 </motion.div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-12">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={safePage <= 1}
+                      className="text-[10px] tracking-[0.2em] uppercase px-4 py-2 border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      Prev
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-9 h-9 text-[11px] border transition-all duration-300 ${
+                          safePage === page
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                        }`}
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={safePage >= totalPages}
+                      className="text-[10px] tracking-[0.2em] uppercase px-4 py-2 border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </>
             );
           })()}
