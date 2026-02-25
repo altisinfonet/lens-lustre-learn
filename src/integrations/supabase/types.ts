@@ -109,6 +109,7 @@ export type Database = {
           description: string | null
           id: string
           photos: string[]
+          placement: string | null
           status: string
           title: string
           updated_at: string
@@ -120,6 +121,7 @@ export type Database = {
           description?: string | null
           id?: string
           photos?: string[]
+          placement?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -131,6 +133,7 @@ export type Database = {
           description?: string | null
           id?: string
           photos?: string[]
+          placement?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -359,6 +362,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      judge_scores: {
+        Row: {
+          created_at: string
+          entry_id: string
+          feedback: string | null
+          id: string
+          judge_id: string
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          feedback?: string | null
+          id?: string
+          judge_id: string
+          score: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          feedback?: string | null
+          id?: string
+          judge_id?: string
+          score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "judge_scores_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "competition_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lesson_progress: {
         Row: {

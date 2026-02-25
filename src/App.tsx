@@ -33,6 +33,7 @@ const LessonView = lazy(() => import("./pages/LessonView"));
 const Certificates = lazy(() => import("./pages/Certificates"));
 const VerifyCertificate = lazy(() => import("./pages/VerifyCertificate"));
 const Winners = lazy(() => import("./pages/Winners"));
+const JudgePanel = lazy(() => import("./pages/JudgePanel"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -73,6 +74,7 @@ const App = () => (
                 <Route path="/competitions/:id" element={<CompetitionDetail />} />
                 <Route path="/competitions/:id/submit" element={<CompetitionSubmit />} />
                 <Route path="/admin" element={<AdminPanel />} />
+                <Route path="/judge" element={<JudgePanel />} />
                 <Route path="/journal" element={<Journal />} />
                 <Route path="/journal/new" element={<JournalEditor />} />
                 <Route path="/journal/edit/:id" element={<JournalEditor />} />
