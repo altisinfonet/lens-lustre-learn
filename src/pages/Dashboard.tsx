@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award } from "lucide-react";
+import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award, GraduationCap } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
@@ -212,6 +212,17 @@ const Dashboard = () => {
                           </span>
                         </TooltipTrigger>
                         <TooltipContent><p>Verified {getRoleDate("registered_photographer")}</p></TooltipContent>
+                      </Tooltip>
+                    )}
+                    {hasRole("student") && (
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-accent/20 text-accent-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
+                            <GraduationCap className="h-3 w-3" />
+                            Student
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Since {getRoleDate("student")}</p></TooltipContent>
                       </Tooltip>
                     )}
                   </div>

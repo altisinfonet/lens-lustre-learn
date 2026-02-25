@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Clock, Tag } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import CommentsSection from "@/components/CommentsSection";
 import { supabase } from "@/integrations/supabase/client";
 
 
@@ -146,6 +147,9 @@ const JournalArticle = () => {
               </div>
             </div>
           )}
+
+          {/* Comments */}
+          <CommentsSection articleId={article.id} />
         </motion.div>
       </article>
 

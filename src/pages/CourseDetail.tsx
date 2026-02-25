@@ -89,6 +89,13 @@ const CourseDetail = () => {
     } else {
       setEnrolled(true);
       toast({ title: "Enrolled successfully!" });
+
+      // Auto-assign student role
+      await supabase.from("user_roles").insert({ user_id: user.id, role: "student" as any }).then(({ error: roleErr }) => {
+        if (roleErr && !roleErr.message.includes("duplicate")) {
+          console.warn("Could not assign student role:", roleErr.message);
+        }
+      });
     }
     setEnrolling(false);
   };
