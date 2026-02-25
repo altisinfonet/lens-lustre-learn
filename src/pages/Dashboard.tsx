@@ -186,6 +186,12 @@ const Dashboard = () => {
                 <h1 className="text-2xl font-light tracking-tight mb-1" style={{ fontFamily: "var(--font-display)" }}>
                   {displayName}
                 </h1>
+                {hasRole("admin") && (
+                  <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-primary text-primary-foreground rounded-full mt-1" style={{ fontFamily: "var(--font-heading)" }}>
+                    <Shield className="h-3 w-3" />
+                    Admin
+                  </span>
+                )}
                 <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{user.email}</p>
               </div>
 
