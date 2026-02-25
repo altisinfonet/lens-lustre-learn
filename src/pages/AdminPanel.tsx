@@ -99,6 +99,9 @@ const AdminPanel = () => {
     max_photos_per_entry: "5",
     starts_at: "",
     ends_at: "",
+    paypal_email: "",
+    bank_details: "",
+    upi_id: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -286,6 +289,7 @@ const AdminPanel = () => {
       title: "", description: "", category: "General", cover_image_url: "",
       entry_fee: "0", prize_info: "", status: "upcoming",
       max_entries_per_user: "1", max_photos_per_entry: "5", starts_at: "", ends_at: "",
+      paypal_email: "", bank_details: "", upi_id: "",
     });
     setEditingId(null);
     setShowForm(false);
@@ -308,6 +312,9 @@ const AdminPanel = () => {
           max_photos_per_entry: String(data.max_photos_per_entry || 5),
           starts_at: data.starts_at ? data.starts_at.slice(0, 16) : "",
           ends_at: data.ends_at ? data.ends_at.slice(0, 16) : "",
+          paypal_email: (data.payment_details as any)?.paypal_email || "",
+          bank_details: (data.payment_details as any)?.bank_details || "",
+          upi_id: (data.payment_details as any)?.upi_id || "",
         });
         setShowForm(true);
       }
@@ -334,6 +341,13 @@ const AdminPanel = () => {
       starts_at: new Date(form.starts_at).toISOString(),
       ends_at: new Date(form.ends_at).toISOString(),
       updated_at: new Date().toISOString(),
+      payment_details: (form.paypal_email.trim() || form.bank_details.trim() || form.upi_id.trim())
+        ? {
+            paypal_email: form.paypal_email.trim() || null,
+            bank_details: form.bank_details.trim() || null,
+            upi_id: form.upi_id.trim() || null,
+          }
+        : null,
     };
 
     let error;
@@ -539,6 +553,30 @@ const AdminPanel = () => {
                     style={{ fontFamily: "var(--font-body)" }}
                   />
                 </div>
+
+                {/* Payment Details (shown when entry_fee > 0) */}
+                {parseFloat(form.entry_fee) > 0 && (
+                  <div className="border border-border/50 p-5 space-y-4">
+                    <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                      Payment Details (shown to participants)
+                    </span>
+                    <div className="grid md:grid-cols-2 gap-5">
+                      <FormField label="PayPal Email" value={form.paypal_email} onChange={(v) => setForm((f) => ({ ...f, paypal_email: v }))} placeholder="payments@example.com" />
+                      <FormField label="UPI ID" value={form.upi_id} onChange={(v) => setForm((f) => ({ ...f, upi_id: v }))} placeholder="name@upi" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Bank Details</label>
+                      <textarea
+                        value={form.bank_details}
+                        onChange={(e) => setForm((f) => ({ ...f, bank_details: e.target.value }))}
+                        rows={2}
+                        className="w-full bg-transparent border border-border focus:border-primary outline-none p-4 text-sm transition-colors duration-500 resize-none"
+                        placeholder="Bank name, Account number, IFSC, etc."
+                        style={{ fontFamily: "var(--font-body)" }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-3 pt-2">
                   <button
