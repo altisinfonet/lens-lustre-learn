@@ -67,6 +67,17 @@ interface CertificateShowcase {
   recipient_avatar: string | null;
 }
 
+interface JournalPreview {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  cover_image_url: string | null;
+  tags: string[];
+  published_at: string | null;
+  author_name: string | null;
+}
+
 const Index = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
@@ -75,6 +86,7 @@ const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [winners, setWinners] = useState<WinnerShowcase[]>([]);
   const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
+  const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -86,7 +98,7 @@ const Index = () => {
   useEffect(() => {
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
-      const [winnersRes, certsRes] = await Promise.all([
+      const [winnersRes, certsRes, articlesRes] = await Promise.all([
         supabase
           .from("competition_entries")
           .select("id, title, photos, competition_id, user_id")
@@ -98,15 +110,24 @@ const Index = () => {
           .select("id, title, type, issued_at, user_id")
           .order("issued_at", { ascending: false })
           .limit(6),
+        supabase
+          .from("journal_articles")
+          .select("id, title, slug, excerpt, cover_image_url, tags, published_at, author_id")
+          .eq("status", "published")
+          .order("published_at", { ascending: false })
+          .limit(4),
       ]);
 
       const winnerData = winnersRes.data || [];
       const certData = certsRes.data || [];
 
+      const articleData = articlesRes.data || [];
+
       // Collect all unique user/comp IDs and fetch profiles + competitions in one parallel call
       const allUserIds = [...new Set([
         ...winnerData.map((e) => e.user_id),
         ...certData.map((c) => c.user_id),
+        ...articleData.map((a) => a.author_id),
       ])];
       const compIds = [...new Set(winnerData.map((e) => e.competition_id))];
 
@@ -141,6 +162,19 @@ const Index = () => {
           issued_at: c.issued_at,
           recipient_name: profileMap.get(c.user_id)?.full_name || null,
           recipient_avatar: profileMap.get(c.user_id)?.avatar_url || null,
+        })));
+      }
+
+      if (articleData.length > 0) {
+        setJournalArticles(articleData.map((a) => ({
+          id: a.id,
+          title: a.title,
+          slug: a.slug,
+          excerpt: a.excerpt,
+          cover_image_url: a.cover_image_url,
+          tags: a.tags || [],
+          published_at: a.published_at,
+          author_name: profileMap.get(a.author_id)?.full_name || null,
         })));
       }
     };
@@ -827,6 +861,158 @@ const Index = () => {
                   </div>
                 </motion.div>
               ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Journal Preview */}
+      {journalArticles.length > 0 && (
+        <section className="py-24 md:py-32 bg-card/30" aria-label="Latest from the journal">
+          <div className="container mx-auto px-6 md:px-12">
+            <motion.header
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              className="flex items-end justify-between mb-16"
+            >
+              <div>
+                <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-px bg-primary" />
+                  <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                    From the Journal
+                  </span>
+                </motion.div>
+                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                  Stories & <em className="italic">Insights</em>
+                </motion.h2>
+              </div>
+              <motion.div variants={fadeIn} custom={2}>
+                <Link
+                  to="/journal"
+                  className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+                </Link>
+              </motion.div>
+            </motion.header>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Featured / first article — large card */}
+              <motion.article
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                className="group md:row-span-2"
+              >
+                <Link to={`/journal/${journalArticles[0].slug}`} className="block h-full border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
+                  {journalArticles[0].cover_image_url ? (
+                    <div className="relative h-64 md:h-80 overflow-hidden bg-muted">
+                      <img
+                        src={journalArticles[0].cover_image_url}
+                        alt={journalArticles[0].title}
+                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                    </div>
+                  ) : (
+                    <div className="h-64 md:h-80 bg-gradient-to-br from-muted to-background flex items-center justify-center">
+                      <Newspaper className="h-12 w-12 text-muted-foreground/30" />
+                    </div>
+                  )}
+                  <div className="p-6 md:p-8">
+                    {journalArticles[0].tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {journalArticles[0].tags.slice(0, 3).map((tag) => (
+                          <span key={tag} className="text-[9px] tracking-[0.2em] uppercase text-primary border border-primary/30 px-2.5 py-0.5" style={{ fontFamily: "var(--font-heading)" }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <h3 className="text-2xl md:text-3xl font-light tracking-tight mb-3 group-hover:text-primary transition-colors duration-500" style={{ fontFamily: "var(--font-display)" }}>
+                      {journalArticles[0].title}
+                    </h3>
+                    {journalArticles[0].excerpt && (
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3" style={{ fontFamily: "var(--font-body)" }}>
+                        {journalArticles[0].excerpt}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                      {journalArticles[0].author_name && (
+                        <span className="tracking-[0.1em] uppercase">{journalArticles[0].author_name}</span>
+                      )}
+                      {journalArticles[0].published_at && (
+                        <>
+                          <span className="text-muted-foreground/30">·</span>
+                          <span className="tracking-[0.1em] uppercase">
+                            {new Date(journalArticles[0].published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              </motion.article>
+
+              {/* Remaining articles — compact cards */}
+              <div className="flex flex-col gap-6">
+                {journalArticles.slice(1).map((article, i) => (
+                  <motion.article
+                    key={article.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: (i + 1) * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                  >
+                    <Link to={`/journal/${article.slug}`} className="group flex gap-5 border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
+                      {article.cover_image_url ? (
+                        <div className="relative w-32 md:w-40 shrink-0 overflow-hidden bg-muted">
+                          <img
+                            src={article.cover_image_url}
+                            alt={article.title}
+                            className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-[1.5s]"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-32 md:w-40 shrink-0 bg-muted flex items-center justify-center">
+                          <Newspaper className="h-6 w-6 text-muted-foreground/30" />
+                        </div>
+                      )}
+                      <div className="py-4 pr-5 flex flex-col justify-center min-w-0">
+                        {article.tags.length > 0 && (
+                          <span className="text-[8px] tracking-[0.2em] uppercase text-primary mb-2 block" style={{ fontFamily: "var(--font-heading)" }}>
+                            {article.tags[0]}
+                          </span>
+                        )}
+                        <h3 className="text-sm font-light tracking-tight mb-1.5 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-heading)" }}>
+                          {article.title}
+                        </h3>
+                        {article.excerpt && (
+                          <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2" style={{ fontFamily: "var(--font-body)" }}>
+                            {article.excerpt}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                          {article.author_name && <span className="tracking-[0.1em] uppercase">{article.author_name}</span>}
+                          {article.published_at && (
+                            <>
+                              <span className="text-muted-foreground/30">·</span>
+                              <span className="tracking-[0.1em] uppercase">
+                                {new Date(article.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.article>
+                ))}
+              </div>
             </div>
           </div>
         </section>
