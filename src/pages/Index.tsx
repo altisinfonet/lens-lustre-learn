@@ -1304,45 +1304,6 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border py-16" role="contentinfo">
         <div className="container mx-auto px-6 md:px-12">
-          {/* Newsletter */}
-          <div className="mb-16 pb-12 border-b border-border">
-            <div className="max-w-md mx-auto text-center">
-              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>Newsletter</span>
-              <h3 className="text-lg tracking-wide mb-2" style={{ fontFamily: "var(--font-display)" }}>Stay Inspired</h3>
-              <p className="text-xs text-muted-foreground mb-6 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
-                Get competition updates, featured works, and photography insights delivered to your inbox.
-              </p>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const form = e.target as HTMLFormElement;
-                  const email = (form.elements.namedItem("newsletter_email") as HTMLInputElement).value;
-                  if (email) {
-                    toast({ title: "Subscribed!", description: "You'll receive our latest updates soon." });
-                    form.reset();
-                  }
-                }}
-                className="flex gap-2 max-w-sm mx-auto"
-              >
-                <input
-                  name="newsletter_email"
-                  type="email"
-                  required
-                  placeholder="your@email.com"
-                  className="flex-1 h-10 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  style={{ fontFamily: "var(--font-body)" }}
-                />
-                <button
-                  type="submit"
-                  className="h-10 px-5 rounded-md bg-primary text-primary-foreground text-[10px] tracking-[0.2em] uppercase hover:bg-primary/90 transition-colors duration-300"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  Subscribe
-                </button>
-              </form>
-            </div>
-          </div>
-
           <div className="grid md:grid-cols-3 gap-12 items-start">
             <div>
               <div className="flex items-center gap-3 mb-4">
@@ -1364,15 +1325,39 @@ const Index = () => {
               <Link to="/journal" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}>Journal</Link>
             </nav>
             <div className="md:text-right">
-              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>Join Us</span>
-              <Link
-                to="/signup"
-                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase border-b border-foreground/30 pb-1 hover:border-primary transition-colors duration-700"
-                style={{ fontFamily: "var(--font-heading)" }}
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>Newsletter</span>
+              <p className="text-[10px] text-muted-foreground mb-3 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+                Stay inspired with updates & insights.
+              </p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  const email = (form.elements.namedItem("newsletter_email") as HTMLInputElement).value;
+                  if (email) {
+                    toast({ title: "Subscribed!", description: "You'll receive our latest updates soon." });
+                    form.reset();
+                  }
+                }}
+                className="flex gap-1.5"
               >
-                Create Account <ArrowRight className="h-3 w-3" />
-              </Link>
-              <p className="text-[10px] text-muted-foreground mt-8" style={{ fontFamily: "var(--font-body)" }}>
+                <input
+                  name="newsletter_email"
+                  type="email"
+                  required
+                  placeholder="your@email.com"
+                  className="flex-1 h-8 rounded-sm border border-input bg-background px-2.5 text-[11px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  style={{ fontFamily: "var(--font-body)" }}
+                />
+                <button
+                  type="submit"
+                  className="h-8 px-3 rounded-sm bg-primary text-primary-foreground text-[9px] tracking-[0.15em] uppercase hover:bg-primary/90 transition-colors duration-300 shrink-0"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  Subscribe
+                </button>
+              </form>
+              <p className="text-[10px] text-muted-foreground mt-6" style={{ fontFamily: "var(--font-body)" }}>
                 © 2026 ArteFoto Global. All rights reserved.
               </p>
             </div>
