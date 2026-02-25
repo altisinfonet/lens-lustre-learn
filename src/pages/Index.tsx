@@ -499,7 +499,7 @@ const Index = () => {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 auto-rows-[1fr] gap-1.5">
+                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 auto-rows-[1fr] gap-1 sm:gap-1.5">
                   {filtered.map((work, i) => {
                     const isHero = featuredSet.has(i);
                     return (
@@ -511,7 +511,7 @@ const Index = () => {
                   transition={{ delay: (i % 14) * 0.02, duration: 0.5 }}
                   className={`group relative overflow-hidden rounded-sm cursor-pointer bg-muted ${
                     isHero
-                      ? "col-span-5 row-span-5 sm:row-span-6 md:row-span-8 aspect-auto"
+                      ? "col-span-3 row-span-3 sm:col-span-4 sm:row-span-4 md:col-span-4 md:row-span-5 lg:col-span-5 lg:row-span-6 aspect-auto"
                       : "aspect-square"
                   }`}
                   onClick={() => openLightbox(filteredIndexMap[i])}
