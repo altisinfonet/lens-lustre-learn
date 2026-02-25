@@ -17,6 +17,9 @@ const CompetitionSubmit = () => {
 
   const [compTitle, setCompTitle] = useState("");
   const [maxPhotos, setMaxPhotos] = useState(5);
+  const [entryFee, setEntryFee] = useState(0);
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [photos, setPhotos] = useState<{ url: string; path: string }[]>([]);
@@ -35,7 +38,7 @@ const CompetitionSubmit = () => {
     const fetch = async () => {
       const { data } = await supabase
         .from("competitions")
-        .select("title, max_photos_per_entry, status")
+        .select("title, max_photos_per_entry, status, entry_fee, payment_details")
         .eq("id", id)
         .single();
       if (data) {
@@ -46,6 +49,8 @@ const CompetitionSubmit = () => {
         }
         setCompTitle(data.title);
         setMaxPhotos(data.max_photos_per_entry || 5);
+        setEntryFee((data as any).entry_fee || 0);
+        setPaymentDetails((data as any).payment_details || null);
       }
       setLoading(false);
     };
@@ -256,7 +261,7 @@ const CompetitionSubmit = () => {
           <div className="pt-4 border-t border-border">
             <button
               type="submit"
-              disabled={submitting || photos.length === 0}
+              disabled={submitting || photos.length === 0 || (entryFee > 0 && !paymentConfirmed)}
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
               style={{ fontFamily: "var(--font-heading)" }}
             >

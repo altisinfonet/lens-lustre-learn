@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Camera, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram } from "lucide-react";
+import { Camera, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 /* ── Mini Carousel on hover ── */
@@ -144,6 +144,7 @@ const PublicProfile = () => {
   const [notFound, setNotFound] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<{ src: string; title: string; desc?: string } | null>(null);
   const [isVerifiedPhotographer, setIsVerifiedPhotographer] = useState(false);
+  const [isStudent, setIsStudent] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -152,7 +153,7 @@ const PublicProfile = () => {
         supabase.from("profiles").select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, website_url").eq("id", userId).maybeSingle(),
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
-        supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "registered_photographer" as any).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["registered_photographer", "student"] as any),
       ]);
 
       if (!profileRes.data) {
@@ -164,7 +165,9 @@ const PublicProfile = () => {
       setProfile(profileRes.data);
       setEntries((entriesRes.data as any) || []);
       setCertificates(certsRes.data || []);
-      setIsVerifiedPhotographer(!!rolesRes.data);
+      const userRoles = rolesRes.data?.map((r: any) => r.role) || [];
+      setIsVerifiedPhotographer(userRoles.includes("registered_photographer"));
+      setIsStudent(userRoles.includes("student"));
       setLoading(false);
     };
     load();
@@ -235,12 +238,20 @@ const PublicProfile = () => {
               >
                 {displayName}
               </h1>
-              {isVerifiedPhotographer && (
-                <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.25em] uppercase px-4 py-1.5 bg-primary/15 text-primary rounded-full mb-4" style={{ fontFamily: "var(--font-heading)" }}>
-                  <Camera className="h-3 w-3" />
-                  Verified Photographer
-                </span>
-              )}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {isVerifiedPhotographer && (
+                  <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.25em] uppercase px-4 py-1.5 bg-primary/15 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
+                    <Camera className="h-3 w-3" />
+                    Verified Photographer
+                  </span>
+                )}
+                {isStudent && (
+                  <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.25em] uppercase px-4 py-1.5 bg-accent/15 text-accent-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
+                    <GraduationCap className="h-3 w-3" />
+                    Student
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-6" style={{ fontFamily: "var(--font-heading)" }}>
                 <span>Member since {memberSince}</span>
                 {entries.length > 0 && (

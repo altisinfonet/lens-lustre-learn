@@ -1,6 +1,7 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Calendar, Clock, Trophy, Heart, Upload, Users } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import CommentsSection from "@/components/CommentsSection";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -279,6 +280,16 @@ const CompetitionDetail = () => {
                 </div>
               )}
             </div>
+
+            {/* Comments on entries */}
+            {entries.map((entry) => (
+              <div key={`comments-${entry.id}`} className="mt-4 border border-border p-4">
+                <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-2 block" style={{ fontFamily: "var(--font-heading)" }}>
+                  Comments on "{entry.title}"
+                </span>
+                <CommentsSection entryId={entry.id} />
+              </div>
+            ))}
           </div>
 
           {/* Sidebar */}

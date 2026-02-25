@@ -47,6 +47,61 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          article_id: string | null
+          content: string
+          created_at: string
+          entry_id: string | null
+          id: string
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          article_id?: string | null
+          content?: string
+          created_at?: string
+          entry_id?: string | null
+          id?: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string | null
+          content?: string
+          created_at?: string
+          entry_id?: string | null
+          id?: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "journal_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "competition_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competition_entries: {
         Row: {
           competition_id: string
@@ -132,6 +187,7 @@ export type Database = {
           id: string
           max_entries_per_user: number | null
           max_photos_per_entry: number | null
+          payment_details: Json | null
           prize_info: string | null
           starts_at: string
           status: string
@@ -149,6 +205,7 @@ export type Database = {
           id?: string
           max_entries_per_user?: number | null
           max_photos_per_entry?: number | null
+          payment_details?: Json | null
           prize_info?: string | null
           starts_at: string
           status?: string
@@ -166,6 +223,7 @@ export type Database = {
           id?: string
           max_entries_per_user?: number | null
           max_photos_per_entry?: number | null
+          payment_details?: Json | null
           prize_info?: string | null
           starts_at?: string
           status?: string
@@ -547,6 +605,7 @@ export type Database = {
         | "content_editor"
         | "admin"
         | "registered_photographer"
+        | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -680,6 +739,7 @@ export const Constants = {
         "content_editor",
         "admin",
         "registered_photographer",
+        "student",
       ],
     },
   },
