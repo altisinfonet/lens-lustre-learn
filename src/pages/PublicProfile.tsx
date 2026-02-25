@@ -1,7 +1,104 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Camera, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award } from "lucide-react";
+import { Camera, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+
+/* ── Mini Carousel on hover ── */
+const MiniCarousel = ({
+  photos,
+  alt,
+  className,
+  onPhotoClick,
+}: {
+  photos: string[];
+  alt: string;
+  className?: string;
+  onPhotoClick?: (src: string) => void;
+}) => {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hasMultiple = photos.length > 1;
+
+  const startAutoplay = useCallback(() => {
+    if (!hasMultiple) return;
+    intervalRef.current = setInterval(() => {
+      setActiveIdx((prev) => (prev + 1) % photos.length);
+    }, 1800);
+  }, [hasMultiple, photos.length]);
+
+  const stopAutoplay = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    setActiveIdx(0);
+  }, []);
+
+  const goTo = (dir: "prev" | "next", e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setActiveIdx((prev) =>
+      dir === "next"
+        ? (prev + 1) % photos.length
+        : (prev - 1 + photos.length) % photos.length
+    );
+    startAutoplay();
+  };
+
+  return (
+    <div
+      className={`relative overflow-hidden ${className ?? ""}`}
+      onMouseEnter={startAutoplay}
+      onMouseLeave={stopAutoplay}
+    >
+      {photos.map((photo, i) => (
+        <img
+          key={photo + i}
+          src={photo}
+          alt={`${alt} – ${i + 1}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+            i === activeIdx ? "opacity-100 z-[1]" : "opacity-0 z-0"
+          }`}
+          loading={i === 0 ? "eager" : "lazy"}
+        />
+      ))}
+
+      {/* Arrows – only visible on hover when multiple photos */}
+      {hasMultiple && (
+        <>
+          <button
+            onClick={(e) => goTo("prev", e)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-background/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 border border-border/30 hover:bg-background/80"
+          >
+            <ChevronLeft className="h-3.5 w-3.5 text-foreground" />
+          </button>
+          <button
+            onClick={(e) => goTo("next", e)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full bg-background/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 border border-border/30 hover:bg-background/80"
+          >
+            <ChevronRight className="h-3.5 w-3.5 text-foreground" />
+          </button>
+
+          {/* Dots */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300">
+            {photos.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.stopPropagation(); setActiveIdx(i); }}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === activeIdx ? "w-4 bg-primary" : "w-1.5 bg-foreground/40"
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Photo count badge */}
+          <div className="absolute top-3 right-3 z-10 text-[8px] tracking-[0.15em] uppercase px-2 py-1 bg-background/50 backdrop-blur-sm text-foreground/80 rounded-sm opacity-0 group-hover:opacity-100 transition-all duration-300 border border-border/20" style={{ fontFamily: "var(--font-heading)" }}>
+            {activeIdx + 1}/{photos.length}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 import { supabase } from "@/integrations/supabase/client";
 import GlobalSearch from "@/components/GlobalSearch";
 
@@ -248,13 +345,14 @@ const PublicProfile = () => {
                   onClick={() => setLightboxPhoto({ src: hero.photos[0], title: hero.title, desc: hero.description || undefined })}
                 >
                   <div className="relative overflow-hidden aspect-[21/9]">
-                    <img
-                      src={hero.photos[0]}
+                    <MiniCarousel
+                      photos={hero.photos}
                       alt={hero.title}
-                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                      className="w-full h-full"
+                      onPhotoClick={(src) => setLightboxPhoto({ src, title: hero.title, desc: hero.description || undefined })}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-transparent pointer-events-none" />
 
                     <div className="absolute top-5 right-5 h-10 w-10 rounded-full bg-background/40 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 border border-border/50">
                       <Expand className="h-4 w-4 text-foreground" />
@@ -306,13 +404,12 @@ const PublicProfile = () => {
                       onClick={() => entry.photos[0] && setLightboxPhoto({ src: entry.photos[0], title: entry.title, desc: entry.description || undefined })}
                     >
                       <div className={`relative overflow-hidden ${isLarge ? "aspect-square" : "aspect-[3/4]"}`}>
-                        <img
-                          src={entry.photos[0]}
+                        <MiniCarousel
+                          photos={entry.photos}
                           alt={entry.title}
-                          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
-                          loading="lazy"
+                          className="w-full h-full"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none" />
 
                         {entry.status === "winner" && (
                           <div className="absolute top-3 left-3 z-10">
