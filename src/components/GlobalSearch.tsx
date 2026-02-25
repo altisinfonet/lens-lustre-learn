@@ -175,6 +175,16 @@ const GlobalSearch = () => {
                 {results.map((result, index) => {
                   const config = typeConfig[result.type];
                   const Icon = config.icon;
+                  // Highlight matched text
+                  const highlightTitle = (title: string) => {
+                    const q = query.trim();
+                    if (!q) return title;
+                    const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+                    const parts = title.split(regex);
+                    return parts.map((part, i) =>
+                      regex.test(part) ? <mark key={i} className="bg-primary/20 text-primary rounded-sm px-0.5">{part}</mark> : part
+                    );
+                  };
                   return (
                     <li key={`${result.type}-${result.id}`}>
                       <button
@@ -189,7 +199,7 @@ const GlobalSearch = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-light truncate" style={{ fontFamily: "var(--font-heading)" }}>
-                            {result.title}
+                            {highlightTitle(result.title)}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
