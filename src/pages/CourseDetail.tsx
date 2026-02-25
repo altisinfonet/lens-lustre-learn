@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Award, BookOpen, CheckCircle, Circle, DollarSign, GraduationCap, Lock, Play } from "lucide-react";
+import { Award, BookOpen, CheckCircle, Circle, DollarSign, GraduationCap, Lock, Play } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -130,9 +131,7 @@ const CourseDetail = () => {
     <main className="min-h-screen bg-background text-foreground">
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6">
-          <Link to="/courses" className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
-            <ArrowLeft className="h-4 w-4" /> Courses
-          </Link>
+          <Breadcrumbs items={[{ label: "Courses", to: "/courses" }, { label: course.title }]} />
         </div>
       </div>
 

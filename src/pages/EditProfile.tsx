@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Save, X } from "lucide-react";
+import { Loader2, Save, X } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,9 +111,7 @@ const EditProfile = () => {
       </nav>
 
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-20 max-w-2xl">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-10" style={{ fontFamily: "var(--font-heading)" }}>
-          <ArrowLeft className="h-3 w-3" /> Dashboard
-        </Link>
+        <Breadcrumbs items={[{ label: "Dashboard", to: "/dashboard" }, { label: "Edit Profile" }]} className="mb-10" />
 
         <div className="flex items-center gap-4 mb-2">
           <div className="w-12 h-px bg-primary" />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Save, Eye, Plus, Trash2, GripVertical, Upload, X } from "lucide-react";
+import { Save, Eye, Plus, Trash2, GripVertical, Upload, X } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -178,9 +179,7 @@ const CourseEditor = () => {
     <main className="min-h-screen bg-background text-foreground">
       <div className="bg-card border-b border-border sticky top-0 z-40">
         <div className="container mx-auto px-6 md:px-12 py-4 flex items-center justify-between">
-          <Link to="/courses" className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Link>
+          <Breadcrumbs items={[{ label: "Courses", to: "/courses" }, { label: courseId ? "Edit Course" : "New Course" }]} />
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={() => handleSave("draft")} disabled={saving} className="text-xs tracking-[0.1em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
               <Save className="h-3.5 w-3.5 mr-1.5" /> Save Draft

@@ -1,5 +1,6 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, Clock, Trophy, Heart, Upload, Users } from "lucide-react";
+import { Calendar, Clock, Trophy, Heart, Upload, Users } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,9 +175,7 @@ const CompetitionDetail = () => {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 container mx-auto px-6 md:px-12 pb-10">
-          <Link to="/competitions" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-6" style={{ fontFamily: "var(--font-heading)" }}>
-            <ArrowLeft className="h-3 w-3" /> All Competitions
-          </Link>
+          <Breadcrumbs items={[{ label: "Competitions", to: "/competitions" }, { label: competition.title }]} className="mb-6" />
           <div className="flex items-center gap-3 mb-3">
             <span className="text-[9px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>{competition.category}</span>
             <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 border ${statusColors[competition.status]}`} style={{ fontFamily: "var(--font-heading)" }}>

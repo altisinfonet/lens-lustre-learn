@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, Trophy, Clock, ArrowRight, LogOut } from "lucide-react";
+import { Calendar, Trophy, Clock, ArrowRight, LogOut } from "lucide-react";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,9 +88,7 @@ const Competitions = () => {
       </nav>
 
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-20">
-        <Link to="/" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-10" style={{ fontFamily: "var(--font-heading)" }}>
-          <ArrowLeft className="h-3 w-3" /> Home
-        </Link>
+        <Breadcrumbs items={[{ label: "Competitions" }]} className="mb-10" />
 
         <motion.div initial="hidden" animate="visible">
           <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-2">
