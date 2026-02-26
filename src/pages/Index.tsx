@@ -444,9 +444,9 @@ const Index = () => {
           ))}
         </AnimatePresence>
 
-        {/* Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40" />
+        {/* Overlays — z-10 to stay above animated slides */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-background via-background/50 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-background via-transparent to-background/40 pointer-events-none" />
 
         {/* Hero content */}
         <div className="container mx-auto px-6 md:px-12 relative z-10">
