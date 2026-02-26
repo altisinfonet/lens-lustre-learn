@@ -472,13 +472,23 @@ const AdminPanel = () => {
     }
   };
 
-  const tabs = [
-    ["banners", "Banners", LayoutDashboard], ["potd", "Photo of Day", Star], ["portfolio", "Gallery", Image],
-    ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award],
-    ["users", "Users", UserCog], ["competitions", "Competitions", Trophy], ["entries", "Entries", Users],
-    ["applications", "Applications", Briefcase], ["comments", "Comments", MessageSquare], ["reports", "Reports", AlertTriangle],
-    ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["vote_rewards", "Vote Rewards", Vote],
-  ] as const;
+  const tabGroups = [
+    { label: "Content", items: [
+      ["banners", "Banners", LayoutDashboard], ["potd", "Photo of Day", Star], ["portfolio", "Gallery", Image],
+    ] as const },
+    { label: "Learning", items: [
+      ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award],
+    ] as const },
+    { label: "Competitions", items: [
+      ["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["vote_rewards", "Vote Rewards", Vote],
+    ] as const },
+    { label: "Community", items: [
+      ["users", "Users", UserCog], ["applications", "Applications", Briefcase], ["comments", "Comments", MessageSquare], ["reports", "Reports", AlertTriangle],
+    ] as const },
+    { label: "Finance", items: [
+      ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift],
+    ] as const },
+  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -495,21 +505,30 @@ const AdminPanel = () => {
             Admin <em className="italic text-primary">Panel</em>
           </h2>
         </div>
-        <nav className="flex-1 py-3 px-2 space-y-0.5">
-          {tabs.map(([key, label, Icon]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`w-full flex items-center gap-2.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2.5 rounded-sm transition-all duration-300 ${
-                tab === key
-                  ? "bg-primary/10 text-primary border-l-2 border-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
-              }`}
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              {label}
-            </button>
+        <nav className="flex-1 py-3 px-2 space-y-4">
+          {tabGroups.map((group) => (
+            <div key={group.label}>
+              <p className="px-3 pb-1.5 text-[8px] tracking-[0.25em] uppercase text-muted-foreground/60 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map(([key, label, Icon]) => (
+                  <button
+                    key={key}
+                    onClick={() => setTab(key)}
+                    className={`w-full flex items-center gap-2.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2.5 rounded-sm transition-all duration-300 ${
+                      tab === key
+                        ? "bg-primary/10 text-primary border-l-2 border-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
+                    }`}
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
         <div className="px-5 py-4 border-t border-border">
