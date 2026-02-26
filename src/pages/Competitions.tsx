@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Calendar, Trophy, Clock, ArrowRight } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +62,14 @@ const Competitions = () => {
     fetch();
   }, [filter]);
 
+  const filterLabels: Record<string, string> = {
+    all: "All",
+    open: "Open",
+    upcoming: "Upcoming",
+    judging: "Judging",
+    closed: "Closed",
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-20">
@@ -69,13 +78,13 @@ const Competitions = () => {
         <motion.div initial="hidden" animate="visible">
           <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-2">
             <div className="w-12 h-px bg-primary" />
-            <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Compete</span>
+            <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Compete</T></span>
           </motion.div>
           <motion.h1 variants={fadeUp} custom={1} className="text-4xl md:text-6xl font-light tracking-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
-            Photography <em className="italic text-primary">Competitions</em>
+            <T>Photography</T> <em className="italic text-primary"><T>Competitions</T></em>
           </motion.h1>
           <motion.p variants={fadeUp} custom={2} className="text-sm text-muted-foreground max-w-lg mb-12" style={{ fontFamily: "var(--font-body)" }}>
-            Showcase your talent, compete with photographers worldwide, and win recognition.
+            <T>Showcase your talent, compete with photographers worldwide, and win recognition.</T>
           </motion.p>
 
           {/* Filters */}
@@ -89,7 +98,7 @@ const Competitions = () => {
                 }`}
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                {s === "all" ? "All" : s}
+                <T>{filterLabels[s]}</T>
               </button>
             ))}
           </motion.div>
@@ -98,13 +107,13 @@ const Competitions = () => {
         {/* Grid */}
         {loading ? (
           <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse py-20 text-center" style={{ fontFamily: "var(--font-heading)" }}>
-            Loading competitions...
+            <T>Loading competitions...</T>
           </div>
         ) : competitions.length === 0 ? (
           <div className="text-center py-20">
             <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-              No competitions found. Check back soon!
+              <T>No competitions found. Check back soon!</T>
             </p>
           </div>
         ) : (
@@ -136,7 +145,7 @@ const Competitions = () => {
                     )}
                     <div className="absolute top-3 right-3">
                       <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 border bg-background/80 backdrop-blur-sm ${statusColors[comp.status] || ""}`} style={{ fontFamily: "var(--font-heading)" }}>
-                        {comp.status}
+                        <T>{comp.status.charAt(0).toUpperCase() + comp.status.slice(1)}</T>
                       </span>
                     </div>
                   </div>
@@ -164,12 +173,12 @@ const Competitions = () => {
                       <div className="flex items-center gap-3">
                         {comp.entry_fee > 0 && (
                           <span style={{ fontFamily: "var(--font-heading)" }} className="tracking-[0.1em]">
-                            ${comp.entry_fee} entry
+                            ${comp.entry_fee} <T>entry</T>
                           </span>
                         )}
                         {comp.prize_info && (
                           <span className="text-primary" style={{ fontFamily: "var(--font-heading)" }} title={comp.prize_info}>
-                            🏆 Prize
+                            🏆 <T>Prize</T>
                           </span>
                         )}
                       </div>
