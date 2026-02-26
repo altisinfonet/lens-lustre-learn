@@ -157,6 +157,7 @@ const Index = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [compFilter, setCompFilter] = useState("All");
 
   const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
@@ -825,38 +826,46 @@ const Index = () => {
             </motion.div>
           </motion.header>
 
-          {competitions.length > 0 ? (
-            <>
-              {[
-                { label: "Upcoming", statuses: ["upcoming"], icon: "◎" },
-                { label: "Ongoing", statuses: ["open", "active", "judging"], icon: "●" },
-                { label: "Closed", statuses: ["closed"], icon: "◆" },
-              ].map((group) => {
-                const items = competitions.filter((c) => group.statuses.includes(c.status));
-                if (items.length === 0) return null;
-                return (
-                  <div key={group.label} className="mb-12 last:mb-0">
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.6 }}
-                      className="flex items-center gap-3 mb-6"
+          {(() => {
+            const compTabs = ["All", "Upcoming", "Ongoing", "Closed"];
+            const statusMap: Record<string, string[]> = {
+              All: [],
+              Upcoming: ["upcoming"],
+              Ongoing: ["open", "active", "judging"],
+              Closed: ["closed"],
+            };
+            const filtered = compFilter === "All" ? competitions : competitions.filter(c => statusMap[compFilter]?.includes(c.status));
+
+            return (
+              <>
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+                  {compTabs.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setCompFilter(tab)}
+                      className={`text-[10px] tracking-[0.25em] uppercase px-4 py-2 border transition-all duration-500 ${
+                        compFilter === tab
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                      }`}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
-                      <span className="text-primary text-sm">{group.icon}</span>
-                      <span className="text-[11px] tracking-[0.25em] uppercase text-foreground/70" style={{ fontFamily: "var(--font-heading)" }}>
-                        {group.label}
-                      </span>
-                      <div className="flex-1 h-px bg-border" />
-                    </motion.div>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {items.map((comp, i) => (
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                {filtered.length > 0 ? (
+                  <motion.div layout className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <AnimatePresence mode="popLayout">
+                      {filtered.map((comp, i) => (
                         <motion.div
                           key={comp.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                          layout
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ delay: i * 0.05, duration: 0.5, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
                         >
                           <Link to={`/competitions/${comp.id}`} className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
                             <div className="relative h-48 overflow-hidden bg-muted">
@@ -869,7 +878,7 @@ const Index = () => {
                               )}
                               <div className="absolute top-3 left-3">
                                 <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 inline-flex items-center gap-1 border bg-background/80 backdrop-blur-sm ${
-                                  comp.status === "open" || comp.status === "active" ? "border-primary text-primary" 
+                                  comp.status === "open" || comp.status === "active" ? "border-primary text-primary"
                                   : comp.status === "judging" ? "border-yellow-500 text-yellow-500"
                                   : comp.status === "closed" ? "border-foreground/20 text-foreground/40"
                                   : "border-muted-foreground/40 text-muted-foreground"
@@ -904,20 +913,20 @@ const Index = () => {
                           </Link>
                         </motion.div>
                       ))}
-                    </div>
+                    </AnimatePresence>
+                  </motion.div>
+                ) : (
+                  <div className="text-center py-16 border border-dashed border-border rounded-sm">
+                    <Trophy className="h-10 w-10 text-primary/30 mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>No {compFilter.toLowerCase()} competitions found</p>
+                    <Link to="/competitions" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                      Browse All <ArrowRight className="h-3 w-3" />
+                    </Link>
                   </div>
-                );
-              })}
-            </>
-          ) : (
-            <div className="text-center py-16 border border-dashed border-border rounded-sm">
-              <Trophy className="h-10 w-10 text-primary/30 mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>New competitions coming soon</p>
-              <Link to="/competitions" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                Browse All <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-          )}
+                )}
+              </>
+            );
+          })()}
         </div>
       </section>
 
