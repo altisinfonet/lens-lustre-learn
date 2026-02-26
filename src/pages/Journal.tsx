@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Clock, Tag, PenLine } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -52,7 +53,6 @@ const Journal = () => {
         .order("published_at", { ascending: false });
 
       if (data) {
-        // Fetch author names
         const authorIds = [...new Set(data.map((a) => a.author_id))];
         const { data: profiles } = await supabase
           .from("profiles")
@@ -90,7 +90,7 @@ const Journal = () => {
                 className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
               >
                 <PenLine className="h-3.5 w-3.5" />
-                New Article
+                <T>New Article</T>
               </Link>
             )}
           </div>
@@ -107,14 +107,14 @@ const Journal = () => {
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-px bg-primary" />
             <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-              Photography Journal
+              <T>Photography Journal</T>
             </span>
           </div>
           <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-6" style={{ fontFamily: "var(--font-display)" }}>
-            Stories & <em className="italic">Insights</em>
+            <T>Stories &</T> <em className="italic"><T>Insights</T></em>
           </h1>
           <p className="text-sm text-muted-foreground max-w-lg leading-relaxed mb-12" style={{ fontFamily: "var(--font-body)" }}>
-            Dive into articles, behind-the-scenes stories, and photography techniques from our community of creators.
+            <T>Dive into articles, behind-the-scenes stories, and photography techniques from our community of creators.</T>
           </p>
         </motion.div>
 
@@ -130,7 +130,7 @@ const Journal = () => {
               }`}
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              All
+              <T>All</T>
             </button>
             {allTags.map((tag) => (
               <button
@@ -161,7 +161,7 @@ const Journal = () => {
         ) : filtered.length === 0 ? (
           <div className="text-center py-24">
             <p className="text-muted-foreground text-sm" style={{ fontFamily: "var(--font-body)" }}>
-              No articles published yet. Check back soon.
+              <T>No articles published yet. Check back soon.</T>
             </p>
           </div>
         ) : (
@@ -193,7 +193,7 @@ const Journal = () => {
                                 className="text-[9px] tracking-[0.25em] uppercase px-3 py-1.5 bg-primary text-primary-foreground"
                                 style={{ fontFamily: "var(--font-heading)" }}
                               >
-                                Featured
+                                <T>Featured</T>
                               </span>
                             </div>
                           </div>
@@ -238,7 +238,7 @@ const Journal = () => {
                             </span>
                           </div>
                           <div className="mt-6 flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                            Read Article <ArrowRight className="h-3.5 w-3.5" />
+                            <T>Read Article</T> <ArrowRight className="h-3.5 w-3.5" />
                           </div>
                         </div>
                       </div>
@@ -250,7 +250,7 @@ const Journal = () => {
                     <div className="flex items-center gap-4 mb-12">
                       <div className="w-12 h-px bg-border" />
                       <span className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                        More Stories
+                        <T>More Stories</T>
                       </span>
                       <div className="flex-1 h-px bg-border" />
                     </div>

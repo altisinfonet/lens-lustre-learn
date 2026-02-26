@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award, GraduationCap, Wallet } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -118,7 +119,7 @@ const Dashboard = () => {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}>
-          Loading...
+          <T>Loading...</T>
         </div>
       </main>
     );
@@ -175,10 +176,10 @@ const Dashboard = () => {
                         <TooltipTrigger>
                           <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-primary text-primary-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
                             <Shield className="h-3 w-3" />
-                            Admin
+                            <T>Admin</T>
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent><p>Assigned {getRoleDate("admin")}</p></TooltipContent>
+                        <TooltipContent><p><T>Assigned</T> {getRoleDate("admin")}</p></TooltipContent>
                       </Tooltip>
                     )}
                     {hasRole("judge") && (
@@ -186,10 +187,10 @@ const Dashboard = () => {
                         <TooltipTrigger>
                           <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-accent text-accent-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
                             <Award className="h-3 w-3" />
-                            Judge
+                            <T>Judge</T>
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent><p>Assigned {getRoleDate("judge")}</p></TooltipContent>
+                        <TooltipContent><p><T>Assigned</T> {getRoleDate("judge")}</p></TooltipContent>
                       </Tooltip>
                     )}
                     {hasRole("content_editor") && (
@@ -197,10 +198,10 @@ const Dashboard = () => {
                         <TooltipTrigger>
                           <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-secondary text-secondary-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
                             <Edit2 className="h-3 w-3" />
-                            Contributor
+                            <T>Contributor</T>
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent><p>Assigned {getRoleDate("content_editor")}</p></TooltipContent>
+                        <TooltipContent><p><T>Assigned</T> {getRoleDate("content_editor")}</p></TooltipContent>
                       </Tooltip>
                     )}
                     {hasRole("registered_photographer") && (
@@ -208,10 +209,10 @@ const Dashboard = () => {
                         <TooltipTrigger>
                           <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-primary/20 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
                             <Camera className="h-3 w-3" />
-                            Verified Photographer
+                            <T>Verified Photographer</T>
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent><p>Verified {getRoleDate("registered_photographer")}</p></TooltipContent>
+                        <TooltipContent><p><T>Verified</T> {getRoleDate("registered_photographer")}</p></TooltipContent>
                       </Tooltip>
                     )}
                     {hasRole("student") && (
@@ -219,10 +220,10 @@ const Dashboard = () => {
                         <TooltipTrigger>
                           <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.25em] uppercase px-3 py-1 bg-accent/20 text-accent-foreground rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
                             <GraduationCap className="h-3 w-3" />
-                            Student
+                            <T>Student</T>
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent><p>Since {getRoleDate("student")}</p></TooltipContent>
+                        <TooltipContent><p><T>Since</T> {getRoleDate("student")}</p></TooltipContent>
                       </Tooltip>
                     )}
                   </div>
@@ -247,13 +248,13 @@ const Dashboard = () => {
               <div className="space-y-3 border-t border-border pt-6">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span style={{ fontFamily: "var(--font-body)" }}>Member since {memberSince}</span>
+                  <span style={{ fontFamily: "var(--font-body)" }}><T>Member since</T> {memberSince}</span>
                 </div>
                 {profile?.portfolio_url && (
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <Camera className="h-3.5 w-3.5" />
                     <a href={profile.portfolio_url} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}>
-                      Portfolio
+                      <T>Portfolio</T>
                     </a>
                   </div>
                 )}
@@ -262,7 +263,7 @@ const Dashboard = () => {
               {profile?.photography_interests && profile.photography_interests.length > 0 && (
                 <div className="mt-6 border-t border-border pt-6">
                   <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>
-                    Interests
+                    <T>Interests</T>
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {profile.photography_interests.map((interest) => (
@@ -281,17 +282,17 @@ const Dashboard = () => {
             <motion.div variants={fadeUp} custom={1}>
               <div className="flex items-center gap-4 mb-2">
                 <div className="w-12 h-px bg-primary" />
-                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Dashboard</span>
+                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Dashboard</T></span>
               </div>
               <h2 className="text-4xl md:text-5xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                Welcome, <em className="italic text-primary">{displayName.split(" ")[0]}</em>
+                <T>Welcome,</T> <em className="italic text-primary">{displayName.split(" ")[0]}</em>
               </h2>
             </motion.div>
 
             {/* Quick Actions */}
             <motion.div variants={fadeUp} custom={2}>
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>
-                Quick Actions
+                <T>Quick Actions</T>
               </span>
               <div className="grid sm:grid-cols-3 gap-4">
                 {[
@@ -311,8 +312,8 @@ const Dashboard = () => {
                     className="group border border-border p-6 hover:border-primary/50 transition-all duration-700"
                   >
                     <action.icon className="h-5 w-5 text-primary mb-3" strokeWidth={1.5} />
-                    <h3 className="text-sm font-light tracking-wide mb-1" style={{ fontFamily: "var(--font-heading)" }}>{action.label}</h3>
-                    <p className="text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{action.desc}</p>
+                    <h3 className="text-sm font-light tracking-wide mb-1" style={{ fontFamily: "var(--font-heading)" }}><T>{action.label}</T></h3>
+                    <p className="text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>{action.desc}</T></p>
                   </Link>
                 ))}
               </div>
@@ -322,7 +323,6 @@ const Dashboard = () => {
             {!hasRole("registered_photographer") && (
               <motion.div variants={fadeUp} custom={3}>
                 <PhotographerUpgradeCard onUpgraded={() => {
-                  // Refresh roles
                   supabase.from("user_roles").select("role, created_at").eq("user_id", user.id).then(({ data }) => {
                     if (data) setRoles(data);
                   });
@@ -333,7 +333,7 @@ const Dashboard = () => {
             {/* Role Applications */}
             <motion.div variants={fadeUp} custom={4}>
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>
-                Role Applications
+                <T>Role Applications</T>
               </span>
 
               {(canApplyFor("judge") || canApplyFor("content_editor")) && !showApplyForm && (
@@ -345,7 +345,7 @@ const Dashboard = () => {
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
                       <Briefcase className="h-3.5 w-3.5 text-primary" />
-                      Apply as Judge
+                      <T>Apply as Judge</T>
                     </button>
                   )}
                   {canApplyFor("content_editor") && (
@@ -355,7 +355,7 @@ const Dashboard = () => {
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
                       <Briefcase className="h-3.5 w-3.5 text-primary" />
-                      Apply as Content Editor
+                      <T>Apply as Content Editor</T>
                     </button>
                   )}
                 </div>
@@ -365,7 +365,7 @@ const Dashboard = () => {
                 <div className="border border-border p-6 md:p-8 mb-6 space-y-5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                      Apply as {applyRole === "judge" ? "Judge" : "Content Editor"}
+                      <T>{`Apply as ${applyRole === "judge" ? "Judge" : "Content Editor"}`}</T>
                     </span>
                     <button onClick={() => setShowApplyForm(false)} className="text-muted-foreground hover:text-foreground">
                       <XCircle className="h-4 w-4" />
@@ -374,7 +374,7 @@ const Dashboard = () => {
 
                   <div>
                     <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                      Why do you want this role? *
+                      <T>Why do you want this role?</T> *
                     </label>
                     <Textarea
                       value={applyReason}
@@ -387,7 +387,7 @@ const Dashboard = () => {
 
                   <div>
                     <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                      Portfolio URL
+                      <T>Portfolio URL</T>
                     </label>
                     <Input
                       value={applyPortfolio}
@@ -400,7 +400,7 @@ const Dashboard = () => {
 
                   <div>
                     <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                      Relevant Experience
+                      <T>Relevant Experience</T>
                     </label>
                     <Textarea
                       value={applyExperience}
@@ -419,10 +419,10 @@ const Dashboard = () => {
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
                       <Send className="h-3.5 w-3.5 mr-1.5" />
-                      {submitting ? "Submitting…" : "Submit Application"}
+                      {submitting ? <T>Submitting…</T> : <T>Submit Application</T>}
                     </Button>
                     <Button variant="ghost" onClick={() => setShowApplyForm(false)} className="text-xs tracking-[0.1em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-                      Cancel
+                      <T>Cancel</T>
                     </Button>
                   </div>
                 </div>
@@ -435,14 +435,14 @@ const Dashboard = () => {
                       <div className="mt-0.5">{appStatusIcon(app.status)}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-light" style={{ fontFamily: "var(--font-heading)" }}>
-                          {app.requested_role === "content_editor" ? "Content Editor" : "Judge"} Application
+                          <T>{`${app.requested_role === "content_editor" ? "Content Editor" : "Judge"} Application`}</T>
                         </p>
                         <p className="text-[11px] text-muted-foreground mt-0.5" style={{ fontFamily: "var(--font-body)" }}>
-                          Status: <span className={app.status === "approved" ? "text-primary" : app.status === "rejected" ? "text-destructive" : "text-yellow-500"}>{app.status}</span>
+                          <T>Status:</T> <span className={app.status === "approved" ? "text-primary" : app.status === "rejected" ? "text-destructive" : "text-yellow-500"}><T>{app.status}</T></span>
                         </p>
                         {app.admin_message && (
                           <p className="text-[11px] text-muted-foreground mt-2 p-2 bg-muted/50 border-l-2 border-primary" style={{ fontFamily: "var(--font-body)" }}>
-                            Admin: {app.admin_message}
+                            <T>Admin:</T> {app.admin_message}
                           </p>
                         )}
                       </div>
@@ -455,8 +455,8 @@ const Dashboard = () => {
               ) : (
                 <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                   {canApplyFor("judge") || canApplyFor("content_editor")
-                    ? "No applications yet. Apply for a role above to unlock new features."
-                    : "You already have all available roles."}
+                    ? <T>No applications yet. Apply for a role above to unlock new features.</T>
+                    : <T>You already have all available roles.</T>}
                 </p>
               )}
             </motion.div>
@@ -464,7 +464,7 @@ const Dashboard = () => {
             {/* Recent Activity */}
             <motion.div variants={fadeUp} custom={4}>
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>
-                Recent Activity
+                <T>Recent Activity</T>
               </span>
               <div className="border border-border divide-y divide-border">
                 <ActivityItem
@@ -499,8 +499,8 @@ const ActivityItem = ({
   <div className="flex items-start gap-4 p-5">
     <div className="mt-0.5 text-primary">{icon}</div>
     <div className="flex-1 min-w-0">
-      <p className="text-sm font-light" style={{ fontFamily: "var(--font-heading)" }}>{title}</p>
-      <p className="text-[11px] text-muted-foreground mt-0.5" style={{ fontFamily: "var(--font-body)" }}>{description}</p>
+      <p className="text-sm font-light" style={{ fontFamily: "var(--font-heading)" }}><T>{title}</T></p>
+      <p className="text-[11px] text-muted-foreground mt-0.5" style={{ fontFamily: "var(--font-body)" }}><T>{description}</T></p>
     </div>
     <span className="text-[10px] text-muted-foreground shrink-0" style={{ fontFamily: "var(--font-body)" }}>{time}</span>
   </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BookOpen, Clock, DollarSign, GraduationCap, PenLine, LogOut } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -104,7 +105,7 @@ const Courses = () => {
           <div className="flex items-center gap-4" style={{ fontFamily: "var(--font-heading)" }}>
             {canEdit && (
               <Link to="/courses/new" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
-                <PenLine className="h-3.5 w-3.5" /> New Course
+                <PenLine className="h-3.5 w-3.5" /> <T>New Course</T>
               </Link>
             )}
             {user && (
@@ -112,7 +113,7 @@ const Courses = () => {
                 onClick={async () => { await signOut(); navigate("/"); }}
                 className="inline-flex items-center gap-1.5 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
               >
-                <LogOut className="h-3 w-3" /> Logout
+                <LogOut className="h-3 w-3" /> <T>Logout</T>
               </button>
             )}
           </div>
@@ -123,19 +124,19 @@ const Courses = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-px bg-primary" />
-            <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Learning</span>
+            <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Learning</T></span>
           </div>
           <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-6" style={{ fontFamily: "var(--font-display)" }}>
-            Photography <em className="italic">Courses</em>
+            <T>Photography</T> <em className="italic"><T>Courses</T></em>
           </h1>
           <p className="text-sm text-muted-foreground max-w-lg leading-relaxed mb-12" style={{ fontFamily: "var(--font-body)" }}>
-            Master your craft with structured courses from experienced photographers. Track your progress lesson by lesson.
+            <T>Master your craft with structured courses from experienced photographers. Track your progress lesson by lesson.</T>
           </p>
         </motion.div>
 
         {categories.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-12">
-            <button onClick={() => setSelectedCategory(null)} className={`text-[10px] tracking-[0.15em] uppercase px-4 py-2 border transition-all duration-300 ${!selectedCategory ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"}`} style={{ fontFamily: "var(--font-heading)" }}>All</button>
+            <button onClick={() => setSelectedCategory(null)} className={`text-[10px] tracking-[0.15em] uppercase px-4 py-2 border transition-all duration-300 ${!selectedCategory ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"}`} style={{ fontFamily: "var(--font-heading)" }}><T>All</T></button>
             {categories.map((cat) => (
               <button key={cat} onClick={() => setSelectedCategory(cat)} className={`text-[10px] tracking-[0.15em] uppercase px-4 py-2 border transition-all duration-300 ${selectedCategory === cat ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"}`} style={{ fontFamily: "var(--font-heading)" }}>{cat}</button>
             ))}
@@ -155,7 +156,7 @@ const Courses = () => {
         ) : filtered.length === 0 ? (
           <div className="text-center py-24">
             <GraduationCap className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm" style={{ fontFamily: "var(--font-body)" }}>No courses published yet. Check back soon.</p>
+            <p className="text-muted-foreground text-sm" style={{ fontFamily: "var(--font-body)" }}><T>No courses published yet. Check back soon.</T></p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -172,7 +173,7 @@ const Courses = () => {
                     )}
                     <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
                       {course.is_featured && (
-                        <span className="text-[8px] tracking-[0.15em] uppercase px-2.5 py-1 bg-yellow-500 text-yellow-950 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>★ Featured</span>
+                        <span className="text-[8px] tracking-[0.15em] uppercase px-2.5 py-1 bg-yellow-500 text-yellow-950 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>★ <T>Featured</T></span>
                       )}
                       {course.labels?.map((label) => (
                         <span key={label} className={`text-[8px] tracking-[0.1em] uppercase px-2.5 py-1 font-semibold ${
@@ -181,7 +182,7 @@ const Courses = () => {
                           label === "Early Bird Offer" ? "bg-green-500 text-white" :
                           label === "Most Demand" ? "bg-blue-500 text-white" :
                           "bg-primary text-primary-foreground"
-                        }`} style={{ fontFamily: "var(--font-heading)" }}>{label}</span>
+                        }`} style={{ fontFamily: "var(--font-heading)" }}><T>{label}</T></span>
                       ))}
                       {!course.is_free && (
                         <div className="bg-background/90 backdrop-blur-sm px-3 py-1 text-xs text-primary flex items-center gap-1" style={{ fontFamily: "var(--font-heading)" }}>
@@ -193,7 +194,7 @@ const Courses = () => {
                   </div>
 
                   <div className="flex items-center gap-3 mb-3">
-                    <span className={`text-[9px] tracking-[0.2em] uppercase px-2 py-0.5 border ${difficultyColor(course.difficulty)}`} style={{ fontFamily: "var(--font-heading)" }}>{course.difficulty}</span>
+                    <span className={`text-[9px] tracking-[0.2em] uppercase px-2 py-0.5 border ${difficultyColor(course.difficulty)}`} style={{ fontFamily: "var(--font-heading)" }}><T>{course.difficulty}</T></span>
                     <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>{course.category}</span>
                   </div>
 
@@ -207,9 +208,9 @@ const Courses = () => {
                     <span>{course.author_name || "Unknown"}</span>
                     <span className="flex items-center gap-1">
                       <BookOpen className="h-3 w-3" />
-                      {course.lesson_count} lesson{course.lesson_count !== 1 ? "s" : ""}
+                      {course.lesson_count} {course.lesson_count !== 1 ? <T>lessons</T> : <T>lesson</T>}
                     </span>
-                    {course.is_free && <span className="text-primary">Free</span>}
+                    {course.is_free && <span className="text-primary"><T>Free</T></span>}
                   </div>
                 </Link>
               </motion.article>
