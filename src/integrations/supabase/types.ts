@@ -859,52 +859,91 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
           avatar_url: string | null
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_ifsc: string | null
+          bank_name: string | null
           bio: string | null
+          city: string | null
+          country: string | null
           created_at: string
           facebook_url: string | null
           full_name: string | null
           id: string
           instagram_url: string | null
           is_suspended: boolean
+          national_id_url: string | null
+          phone: string | null
           photography_interests: string[] | null
           portfolio_url: string | null
+          postal_code: string | null
+          state: string | null
           suspended_until: string | null
           suspension_reason: string | null
           updated_at: string
           website_url: string | null
+          whatsapp: string | null
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
           avatar_url?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
+          bank_name?: string | null
           bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           facebook_url?: string | null
           full_name?: string | null
           id: string
           instagram_url?: string | null
           is_suspended?: boolean
+          national_id_url?: string | null
+          phone?: string | null
           photography_interests?: string[] | null
           portfolio_url?: string | null
+          postal_code?: string | null
+          state?: string | null
           suspended_until?: string | null
           suspension_reason?: string | null
           updated_at?: string
           website_url?: string | null
+          whatsapp?: string | null
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
           avatar_url?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
+          bank_name?: string | null
           bio?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           facebook_url?: string | null
           full_name?: string | null
           id?: string
           instagram_url?: string | null
           is_suspended?: boolean
+          national_id_url?: string | null
+          phone?: string | null
           photography_interests?: string[] | null
           portfolio_url?: string | null
+          postal_code?: string | null
+          state?: string | null
           suspended_until?: string | null
           suspension_reason?: string | null
           updated_at?: string
           website_url?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
