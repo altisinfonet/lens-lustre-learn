@@ -124,10 +124,16 @@ export const generateCertificatePdf = ({
   doc.setTextColor(140, 140, 140);
   doc.text(`Issued on ${issueDate}`, W / 2, afterTitleY + 12, { align: "center" });
 
-  // --- Certificate ID ---
+  // --- Certificate ID (full UUID for verification) ---
   doc.setFontSize(7);
-  doc.setTextColor(80, 80, 80);
-  doc.text(`Certificate ID: ${certificateId.slice(0, 8).toUpperCase()}`, W / 2, H - 20, { align: "center" });
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Certificate ID: ${certificateId}`, W / 2, H - 20, { align: "center" });
+
+  // --- Verification URL ---
+  doc.setFontSize(6);
+  doc.setTextColor(100, 100, 100);
+  const verifyUrl = `${window.location.origin}/verify-certificate?id=${certificateId}`;
+  doc.text(`Verify at: ${verifyUrl}`, W / 2, H - 16, { align: "center" });
 
   // --- Bottom accent ---
   doc.setDrawColor(200, 160, 60);
