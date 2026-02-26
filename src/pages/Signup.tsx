@@ -1,16 +1,28 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, Mail, Eye, EyeOff } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import SimpleCaptcha from "@/components/SimpleCaptcha";
 
 const signupSchema = z.object({
   fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().trim().email("Please enter a valid email").max(255),
   password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
+
+const friendlyError = (raw: string): string => {
+  const lower = raw.toLowerCase();
+  if (lower.includes("failed to fetch") || lower.includes("networkerror") || lower.includes("load failed"))
+    return "Unable to connect to the server. Please check your internet connection and try again.";
+  if (lower.includes("already registered") || lower.includes("already been registered"))
+    return "This email is already registered. Try signing in instead.";
+  if (lower.includes("too many requests") || lower.includes("rate limit"))
+    return "Too many attempts. Please wait a moment before trying again.";
+  return raw;
+};
 
 const Signup = () => {
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +32,7 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -30,11 +43,16 @@ const Signup = () => {
   const handleOAuth = async (provider: "google" | "apple") => {
     setError(null);
     setLoading(provider);
-    const { error } = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
-    });
-    if (error) {
-      setError(error instanceof Error ? error.message : String(error));
+    try {
+      const { error } = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+      if (error) {
+        setError(friendlyError(error instanceof Error ? error.message : String(error)));
+        setLoading(null);
+      }
+    } catch (err: any) {
+      setError(friendlyError(err?.message || "Something went wrong. Please try again."));
       setLoading(null);
     }
   };
@@ -49,23 +67,34 @@ const Signup = () => {
       return;
     }
 
-    setLoading("email");
-    const { error } = await supabase.auth.signUp({
-      email: result.data.email,
-      password: result.data.password,
-      options: {
-        data: { full_name: result.data.fullName },
-        emailRedirectTo: window.location.origin,
-      },
-    });
+    if (!captchaVerified) {
+      setError("Please complete the security check first.");
+      return;
+    }
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess(true);
+    setLoading("email");
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: result.data.email,
+        password: result.data.password,
+        options: {
+          data: { full_name: result.data.fullName },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (error) {
+        setError(friendlyError(error.message));
+      } else {
+        setSuccess(true);
+      }
+    } catch (err: any) {
+      setError(friendlyError(err?.message || "Something went wrong."));
     }
     setLoading(null);
   };
+
+  const onCaptchaVerified = useCallback((v: boolean) => setCaptchaVerified(v), []);
 
   if (success) {
     return (
@@ -248,9 +277,12 @@ const Signup = () => {
                 );
               })()}
             </div>
+
+            <SimpleCaptcha onVerified={onCaptchaVerified} />
+
             <button
               type="submit"
-              disabled={!!loading}
+              disabled={!!loading || !captchaVerified}
               className="w-full py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50 flex items-center justify-center gap-3"
               style={{ fontFamily: "var(--font-heading)" }}
             >
