@@ -45,6 +45,13 @@
     --sidebar-border: 30 8% 16%;
     --sidebar-ring: 32 95% 55%;
 
+    /* Scroll section backgrounds — warm, eye-soothing tones */
+    --scroll-bg-1: 30 10% 4%;
+    --scroll-bg-2: 25 12% 7%;
+    --scroll-bg-3: 30 8% 6%;
+    --scroll-bg-4: 20 14% 8%;
+    --scroll-bg-5: 28 10% 5%;
+
     --font-display: 'Cormorant Garamond', serif;
     --font-heading: 'Syne', sans-serif;
     --font-body: 'Poppins', sans-serif;
@@ -87,6 +94,13 @@
     --sidebar-accent-foreground: 30 10% 10%;
     --sidebar-border: 30 15% 85%;
     --sidebar-ring: 32 95% 45%;
+
+    /* Scroll section backgrounds — light mode soothing tones */
+    --scroll-bg-1: 40 30% 96%;
+    --scroll-bg-2: 35 25% 93%;
+    --scroll-bg-3: 40 20% 95%;
+    --scroll-bg-4: 30 28% 92%;
+    --scroll-bg-5: 38 22% 94%;
   }
 
   * {
