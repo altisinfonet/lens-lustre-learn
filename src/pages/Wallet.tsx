@@ -183,7 +183,7 @@ const Wallet = () => {
                 </span>
               </div>
               <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}>
-                Rate: 1 USD = ₹{exchangeRate.rate} ({exchangeRate.source})
+                1 USD ≈ ₹{exchangeRate.rate}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -346,9 +346,19 @@ const Wallet = () => {
                     {t.description && (
                       <p className="text-[10px] text-muted-foreground truncate" style={{ fontFamily: "var(--font-body)" }}>{t.description}</p>
                     )}
-                    <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                      {new Date(t.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                        {new Date(t.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      {t.type === "gift" && t.metadata?.expires_at && (
+                        <span className={`text-[9px] px-1.5 py-0.5 border rounded-sm ${new Date(t.metadata.expires_at) < new Date() ? "border-destructive/40 text-destructive bg-destructive/5" : "border-yellow-500/40 text-yellow-600 bg-yellow-500/5"}`}>
+                          {new Date(t.metadata.expires_at) < new Date() ? "Expired" : `Expires: ${new Date(t.metadata.expires_at).toLocaleDateString()}`}
+                        </span>
+                      )}
+                      {t.type === "gift" && !t.metadata?.expires_at && (
+                        <span className="text-[9px] px-1.5 py-0.5 border border-primary/30 text-primary bg-primary/5 rounded-sm">No expiry</span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right shrink-0">
                     <p className={`text-sm font-medium ${Number(t.amount) >= 0 ? "text-primary" : "text-destructive"}`} style={{ fontFamily: "var(--font-heading)" }}>
