@@ -564,9 +564,13 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* Photo of the Day — with its own scroll-linked light yellow background */}
-      <motion.div ref={potdRef} style={{ backgroundColor: potdBg }} className="transition-colors duration-700">
+      {/* Photo of the Day — with its own scroll-linked background */}
+      <motion.div ref={potdRef} style={{ backgroundColor: potdBg }} className="relative transition-colors duration-700">
+        {/* Top gradient — blends from page background into POTD */}
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background to-transparent pointer-events-none z-10" />
         <PhotoOfTheDay />
+        {/* Bottom gradient — blends from POTD into competitions */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
       </motion.div>
 
       {/* Middle sections with scroll-based background */}
