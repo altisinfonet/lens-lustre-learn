@@ -28,7 +28,7 @@ const fadeIn: Variants = {
   }),
 };
 
-const heroSlides = [
+const defaultHeroSlides = [
   { src: "/images/lives-on-life.jpg", title: "Lives on Life", category: "Aerial" },
   { src: "/images/sadhu.jpg", title: "The Ascetic", category: "Portrait" },
   { src: "/images/hero-1.jpg", title: "Breakfast", category: "Wildlife" },
@@ -144,6 +144,7 @@ const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [heroSlides, setHeroSlides] = useState(defaultHeroSlides);
   const [winners, setWinners] = useState<WinnerShowcase[]>([]);
   const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
   const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
@@ -180,7 +181,7 @@ const Index = () => {
   useEffect(() => {
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
-      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes] = await Promise.all([
+      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes, bannersRes] = await Promise.all([
         supabase
           .from("competition_entries")
           .select("id, title, photos, competition_id, user_id")
@@ -214,6 +215,11 @@ const Index = () => {
           .from("portfolio_images")
           .select("id, title, category, image_url, sort_order")
           .eq("is_visible", true)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("hero_banners")
+          .select("id, title, category, image_url, sort_order")
+          .eq("is_active", true)
           .order("sort_order", { ascending: true }),
       ]);
 
@@ -314,6 +320,16 @@ const Index = () => {
           src: p.image_url,
           title: p.title,
           category: p.category,
+        })));
+      }
+
+      // Set hero banners from database (fallback to defaults if empty)
+      const bannerData = bannersRes.data || [];
+      if (bannerData.length > 0) {
+        setHeroSlides(bannerData.map((b) => ({
+          src: b.image_url,
+          title: b.title,
+          category: b.category,
         })));
       }
     };

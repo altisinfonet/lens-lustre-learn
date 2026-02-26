@@ -1,6 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog } from "lucide-react";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
+import AdminBanners from "@/components/admin/AdminBanners";
+import AdminCourses from "@/components/admin/AdminCourses";
+import AdminJournal from "@/components/admin/AdminJournal";
+import AdminCertificates from "@/components/admin/AdminCertificates";
+import AdminUsers from "@/components/admin/AdminUsers";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,7 +71,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "banners" | "courses" | "journal" | "certificates" | "users";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -76,7 +81,7 @@ const AdminPanel = () => {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState<Tab>("competitions");
+  const [tab, setTab] = useState<Tab>("banners");
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [roleApps, setRoleApps] = useState<RoleApp[]>([]);
@@ -479,7 +484,7 @@ const AdminPanel = () => {
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["portfolio", "Portfolio", Image], ["comments", "Comments", MessageSquare], ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift]] as const).map(([key, label, Icon]) => (
+          {([["banners", "Banners", LayoutDashboard], ["portfolio", "Gallery", Image], ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award], ["users", "Users", UserCog], ["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["comments", "Comments", MessageSquare], ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift]] as const).map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -493,6 +498,21 @@ const AdminPanel = () => {
             </button>
           ))}
         </div>
+
+        {/* Banners Tab */}
+        {tab === "banners" && <AdminBanners user={user} />}
+
+        {/* Courses Tab */}
+        {tab === "courses" && <AdminCourses />}
+
+        {/* Journal Tab */}
+        {tab === "journal" && <AdminJournal />}
+
+        {/* Certificates Tab */}
+        {tab === "certificates" && <AdminCertificates user={user} />}
+
+        {/* Users Tab */}
+        {tab === "users" && <AdminUsers user={user} />}
 
         {/* Competitions Tab */}
         {tab === "competitions" && (
