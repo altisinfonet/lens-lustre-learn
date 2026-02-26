@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote } from "lucide-react";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
+import AdminVoteRewards from "@/components/admin/AdminVoteRewards";
 import AdminCourses from "@/components/admin/AdminCourses";
 import AdminJournal from "@/components/admin/AdminJournal";
 import AdminCertificates from "@/components/admin/AdminCertificates";
@@ -71,7 +72,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "banners" | "courses" | "journal" | "certificates" | "users";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "banners" | "courses" | "journal" | "certificates" | "users";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -484,7 +485,7 @@ const AdminPanel = () => {
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {([["banners", "Banners", LayoutDashboard], ["portfolio", "Gallery", Image], ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award], ["users", "Users", UserCog], ["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["comments", "Comments", MessageSquare], ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift]] as const).map(([key, label, Icon]) => (
+          {([["banners", "Banners", LayoutDashboard], ["portfolio", "Gallery", Image], ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award], ["users", "Users", UserCog], ["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["comments", "Comments", MessageSquare], ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["vote_rewards", "Vote Rewards", Vote]] as const).map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -944,6 +945,9 @@ const AdminPanel = () => {
 
         {/* Gift Credits Tab */}
         {tab === "gifts" && <AdminGiftCredit user={user} />}
+
+        {/* Vote Rewards Tab */}
+        {tab === "vote_rewards" && <AdminVoteRewards user={user} />}
       </div>
     </main>
   );

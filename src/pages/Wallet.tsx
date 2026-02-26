@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Wallet as WalletIcon, Plus, ArrowDownLeft, ArrowUpRight, Download, CreditCard, Loader2, Banknote, IndianRupee } from "lucide-react";
+import { Wallet as WalletIcon, Plus, ArrowDownLeft, ArrowUpRight, Download, CreditCard, Loader2, Banknote, IndianRupee, AlertTriangle, Clock } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useAuth } from "@/hooks/useAuth";
 import { useWallet, WalletTransaction } from "@/hooks/useWallet";
@@ -28,11 +28,13 @@ const txnTypeLabel: Record<string, string> = {
   referral_earning: "Referral Earning",
   honorarium: "Judging Honorarium",
   gift: "Gift from Admin",
+  gift_expiry: "Gift Expired",
+  vote_reward: "Vote Reward",
   promo_credit: "Promo Credit",
 };
 
 const txnIcon = (type: string) => {
-  const credit = ["deposit", "prize_winning", "refund", "referral_earning", "honorarium", "gift", "promo_credit"];
+  const credit = ["deposit", "prize_winning", "refund", "referral_earning", "honorarium", "gift", "promo_credit", "vote_reward"];
   return credit.includes(type) ? (
     <ArrowDownLeft className="h-4 w-4 text-primary" />
   ) : (
@@ -54,6 +56,29 @@ const Wallet = () => {
   const [bankDetails, setBankDetails] = useState("");
   const [currencyDisplay, setCurrencyDisplay] = useState<"usd" | "inr">("usd");
   const [ledgerYears, setLedgerYears] = useState(1);
+  const [expiringBalance, setExpiringBalance] = useState<{ amount: number; soonest: string | null; count: number }>({ amount: 0, soonest: null, count: 0 });
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchExpiring = async () => {
+      const { data } = await supabase
+        .from("gift_announcements")
+        .select("amount, expires_at")
+        .eq("user_id", user.id)
+        .eq("is_expired", false)
+        .not("expires_at", "is", null);
+      if (data && data.length > 0) {
+        const now = new Date();
+        const active = data.filter(g => new Date(g.expires_at!) > now);
+        const total = active.reduce((sum, g) => sum + Number(g.amount), 0);
+        const soonest = active.length > 0
+          ? active.sort((a, b) => new Date(a.expires_at!).getTime() - new Date(b.expires_at!).getTime())[0].expires_at
+          : null;
+        setExpiringBalance({ amount: total, soonest, count: active.length });
+      }
+    };
+    fetchExpiring();
+  }, [user]);
 
   if (authLoading || loading) {
     return (
@@ -185,6 +210,23 @@ const Wallet = () => {
               <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}>
                 1 USD ≈ ₹{exchangeRate.rate}
               </p>
+              {/* Expiring Balance Warning */}
+              {expiringBalance.amount > 0 && (
+                <div className="mt-3 flex items-start gap-2 px-3 py-2 border border-yellow-500/40 bg-yellow-500/5 rounded-sm">
+                  <AlertTriangle className="h-3.5 w-3.5 text-yellow-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400" style={{ fontFamily: "var(--font-heading)" }}>
+                      ${expiringBalance.amount.toFixed(2)} expiring soon
+                    </p>
+                    <p className="text-[9px] text-yellow-600/80 dark:text-yellow-500/80" style={{ fontFamily: "var(--font-body)" }}>
+                      {expiringBalance.count} gift credit{expiringBalance.count > 1 ? "s" : ""} with expiry
+                      {expiringBalance.soonest && (
+                        <> · Next: {new Date(expiringBalance.soonest).toLocaleDateString()}</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap gap-3">
               <button
