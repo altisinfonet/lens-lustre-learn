@@ -1,7 +1,7 @@
 import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, type Variants, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useCallback, lazy, Suspense, memo } from "react";
+import { motion, type Variants, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { useEffect, useState, useCallback, lazy, Suspense, memo, useRef } from "react";
 import Lightbox from "@/components/Lightbox";
 import PhotoOfTheDay from "@/components/PhotoOfTheDay";
 import { useAuth } from "@/hooks/useAuth";
@@ -159,6 +159,23 @@ const Index = () => {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [compFilter, setCompFilter] = useState("All");
+
+  // Scroll-linked background for middle sections
+  const middleRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: middleRef, offset: ["start start", "end end"] });
+  const scrollBg = useTransform(
+    scrollYProgress,
+    [0, 0.15, 0.3, 0.5, 0.7, 0.85, 1],
+    [
+      "hsl(var(--scroll-bg-1))",
+      "hsl(var(--scroll-bg-2))",
+      "hsl(var(--scroll-bg-3))",
+      "hsl(var(--scroll-bg-4))",
+      "hsl(var(--scroll-bg-5))",
+      "hsl(var(--scroll-bg-3))",
+      "hsl(var(--scroll-bg-1))",
+    ]
+  );
 
   const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
@@ -365,7 +382,7 @@ const Index = () => {
   }, []);
 
   return (
-    <main className="min-h-screen bg-background text-foreground overflow-hidden">
+    <main className="min-h-screen text-foreground overflow-hidden">
       {/* Hero — Slow crossfade slideshow */}
       <section className="relative h-screen flex items-end pb-20 md:pb-28" aria-label="Featured photography">
         <AnimatePresence mode="wait">
@@ -488,6 +505,9 @@ const Index = () => {
           <ArrowDown className="h-4 w-4 text-muted-foreground" />
         </motion.div>
       </section>
+
+      {/* Middle sections with scroll-based background */}
+      <motion.div ref={middleRef} style={{ backgroundColor: scrollBg }} className="transition-colors duration-700">
 
       {/* Photo of the Day — Big Banner */}
       <PhotoOfTheDay />
@@ -838,7 +858,7 @@ const Index = () => {
       </section>
 
       {/* All Competitions Showcase — Grouped by Status */}
-      <section className="py-24 md:py-32 bg-card/30" aria-label="Competitions">
+      <section className="py-24 md:py-32" aria-label="Competitions">
         <div className="container mx-auto px-6 md:px-12">
           <motion.header
             initial="hidden"
@@ -1067,7 +1087,7 @@ const Index = () => {
       </section>
 
       {/* Competition Winners Showcase */}
-      <section className="py-24 md:py-32 bg-card/30" aria-label="Competition winners">
+      <section className="py-24 md:py-32" aria-label="Competition winners">
           <div className="container mx-auto px-6 md:px-12">
             <motion.header
               initial="hidden"
@@ -1253,7 +1273,7 @@ const Index = () => {
         </section>
 
       {/* Journal Preview */}
-      <section className="py-24 md:py-32 bg-card/30" aria-label="Latest from the journal">
+      <section className="py-24 md:py-32" aria-label="Latest from the journal">
           <div className="container mx-auto px-6 md:px-12">
             <motion.header
               initial="hidden"
@@ -1471,6 +1491,7 @@ const Index = () => {
           </motion.div>
         </div>
       </section>
+      </motion.div>
 
       {/* Footer */}
       <footer className="border-t border-border py-16" role="contentinfo">
