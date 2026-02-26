@@ -1,6 +1,6 @@
 import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, type Variants, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, type Variants, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 import { useEffect, useState, useCallback, lazy, Suspense, memo, useRef } from "react";
 import Lightbox from "@/components/Lightbox";
 import PhotoOfTheDay from "@/components/PhotoOfTheDay";
@@ -163,17 +163,39 @@ const Index = () => {
   // Scroll-linked background for middle sections
   const middleRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: middleRef, offset: ["start start", "end end"] });
+
+  // Read resolved CSS colors from the DOM so framer-motion can interpolate real color values
+  const [scrollColors, setScrollColors] = useState<string[]>([]);
+  useEffect(() => {
+    const readColors = () => {
+      const style = getComputedStyle(document.documentElement);
+      const get = (v: string) => {
+        const raw = style.getPropertyValue(v).trim();
+        return raw ? `hsl(${raw})` : "hsl(0 0% 4%)";
+      };
+      setScrollColors([
+        get("--scroll-bg-1"),
+        get("--scroll-bg-2"),
+        get("--scroll-bg-3"),
+        get("--scroll-bg-4"),
+        get("--scroll-bg-5"),
+        get("--scroll-bg-3"),
+        get("--scroll-bg-1"),
+      ]);
+    };
+    readColors();
+    // Re-read when theme changes
+    const observer = new MutationObserver(readColors);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
   const scrollBg = useTransform(
     scrollYProgress,
     [0, 0.15, 0.3, 0.5, 0.7, 0.85, 1],
-    [
-      "hsl(var(--scroll-bg-1))",
-      "hsl(var(--scroll-bg-2))",
-      "hsl(var(--scroll-bg-3))",
-      "hsl(var(--scroll-bg-4))",
-      "hsl(var(--scroll-bg-5))",
-      "hsl(var(--scroll-bg-3))",
-      "hsl(var(--scroll-bg-1))",
+    scrollColors.length === 7 ? scrollColors : [
+      "hsl(210 12% 5%)", "hsl(200 18% 8%)", "hsl(195 14% 6%)",
+      "hsl(185 20% 9%)", "hsl(205 16% 7%)", "hsl(195 14% 6%)", "hsl(210 12% 5%)",
     ]
   );
 
