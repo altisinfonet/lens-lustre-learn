@@ -34,67 +34,108 @@ export default function PhotoOfTheDay() {
   if (!potd) return null;
 
   return (
-    <section className="relative" aria-label="Photo of the Day">
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1.5, ease: slowEase }}
-        className="relative w-full h-[70vh] md:h-[85vh] overflow-hidden bg-muted"
-      >
-        <motion.img
-          src={potd.image_url}
-          alt={potd.title}
-          className="w-full h-full object-cover"
-          initial={{ scale: 1.05 }}
-          whileInView={{ scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 6, ease: slowEase }}
-        />
-        {/* Gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
-
-        {/* Content */}
-        <div className="absolute bottom-0 left-0 right-0 container mx-auto px-6 md:px-12 pb-12 md:pb-20">
+    <section className="relative py-16 md:py-24" aria-label="Photo of the Day">
+      <div className="container mx-auto px-6 md:px-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+          {/* Left — Image */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.3, ease: slowEase }}
+            transition={{ duration: 1, ease: slowEase }}
+            className="relative overflow-hidden rounded-sm aspect-[3/4] md:aspect-[4/5] bg-muted"
           >
-            <div className="flex items-center gap-3 mb-4">
-              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-              <span className="text-[10px] tracking-[0.35em] uppercase text-yellow-500" style={{ fontFamily: "var(--font-heading)" }}>
+            <motion.img
+              src={potd.image_url}
+              alt={potd.title}
+              className="w-full h-full object-cover"
+              initial={{ scale: 1.06 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 5, ease: slowEase }}
+            />
+            {/* Minimal bottom-edge gradient for depth */}
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/30 to-transparent" />
+          </motion.div>
+
+          {/* Right — Text */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.2, ease: slowEase }}
+            className="flex flex-col justify-center"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <Star className="h-4 w-4 text-primary fill-primary" />
+              <span
+                className="text-[10px] tracking-[0.35em] uppercase text-primary"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
                 Photo of the Day
-              </span>
-              <div className="w-12 h-px bg-yellow-500/40" />
-              <span className="text-[9px] tracking-[0.15em] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                {new Date(potd.featured_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
               </span>
             </div>
 
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
+            <motion.h2
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.4, ease: slowEase }}
+              className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight mb-4"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
               {potd.title}
-            </h2>
+            </motion.h2>
+
+            <motion.div
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.6, ease: slowEase }}
+              className="origin-left w-16 h-px bg-border mb-6"
+            />
 
             {potd.photographer_name && (
-              <div className="flex items-center gap-2 mb-3">
-                <Camera className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.7, ease: slowEase }}
+                className="flex items-center gap-2 mb-4"
+              >
+                <Camera className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                   by {potd.photographer_name}
                 </span>
-              </div>
+              </motion.div>
             )}
 
             {potd.description && (
-              <p className="text-sm text-muted-foreground/80 max-w-lg leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.8, ease: slowEase }}
+                className="text-sm text-muted-foreground/80 max-w-md leading-relaxed mb-6"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
                 {potd.description}
-              </p>
+              </motion.p>
             )}
+
+            <motion.span
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.9, ease: slowEase }}
+              className="text-[10px] tracking-[0.2em] text-muted-foreground/50 uppercase"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {new Date(potd.featured_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+            </motion.span>
           </motion.div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }
