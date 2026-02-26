@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award, GraduationCap } from "lucide-react";
+import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award, GraduationCap, Wallet } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
@@ -299,6 +299,7 @@ const Dashboard = () => {
                   { icon: Trophy, label: "Competitions", desc: "Browse & enter contests", to: "/competitions" },
                   { icon: Camera, label: "My Works", desc: "Manage your portfolio", to: "#" },
                   { icon: Edit2, label: "Edit Profile", desc: "Update your info", to: "/edit-profile" },
+                  { icon: Wallet, label: "My Wallet", desc: "Balance, top-up & history", to: "/wallet" },
                   { icon: Award, label: "Certificates", desc: "View your achievements", to: "/certificates" },
                   ...(roles.some((r) => r.role === "admin")
                     ? [{ icon: Shield, label: "Admin Panel", desc: "Manage competitions & entries", to: "/admin" }]

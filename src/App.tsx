@@ -34,6 +34,7 @@ const Certificates = lazy(() => import("./pages/Certificates"));
 const VerifyCertificate = lazy(() => import("./pages/VerifyCertificate"));
 const Winners = lazy(() => import("./pages/Winners"));
 const JudgePanel = lazy(() => import("./pages/JudgePanel"));
+const Wallet = lazy(() => import("./pages/Wallet"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -87,6 +88,7 @@ const App = () => (
                 <Route path="/certificates" element={<Certificates />} />
                 <Route path="/verify" element={<VerifyCertificate />} />
                 <Route path="/winners" element={<Winners />} />
+                <Route path="/wallet" element={<Wallet />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Route>

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,7 +65,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -478,7 +478,7 @@ const AdminPanel = () => {
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["portfolio", "Portfolio", Image], ["comments", "Comments", MessageSquare]] as const).map(([key, label, Icon]) => (
+          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["portfolio", "Portfolio", Image], ["comments", "Comments", MessageSquare], ["wallet", "Wallet", Wallet]] as const).map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -917,6 +917,9 @@ const AdminPanel = () => {
             )}
           </div>
         )}
+
+        {/* Wallet Admin Tab */}
+        {tab === "wallet" && <AdminWalletTab user={user} />}
       </div>
     </main>
   );
@@ -941,3 +944,241 @@ const FormField = ({
 );
 
 export default AdminPanel;
+
+/* ─── Admin Wallet Tab ─── */
+import type { User } from "@supabase/supabase-js";
+
+const AdminWalletTab = ({ user }: { user: User | null }) => {
+  const [targetEmail, setTargetEmail] = useState("");
+  const [targetUserId, setTargetUserId] = useState<string | null>(null);
+  const [targetName, setTargetName] = useState("");
+  const [creditAmount, setCreditAmount] = useState("");
+  const [creditType, setCreditType] = useState("prize_winning");
+  const [creditDesc, setCreditDesc] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [exchangeRate, setExchangeRate] = useState("83.5");
+  const [autoFetch, setAutoFetch] = useState(true);
+
+  const fetchWithdrawals = async () => {
+    const { data } = await supabase
+      .from("withdrawal_requests")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map((w: any) => w.user_id))];
+      const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
+      const map = new Map(profiles?.map((p: any) => [p.id, p.full_name]) || []);
+      setWithdrawals(data.map((w: any) => ({ ...w, user_name: map.get(w.user_id) || "Unknown" })));
+    } else {
+      setWithdrawals([]);
+    }
+  };
+
+  const fetchRate = async () => {
+    const { data } = await supabase.from("site_settings").select("value").eq("key", "usd_to_inr_rate").maybeSingle();
+    if (data?.value) {
+      const v = data.value as any;
+      setExchangeRate(String(v.rate || 83.5));
+      setAutoFetch(v.auto_fetch ?? true);
+    }
+  };
+
+  useState(() => { fetchWithdrawals(); fetchRate(); });
+
+  const lookupUser = async () => {
+    if (!targetEmail.trim()) return;
+    const { data } = await supabase.from("profiles").select("id, full_name").ilike("full_name", `%${targetEmail.trim()}%`).limit(1);
+    if (data && data.length > 0) {
+      setTargetUserId(data[0].id);
+      setTargetName(data[0].full_name || "User");
+      toast({ title: `Found: ${data[0].full_name}` });
+    } else {
+      toast({ title: "User not found", variant: "destructive" });
+    }
+  };
+
+  const creditWallet = async () => {
+    if (!user || !targetUserId) return;
+    const amt = parseFloat(creditAmount);
+    if (!amt || amt <= 0) { toast({ title: "Enter valid amount", variant: "destructive" }); return; }
+    setProcessing(true);
+    const { error } = await supabase.rpc("admin_wallet_credit", {
+      _admin_id: user.id,
+      _target_user_id: targetUserId,
+      _amount: amt,
+      _type: creditType,
+      _description: creditDesc.trim() || `${creditType} credit by admin`,
+    });
+    if (error) {
+      toast({ title: "Credit failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `$${amt} credited to ${targetName}` });
+      setCreditAmount("");
+      setCreditDesc("");
+      setTargetUserId(null);
+      setTargetEmail("");
+    }
+    setProcessing(false);
+  };
+
+  const updateWithdrawal = async (id: string, status: string, note: string) => {
+    const w = withdrawals.find((w: any) => w.id === id);
+    const { error } = await supabase.from("withdrawal_requests")
+      .update({ status, admin_note: note || null, reviewed_by: user?.id, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+    } else {
+      // If approved, deduct from wallet
+      if (status === "approved" && w && user) {
+        await supabase.rpc("admin_wallet_credit", {
+          _admin_id: user.id,
+          _target_user_id: w.user_id,
+          _amount: -w.amount,
+          _type: "withdrawal",
+          _description: `Withdrawal approved - $${w.amount}`,
+        });
+      }
+      toast({ title: `Withdrawal ${status}` });
+      fetchWithdrawals();
+    }
+  };
+
+  const saveRate = async () => {
+    const rate = parseFloat(exchangeRate);
+    if (!rate || rate <= 0) return;
+    await supabase.from("site_settings").upsert({
+      key: "usd_to_inr_rate",
+      value: { rate, source: "manual", auto_fetch: autoFetch },
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id,
+    });
+    toast({ title: `Exchange rate set to ₹${rate}` });
+  };
+
+  const [wNotes, setWNotes] = useState<Record<string, string>>({});
+
+  return (
+    <div className="space-y-10">
+      {/* Exchange Rate */}
+      <div className="border border-border p-6 space-y-4">
+        <span className="text-xs tracking-[0.2em] uppercase text-primary block" style={{ fontFamily: "var(--font-heading)" }}>
+          <IndianRupee className="h-3.5 w-3.5 inline mr-2" />Exchange Rate Settings
+        </span>
+        <div className="flex flex-wrap gap-4 items-end">
+          <div>
+            <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>1 USD = ₹</label>
+            <input type="number" min="1" step="0.01" value={exchangeRate} onChange={e => setExchangeRate(e.target.value)}
+              className="w-32 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm" style={{ fontFamily: "var(--font-body)" }} />
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer" style={{ fontFamily: "var(--font-body)" }}>
+            <input type="checkbox" checked={autoFetch} onChange={e => setAutoFetch(e.target.checked)} className="accent-primary" />
+            Auto-fetch live rate (fallback)
+          </label>
+          <button onClick={saveRate}
+            className="px-5 py-2 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity"
+            style={{ fontFamily: "var(--font-heading)" }}>Save Rate</button>
+        </div>
+      </div>
+
+      {/* Credit User Wallet */}
+      <div className="border border-border p-6 space-y-4">
+        <span className="text-xs tracking-[0.2em] uppercase text-primary block" style={{ fontFamily: "var(--font-heading)" }}>
+          <Gift className="h-3.5 w-3.5 inline mr-2" />Credit User Wallet
+        </span>
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Search by Name</label>
+            <div className="flex gap-2">
+              <input type="text" value={targetEmail} onChange={e => setTargetEmail(e.target.value)} placeholder="User's name"
+                className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm" style={{ fontFamily: "var(--font-body)" }} />
+              <button onClick={lookupUser} className="px-4 py-2 border border-border text-xs tracking-[0.15em] uppercase hover:border-primary/50 transition-all" style={{ fontFamily: "var(--font-heading)" }}>Find</button>
+            </div>
+            {targetUserId && <p className="text-xs text-primary mt-1" style={{ fontFamily: "var(--font-body)" }}>✓ {targetName}</p>}
+          </div>
+        </div>
+        {targetUserId && (
+          <div className="flex flex-wrap gap-3 items-end">
+            <div>
+              <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Amount ($)</label>
+              <input type="number" min="0.01" step="0.01" value={creditAmount} onChange={e => setCreditAmount(e.target.value)}
+                className="w-32 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm" style={{ fontFamily: "var(--font-body)" }} />
+            </div>
+            <div>
+              <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Type</label>
+              <select value={creditType} onChange={e => setCreditType(e.target.value)}
+                className="bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm" style={{ fontFamily: "var(--font-body)" }}>
+                <option value="prize_winning">Prize Winnings</option>
+                <option value="gift">Gift</option>
+                <option value="refund">Refund</option>
+                <option value="honorarium">Honorarium</option>
+                <option value="promo_credit">Promo Credit</option>
+                <option value="referral_earning">Referral Earning</option>
+              </select>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Description</label>
+              <input type="text" value={creditDesc} onChange={e => setCreditDesc(e.target.value)} placeholder="e.g. Competition prize"
+                className="w-full bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm" style={{ fontFamily: "var(--font-body)" }} />
+            </div>
+            <button onClick={creditWallet} disabled={processing}
+              className="px-5 py-2 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+              style={{ fontFamily: "var(--font-heading)" }}>
+              {processing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Credit"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Withdrawal Requests */}
+      <div>
+        <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>
+          <Banknote className="h-3.5 w-3.5 inline mr-2" />Withdrawal Requests ({withdrawals.length})
+        </span>
+        {withdrawals.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-border">
+            <Banknote className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>No withdrawal requests.</p>
+          </div>
+        ) : (
+          <div className="border border-border divide-y divide-border">
+            {withdrawals.map((w: any) => (
+              <div key={w.id} className="p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm" style={{ fontFamily: "var(--font-heading)" }}>{w.user_name} — ${Number(w.amount).toFixed(2)}</p>
+                    <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                      {new Date(w.created_at).toLocaleDateString()} · Bank: {w.bank_details?.details || "N/A"}
+                    </p>
+                  </div>
+                  <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 border ${
+                    w.status === "pending" ? "text-yellow-500 border-yellow-500" :
+                    w.status === "approved" ? "text-primary border-primary" :
+                    "text-destructive border-destructive"
+                  }`} style={{ fontFamily: "var(--font-heading)" }}>{w.status}</span>
+                </div>
+                {w.status === "pending" && (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <input type="text" placeholder="Admin note (optional)" value={wNotes[w.id] || ""} onChange={e => setWNotes(p => ({ ...p, [w.id]: e.target.value }))}
+                      className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-xs" style={{ fontFamily: "var(--font-body)" }} />
+                    <button onClick={() => updateWithdrawal(w.id, "approved", wNotes[w.id] || "")}
+                      className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase text-primary hover:opacity-70"
+                      style={{ fontFamily: "var(--font-heading)" }}>
+                      <CheckCircle className="h-3.5 w-3.5" /> Approve
+                    </button>
+                    <button onClick={() => updateWithdrawal(w.id, "rejected", wNotes[w.id] || "")}
+                      className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase text-destructive hover:opacity-70"
+                      style={{ fontFamily: "var(--font-heading)" }}>
+                      <XCircle className="h-3.5 w-3.5" /> Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
