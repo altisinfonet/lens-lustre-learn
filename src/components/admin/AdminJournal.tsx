@@ -98,6 +98,11 @@ const AdminJournal = () => {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>{a.title}</span>
+                  {a.is_featured && (
+                    <span className="text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider shrink-0 bg-yellow-500/10 text-yellow-600 border-yellow-500/30 flex items-center gap-1">
+                      <Star className="h-2.5 w-2.5 fill-current" /> Featured
+                    </span>
+                  )}
                   <span className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider shrink-0 ${statusStyle(a.status)}`}>
                     {a.status}
                   </span>
