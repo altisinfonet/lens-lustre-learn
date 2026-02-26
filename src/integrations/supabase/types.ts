@@ -322,6 +322,7 @@ export type Database = {
           expires_at: string | null
           gift_credit_id: string
           id: string
+          is_expired: boolean
           is_read: boolean
           reason: string
           user_id: string
@@ -332,6 +333,7 @@ export type Database = {
           expires_at?: string | null
           gift_credit_id: string
           id?: string
+          is_expired?: boolean
           is_read?: boolean
           reason: string
           user_id: string
@@ -342,6 +344,7 @@ export type Database = {
           expires_at?: string | null
           gift_credit_id?: string
           id?: string
+          is_expired?: boolean
           is_read?: boolean
           reason?: string
           user_id?: string
