@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote } from "lucide-react";
+import AdminGiftCredit from "@/components/AdminGiftCredit";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,7 +66,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -478,7 +479,7 @@ const AdminPanel = () => {
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["portfolio", "Portfolio", Image], ["comments", "Comments", MessageSquare], ["wallet", "Wallet", Wallet]] as const).map(([key, label, Icon]) => (
+          {([["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["portfolio", "Portfolio", Image], ["comments", "Comments", MessageSquare], ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift]] as const).map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -920,6 +921,9 @@ const AdminPanel = () => {
 
         {/* Wallet Admin Tab */}
         {tab === "wallet" && <AdminWalletTab user={user} />}
+
+        {/* Gift Credits Tab */}
+        {tab === "gifts" && <AdminGiftCredit user={user} />}
       </div>
     </main>
   );

@@ -315,6 +315,83 @@ export type Database = {
         }
         Relationships: []
       }
+      gift_announcements: {
+        Row: {
+          amount: number
+          created_at: string
+          gift_credit_id: string
+          id: string
+          is_read: boolean
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          gift_credit_id: string
+          id?: string
+          is_read?: boolean
+          reason: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          gift_credit_id?: string
+          id?: string
+          is_read?: boolean
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_announcements_gift_credit_id_fkey"
+            columns: ["gift_credit_id"]
+            isOneToOne: false
+            referencedRelation: "gift_credits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_credits: {
+        Row: {
+          admin_id: string
+          amount: number
+          auto_apply_future: boolean
+          created_at: string
+          id: string
+          reason: string
+          recipients_count: number
+          status: string
+          target_type: string
+          target_value: string | null
+        }
+        Insert: {
+          admin_id: string
+          amount: number
+          auto_apply_future?: boolean
+          created_at?: string
+          id?: string
+          reason: string
+          recipients_count?: number
+          status?: string
+          target_type: string
+          target_value?: string | null
+        }
+        Update: {
+          admin_id?: string
+          amount?: number
+          auto_apply_future?: boolean
+          created_at?: string
+          id?: string
+          reason?: string
+          recipients_count?: number
+          status?: string
+          target_type?: string
+          target_value?: string | null
+        }
+        Relationships: []
+      }
       journal_articles: {
         Row: {
           author_id: string

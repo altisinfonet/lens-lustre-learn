@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import GiftCelebrationModal from "@/components/GiftCelebrationModal";
 
 /** Pages where the Navbar should NOT be shown (auth screens) */
 const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
@@ -13,6 +14,7 @@ const Layout = () => {
   return (
     <>
       {!hideNav && <Navbar transparent={isHome} />}
+      <GiftCelebrationModal />
       <Outlet />
     </>
   );
