@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Facebook, Instagram, Globe, KeyRound, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2 } from "lucide-react";
+import { Camera, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2 } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import { COUNTRIES } from "@/lib/profileCompletion";
+import { SUPPORTED_LANGUAGES, useLanguage } from "@/hooks/useLanguage";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,10 +21,12 @@ const sectionHeadCls = "text-[9px] tracking-[0.3em] uppercase text-muted-foregro
 
 const EditProfile = () => {
   const { user, loading: authLoading } = useAuth();
+  const { language: currentLang, setLanguage: setGlobalLanguage } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
+  const [preferredLanguage, setPreferredLanguage] = useState("English");
 
   const handlePasswordReset = async () => {
     if (!user?.email) return;
@@ -100,6 +103,7 @@ const EditProfile = () => {
         setBankName((data as any).bank_name || "");
         setBankIfsc((data as any).bank_ifsc || "");
         setNationalIdUrl((data as any).national_id_url || null);
+        setPreferredLanguage((data as any).preferred_language || "English");
       }
       setLoading(false);
     };
@@ -225,6 +229,7 @@ const EditProfile = () => {
         bank_name: bankName.trim() || null,
         bank_ifsc: bankIfsc.trim() || null,
         national_id_url: nationalIdUrl || null,
+        preferred_language: preferredLanguage,
         updated_at: new Date().toISOString(),
       } as any)
       .eq("id", user.id);
@@ -232,6 +237,7 @@ const EditProfile = () => {
     if (error) {
       toast({ title: "Failed to save", description: error.message, variant: "destructive" });
     } else {
+      await setGlobalLanguage(preferredLanguage);
       toast({ title: "Profile updated" });
       navigate("/dashboard");
     }
@@ -286,6 +292,26 @@ const EditProfile = () => {
               </button>
               <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}>JPG, PNG or WebP. Max 5MB. Required.</p>
             </div>
+          </div>
+
+          {/* Preferred Language */}
+          <div>
+            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>
+              <Languages className="inline h-3 w-3 mr-1.5" />Preferred Language
+            </label>
+            <p className="text-[10px] text-muted-foreground mb-2" style={{ fontFamily: "var(--font-body)" }}>
+              The entire website will be translated to your preferred language.
+            </p>
+            <select
+              value={preferredLanguage}
+              onChange={(e) => setPreferredLanguage(e.target.value)}
+              className={`${inputCls} bg-background`}
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <option key={lang} value={lang}>{lang}</option>
+              ))}
+            </select>
           </div>
 
           {/* Full Name */}

@@ -880,6 +880,7 @@ export type Database = {
           photography_interests: string[] | null
           portfolio_url: string | null
           postal_code: string | null
+          preferred_language: string
           state: string | null
           suspended_until: string | null
           suspension_reason: string | null
@@ -909,6 +910,7 @@ export type Database = {
           photography_interests?: string[] | null
           portfolio_url?: string | null
           postal_code?: string | null
+          preferred_language?: string
           state?: string | null
           suspended_until?: string | null
           suspension_reason?: string | null
@@ -938,6 +940,7 @@ export type Database = {
           photography_interests?: string[] | null
           portfolio_url?: string | null
           postal_code?: string | null
+          preferred_language?: string
           state?: string | null
           suspended_until?: string | null
           suspension_reason?: string | null

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import GlobalSearch from "@/components/GlobalSearch";
+import LanguageSelector from "@/components/LanguageSelector";
 import { useTheme } from "@/hooks/useTheme";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -107,7 +108,8 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
           </div>
 
           {/* Desktop right */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            <LanguageSelector compact />
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full border border-border hover:border-primary hover:text-primary transition-all duration-500"
@@ -207,6 +209,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
               <div className="flex flex-col p-6 gap-6 flex-1" style={{ fontFamily: "var(--font-heading)" }}>
                 <div className="flex items-center gap-3 mb-2">
                   <GlobalSearch />
+                  <LanguageSelector compact />
                   <button
                     onClick={toggleTheme}
                     className="p-2 rounded-full border border-border hover:border-primary hover:text-primary transition-all duration-500"
