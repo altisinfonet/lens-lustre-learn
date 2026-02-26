@@ -406,7 +406,7 @@ const Index = () => {
   return (
     <main className="min-h-screen text-foreground overflow-hidden">
       {/* Hero — Slow crossfade slideshow */}
-      <section className="relative h-screen flex items-end pb-20 md:pb-28" aria-label="Featured photography">
+      <section className="relative h-screen flex items-end pb-20 md:pb-28 overflow-hidden" aria-label="Featured photography">
         <AnimatePresence mode="sync">
           {heroSlides.map((slide, i) => i === currentSlide && (
             <motion.div
