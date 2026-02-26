@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { Save, Eye, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Save, Eye, Upload, X, Image as ImageIcon, GripVertical } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import InlineImageDropZone from "@/components/InlineImageDropZone";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -10,6 +11,33 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 
+// Body is stored as plain text. Inline images use [img:URL] blocks separated by \n\n
+
+interface BodyBlock {
+  id: string;
+  type: "text" | "image";
+  content: string;
+}
+
+function parseBodyToBlocks(body: string): BodyBlock[] {
+  if (!body.trim()) return [{ id: crypto.randomUUID(), type: "text", content: "" }];
+  const parts = body.split("\n\n");
+  return parts.map((part) => {
+    const trimmed = part.trim();
+    const imgMatch = trimmed.match(/^\[img:(.*?)\]$/);
+    if (imgMatch) {
+      return { id: crypto.randomUUID(), type: "image" as const, content: imgMatch[1] };
+    }
+    return { id: crypto.randomUUID(), type: "text" as const, content: trimmed };
+  });
+}
+
+function blocksToBody(blocks: BodyBlock[]): string {
+  return blocks
+    .map((b) => (b.type === "image" ? `[img:${b.content}]` : b.content))
+    .filter((s) => s.trim() || s.startsWith("[img:"))
+    .join("\n\n");
+}
 
 const JournalEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,7 +48,7 @@ const JournalEditor = () => {
 
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
-  const [body, setBody] = useState("");
+  const [blocks, setBlocks] = useState<BodyBlock[]>([{ id: crypto.randomUUID(), type: "text", content: "" }]);
   const [tagsInput, setTagsInput] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
   const [gallery, setGallery] = useState<string[]>([]);
@@ -59,7 +87,7 @@ const JournalEditor = () => {
       if (data) {
         setTitle(data.title);
         setExcerpt(data.excerpt || "");
-        setBody(data.body);
+        setBlocks(parseBodyToBlocks(data.body));
         setTagsInput(data.tags.join(", "));
         setCoverUrl(data.cover_image_url || "");
         setGallery(data.photo_gallery);
@@ -68,6 +96,29 @@ const JournalEditor = () => {
     };
     load();
   }, [id, isNew, user]);
+
+  const updateBlock = useCallback((blockId: string, content: string) => {
+    setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, content } : b)));
+  }, []);
+
+  const removeBlock = useCallback((blockId: string) => {
+    setBlocks((prev) => {
+      const filtered = prev.filter((b) => b.id !== blockId);
+      return filtered.length > 0 ? filtered : [{ id: crypto.randomUUID(), type: "text", content: "" }];
+    });
+  }, []);
+
+  const insertImageAfter = useCallback((afterIdx: number, imageUrl: string) => {
+    setBlocks((prev) => {
+      const newBlocks = [...prev];
+      newBlocks.splice(afterIdx + 1, 0, { id: crypto.randomUUID(), type: "image", content: imageUrl });
+      // Ensure there's a text block after the image
+      if (afterIdx + 2 >= newBlocks.length || newBlocks[afterIdx + 2]?.type !== "text") {
+        newBlocks.splice(afterIdx + 2, 0, { id: crypto.randomUUID(), type: "text", content: "" });
+      }
+      return newBlocks;
+    });
+  }, []);
 
   if (checkingAccess) {
     return <main className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground text-sm">Loading…</p></main>;
@@ -130,6 +181,7 @@ const JournalEditor = () => {
       toast({ title: "Title is required", variant: "destructive" });
       return;
     }
+    const body = blocksToBody(blocks);
     if (!body.trim()) {
       toast({ title: "Body is required", variant: "destructive" });
       return;
@@ -141,7 +193,7 @@ const JournalEditor = () => {
       title: title.trim().slice(0, 200),
       slug: isNew ? generateSlug(title) : undefined,
       excerpt: excerpt.trim().slice(0, 500) || null,
-      body: body.trim(),
+      body,
       cover_image_url: coverUrl || null,
       tags,
       photo_gallery: gallery,
@@ -176,26 +228,13 @@ const JournalEditor = () => {
         <div className="container mx-auto px-6 md:px-12 py-4 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Journal", to: "/journal" }, { label: id ? "Edit Article" : "New Article" }]} />
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleSave("draft")}
-              disabled={saving}
-              className="text-xs tracking-[0.1em] uppercase"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              <Save className="h-3.5 w-3.5 mr-1.5" />
-              Save Draft
+            <Button variant="outline" size="sm" onClick={() => handleSave("draft")} disabled={saving}
+              className="text-xs tracking-[0.1em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
+              <Save className="h-3.5 w-3.5 mr-1.5" /> Save Draft
             </Button>
-            <Button
-              size="sm"
-              onClick={() => handleSave("published")}
-              disabled={saving}
-              className="text-xs tracking-[0.1em] uppercase bg-primary text-primary-foreground"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              <Eye className="h-3.5 w-3.5 mr-1.5" />
-              Publish
+            <Button size="sm" onClick={() => handleSave("published")} disabled={saving}
+              className="text-xs tracking-[0.1em] uppercase bg-primary text-primary-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+              <Eye className="h-3.5 w-3.5 mr-1.5" /> Publish
             </Button>
           </div>
         </div>
@@ -210,10 +249,8 @@ const JournalEditor = () => {
           {coverUrl ? (
             <div className="relative group">
               <img src={coverUrl} alt="Cover" className="w-full h-48 object-cover" />
-              <button
-                onClick={() => setCoverUrl("")}
-                className="absolute top-2 right-2 p-1.5 bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              >
+              <button onClick={() => setCoverUrl("")}
+                className="absolute top-2 right-2 p-1.5 bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -232,73 +269,71 @@ const JournalEditor = () => {
 
         {/* Title */}
         <div>
-          <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-            Title
-          </label>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Article title…"
+          <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>Title</label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article title…"
             className="text-2xl font-light bg-transparent border-none px-0 focus-visible:ring-0 placeholder:text-muted-foreground/40"
-            style={{ fontFamily: "var(--font-display)" }}
-            maxLength={200}
-          />
+            style={{ fontFamily: "var(--font-display)" }} maxLength={200} />
         </div>
 
         {/* Excerpt */}
         <div>
-          <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-            Excerpt
-          </label>
-          <Input
-            value={excerpt}
-            onChange={(e) => setExcerpt(e.target.value)}
-            placeholder="A short summary…"
-            className="bg-transparent"
-            maxLength={500}
-          />
+          <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>Excerpt</label>
+          <Input value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="A short summary…"
+            className="bg-transparent" maxLength={500} />
         </div>
 
         {/* Tags */}
         <div>
-          <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-            Tags (comma-separated)
-          </label>
-          <Input
-            value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)}
-            placeholder="Wildlife, Tutorial, Behind the Scenes"
-            className="bg-transparent"
-          />
+          <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>Tags (comma-separated)</label>
+          <Input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="Wildlife, Tutorial, Behind the Scenes" className="bg-transparent" />
         </div>
 
-        {/* Body */}
+        {/* Body with inline image drop zones */}
         <div>
           <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-            Body
+            Body <span className="text-muted-foreground/50 normal-case tracking-normal">— click + between paragraphs to insert images</span>
           </label>
-          <Textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Write your article here… Use double line breaks for paragraphs."
-            className="min-h-[400px] bg-transparent leading-relaxed"
-            style={{ fontFamily: "var(--font-body)" }}
-          />
+          <div className="space-y-1">
+            {blocks.map((block, idx) => (
+              <div key={block.id}>
+                {block.type === "text" ? (
+                  <Textarea
+                    value={block.content}
+                    onChange={(e) => updateBlock(block.id, e.target.value)}
+                    placeholder={idx === 0 ? "Start writing your article…" : "Continue writing…"}
+                    className="min-h-[120px] bg-transparent leading-relaxed resize-y"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  />
+                ) : (
+                  <div className="relative group my-2">
+                    <img src={block.content} alt={`Inline image ${idx + 1}`} className="w-full max-h-80 object-cover rounded-sm" />
+                    <button
+                      onClick={() => removeBlock(block.id)}
+                      className="absolute top-2 right-2 p-1.5 bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-background/70 rounded-sm text-[9px] tracking-wider uppercase text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" style={{ fontFamily: "var(--font-heading)" }}>
+                      Inline Image
+                    </div>
+                  </div>
+                )}
+                {/* Drop zone between blocks */}
+                <InlineImageDropZone onImageInserted={(url) => insertImageAfter(idx, url)} />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Photo gallery */}
         <div>
-          <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-            Photo Gallery
-          </label>
+          <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>Photo Gallery</label>
           <div className="grid grid-cols-3 md:grid-cols-4 gap-3 mb-3">
             {gallery.map((url, i) => (
               <div key={i} className="relative group aspect-square">
                 <img src={url} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
-                <button
-                  onClick={() => setGallery((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="absolute top-1 right-1 p-1 bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                >
+                <button onClick={() => setGallery((prev) => prev.filter((_, idx) => idx !== i))}
+                  className="absolute top-1 right-1 p-1 bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                   <X className="h-3 w-3" />
                 </button>
               </div>
@@ -306,9 +341,7 @@ const JournalEditor = () => {
             <label className="flex items-center justify-center aspect-square border-2 border-dashed border-border cursor-pointer hover:border-primary/50 transition-colors">
               <div className="flex flex-col items-center gap-1 text-muted-foreground">
                 <ImageIcon className="h-5 w-5" />
-                <span className="text-[9px]" style={{ fontFamily: "var(--font-heading)" }}>
-                  {uploading ? "…" : "Add"}
-                </span>
+                <span className="text-[9px]" style={{ fontFamily: "var(--font-heading)" }}>{uploading ? "…" : "Add"}</span>
               </div>
               <input type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} disabled={uploading} />
             </label>
