@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Clock, Tag } from "lucide-react";
+import { Clock, Tag, Download, Share2, Check } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import { supabase } from "@/integrations/supabase/client";
-
+import { generateArticlePdf } from "@/lib/generateArticlePdf";
+import { toast } from "@/hooks/use-toast";
 
 interface Article {
   id: string;
@@ -21,12 +22,30 @@ interface Article {
   author_id: string;
 }
 
+interface BodyBlock {
+  type: "text" | "image";
+  content: string;
+}
+
+function parseBodyBlocks(body: string): BodyBlock[] {
+  const parts = body.split("\n\n");
+  return parts.map((part) => {
+    const trimmed = part.trim();
+    if (!trimmed) return null;
+    const imgMatch = trimmed.match(/^\[img:(.*?)\]$/);
+    if (imgMatch) return { type: "image" as const, content: imgMatch[1] };
+    return { type: "text" as const, content: trimmed };
+  }).filter(Boolean) as BodyBlock[];
+}
+
 const JournalArticle = () => {
   const { slug } = useParams<{ slug: string }>();
   const [article, setArticle] = useState<Article | null>(null);
   const [authorName, setAuthorName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -51,6 +70,41 @@ const JournalArticle = () => {
     fetch();
   }, [slug]);
 
+  const handleDownloadPdf = async () => {
+    if (!article) return;
+    setGeneratingPdf(true);
+    try {
+      await generateArticlePdf({
+        title: article.title,
+        excerpt: article.excerpt,
+        body: article.body,
+        cover_image_url: article.cover_image_url,
+        tags: article.tags,
+        published_at: article.published_at,
+        created_at: article.created_at,
+        author_name: authorName,
+      });
+      toast({ title: "PDF downloaded!" });
+    } catch (err) {
+      toast({ title: "PDF generation failed", variant: "destructive" });
+    }
+    setGeneratingPdf(false);
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: article?.title, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast({ title: "Link copied to clipboard!" });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
@@ -68,12 +122,33 @@ const JournalArticle = () => {
     );
   }
 
+  const bodyBlocks = parseBodyBlocks(article.body);
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       {/* Back nav */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
           <Breadcrumbs items={[{ label: "Journal", to: "/journal" }, { label: article.title }]} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2 border border-border hover:border-foreground/30 transition-colors rounded-sm"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Share2 className="h-3.5 w-3.5" />}
+              {copied ? "Copied" : "Share"}
+            </button>
+            <button
+              onClick={handleDownloadPdf}
+              disabled={generatingPdf}
+              className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-sm disabled:opacity-50"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              <Download className="h-3.5 w-3.5" />
+              {generatingPdf ? "Generating…" : "PDF"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -108,20 +183,30 @@ const JournalArticle = () => {
             <span className="flex items-center gap-1 tracking-[0.1em]">
               <Clock className="h-3 w-3" />
               {new Date(article.published_at || article.created_at).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
+                month: "long", day: "numeric", year: "numeric",
               })}
             </span>
           </div>
 
-          {/* Body — render paragraphs */}
+          {/* Body — render paragraphs and inline images */}
           <div className="prose-custom space-y-6">
-            {article.body.split("\n\n").map((paragraph, i) => (
-              <p key={i} className="text-sm md:text-base text-foreground/85 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
-                {paragraph}
-              </p>
-            ))}
+            {bodyBlocks.map((block, i) =>
+              block.type === "image" ? (
+                <div key={i} className="my-8">
+                  <img
+                    src={block.content}
+                    alt={`Article image ${i + 1}`}
+                    className="w-full object-cover rounded-sm cursor-pointer hover:brightness-90 transition-all duration-500"
+                    loading="lazy"
+                    onClick={() => setLightboxImg(block.content)}
+                  />
+                </div>
+              ) : (
+                <p key={i} className="text-sm md:text-base text-foreground/85 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+                  {block.content}
+                </p>
+              )
+            )}
           </div>
 
           {/* Photo gallery */}
@@ -135,14 +220,9 @@ const JournalArticle = () => {
               </div>
               <div className="columns-2 md:columns-3 gap-3 space-y-3">
                 {article.photo_gallery.map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`${article.title} gallery photo ${i + 1}`}
+                  <img key={i} src={url} alt={`${article.title} gallery photo ${i + 1}`}
                     className="w-full object-cover break-inside-avoid cursor-pointer hover:brightness-75 transition-all duration-500"
-                    loading="lazy"
-                    onClick={() => setLightboxImg(url)}
-                  />
+                    loading="lazy" onClick={() => setLightboxImg(url)} />
                 ))}
               </div>
             </div>
@@ -155,10 +235,8 @@ const JournalArticle = () => {
 
       {/* Lightbox */}
       {lightboxImg && (
-        <div
-          className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-sm flex items-center justify-center p-6 cursor-pointer"
-          onClick={() => setLightboxImg(null)}
-        >
+        <div className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-sm flex items-center justify-center p-6 cursor-pointer"
+          onClick={() => setLightboxImg(null)}>
           <img src={lightboxImg} alt="Enlarged view" className="max-w-full max-h-[85vh] object-contain" />
         </div>
       )}
