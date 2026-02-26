@@ -1,17 +1,19 @@
 import { memo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import ImageEngagement from "@/components/ImageEngagement";
 
 interface LightboxProps {
-  images: { src: string; title: string; category: string }[];
+  images: { id?: string; src: string; title: string; category: string }[];
   currentIndex: number;
   isOpen: boolean;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+  imageType?: "portfolio" | "competition_entry";
 }
 
-const Lightbox = memo(({ images, currentIndex, isOpen, onClose, onPrev, onNext }: LightboxProps) => {
+const Lightbox = memo(({ images, currentIndex, isOpen, onClose, onPrev, onNext, imageType = "portfolio" }: LightboxProps) => {
   const current = images[currentIndex];
 
   const handleKeyDown = useCallback(
@@ -85,9 +87,9 @@ const Lightbox = memo(({ images, currentIndex, isOpen, onClose, onPrev, onNext }
               <img
                 src={current.src}
                 alt={`${current.title} — ${current.category}`}
-                className="max-w-full max-h-[75vh] object-contain rounded-sm shadow-2xl"
+                className="max-w-full max-h-[65vh] object-contain rounded-sm shadow-2xl"
               />
-              <div className="mt-6 text-center">
+              <div className="mt-4 text-center">
                 <span
                   className="text-[10px] tracking-[0.3em] uppercase text-primary block mb-1"
                   style={{ fontFamily: "var(--font-heading)" }}
@@ -101,12 +103,19 @@ const Lightbox = memo(({ images, currentIndex, isOpen, onClose, onPrev, onNext }
                   {current.title}
                 </h3>
                 <span
-                  className="text-xs text-muted-foreground mt-2 block"
+                  className="text-xs text-muted-foreground mt-1 block"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
                   {currentIndex + 1} / {images.length}
                 </span>
               </div>
+
+              {/* Engagement: Like, Love, Vote, Comments */}
+              {current.id && (
+                <div className="mt-3 w-full max-w-md">
+                  <ImageEngagement imageType={imageType} imageId={current.id} />
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </motion.div>
