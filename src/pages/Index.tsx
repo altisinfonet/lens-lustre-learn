@@ -151,7 +151,7 @@ const Index = () => {
   const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
   const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionPreview[]>([]);
-  const [featuredArticle, setFeaturedArticle] = useState<(JournalPreview & { cover_image_url: string | null }) | null>(null);
+  const [featuredArticle, setFeaturedArticle] = useState<(JournalPreview & { cover_image_url: string | null; body?: string }) | null>(null);
   const [courses, setCourses] = useState<CoursePreview[]>([]);
   const [galleryWorks, setGalleryWorks] = useState<PortfolioImage[]>(fallbackGalleryWorks);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -339,7 +339,7 @@ const Index = () => {
       // Fetch featured article for Philosophy section
       const { data: featData } = await supabase
         .from("journal_articles")
-        .select("id, title, slug, excerpt, cover_image_url, tags, published_at, author_id, is_featured")
+        .select("id, title, slug, excerpt, cover_image_url, tags, published_at, author_id, is_featured, body")
         .eq("is_featured", true)
         .eq("status", "published")
         .limit(1)
@@ -356,6 +356,7 @@ const Index = () => {
           tags: featData.tags || [],
           published_at: featData.published_at,
           author_name: authorName,
+          body: featData.body,
         });
       }
     };
@@ -703,7 +704,13 @@ const Index = () => {
                   <>Photography is<br />the art of <em className="italic text-primary">seeing</em></>
                 )}
               </motion.h2>
-              {featuredArticle?.excerpt && (
+              {featuredArticle?.body && (
+                <motion.div variants={fadeUp} custom={2} className="text-sm text-muted-foreground leading-relaxed mb-6 line-clamp-5" style={{ fontFamily: "var(--font-body)" }}>
+                  {/* Strip HTML tags and show first ~5 lines of plain text */}
+                  {featuredArticle.body.replace(/<[^>]*>/g, '').substring(0, 500)}
+                </motion.div>
+              )}
+              {!featuredArticle?.body && featuredArticle?.excerpt && (
                 <motion.p variants={fadeUp} custom={2} className="text-sm text-muted-foreground leading-relaxed mb-6" style={{ fontFamily: "var(--font-body)" }}>
                   {featuredArticle.excerpt}
                 </motion.p>
