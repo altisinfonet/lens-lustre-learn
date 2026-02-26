@@ -392,6 +392,39 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_banners: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       journal_articles: {
         Row: {
           author_id: string
@@ -596,8 +629,11 @@ export type Database = {
           full_name: string | null
           id: string
           instagram_url: string | null
+          is_suspended: boolean
           photography_interests: string[] | null
           portfolio_url: string | null
+          suspended_until: string | null
+          suspension_reason: string | null
           updated_at: string
           website_url: string | null
         }
@@ -609,8 +645,11 @@ export type Database = {
           full_name?: string | null
           id: string
           instagram_url?: string | null
+          is_suspended?: boolean
           photography_interests?: string[] | null
           portfolio_url?: string | null
+          suspended_until?: string | null
+          suspension_reason?: string | null
           updated_at?: string
           website_url?: string | null
         }
@@ -622,8 +661,11 @@ export type Database = {
           full_name?: string | null
           id?: string
           instagram_url?: string | null
+          is_suspended?: boolean
           photography_interests?: string[] | null
           portfolio_url?: string | null
+          suspended_until?: string | null
+          suspension_reason?: string | null
           updated_at?: string
           website_url?: string | null
         }
