@@ -151,6 +151,7 @@ const Index = () => {
   const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
   const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionPreview[]>([]);
+  const [featuredArticle, setFeaturedArticle] = useState<(JournalPreview & { cover_image_url: string | null }) | null>(null);
   const [courses, setCourses] = useState<CoursePreview[]>([]);
   const [galleryWorks, setGalleryWorks] = useState<PortfolioImage[]>(fallbackGalleryWorks);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -334,6 +335,28 @@ const Index = () => {
           title: b.title,
           category: b.category,
         })));
+      }
+      // Fetch featured article for Philosophy section
+      const { data: featData } = await supabase
+        .from("journal_articles")
+        .select("id, title, slug, excerpt, cover_image_url, tags, published_at, author_id, is_featured")
+        .eq("is_featured", true)
+        .eq("status", "published")
+        .limit(1)
+        .single();
+
+      if (featData) {
+        const authorName = profileMap.get(featData.author_id)?.full_name || null;
+        setFeaturedArticle({
+          id: featData.id,
+          title: featData.title,
+          slug: featData.slug,
+          excerpt: featData.excerpt,
+          cover_image_url: featData.cover_image_url,
+          tags: featData.tags || [],
+          published_at: featData.published_at,
+          author_name: authorName,
+        });
       }
     };
 
@@ -639,8 +662,8 @@ const Index = () => {
         onNext={nextLightbox}
       />
 
-      {/* Philosophy — Split layout */}
-      <section id="about" className="py-24 md:py-32 relative" aria-label="Our philosophy">
+      {/* Philosophy / Featured Journal — Split layout */}
+      <section id="about" className="py-24 md:py-32 relative" aria-label="Featured from the Journal">
         <div className="absolute inset-0 bg-gradient-to-b from-card/50 to-transparent pointer-events-none" />
         <div className="container mx-auto px-6 md:px-12 relative z-10">
           <div className="grid md:grid-cols-2 gap-16 items-center">
@@ -652,8 +675,8 @@ const Index = () => {
             >
               <figure className="relative">
                 <img
-                  src="/images/sadhu.jpg"
-                  alt="The Ascetic — portrait photography showcasing the depth of human character"
+                  src={featuredArticle?.cover_image_url || "/images/sadhu.jpg"}
+                  alt={featuredArticle?.title || "Featured photography article"}
                   className="w-full h-[500px] object-cover"
                   loading="lazy"
                 />
@@ -670,29 +693,45 @@ const Index = () => {
               <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-px bg-primary" />
                 <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Philosophy
+                  Featured from Journal
                 </span>
               </motion.div>
               <motion.h2 variants={fadeUp} custom={1} className="text-4xl md:text-6xl font-light leading-[1.1] mb-8" style={{ fontFamily: "var(--font-display)" }}>
-                Photography is
-                <br />
-                the art of <em className="italic text-primary">seeing</em>
+                {featuredArticle ? (
+                  <>{featuredArticle.title}</>
+                ) : (
+                  <>Photography is<br />the art of <em className="italic text-primary">seeing</em></>
+                )}
               </motion.h2>
-              <motion.p variants={fadeUp} custom={2} className="text-sm text-muted-foreground leading-relaxed mb-6" style={{ fontFamily: "var(--font-body)" }}>
-                We believe every photographer has a unique perspective. Our platform
-                brings together competing visions, educational paths, and storytelling —
-                creating a space where the art of photography thrives in all its forms.
-              </motion.p>
-              <motion.p variants={fadeUp} custom={3} className="text-sm text-muted-foreground leading-relaxed mb-10" style={{ fontFamily: "var(--font-body)" }}>
-                From wildlife to street, portrait to aerial — every genre has a home here.
-              </motion.p>
+              {featuredArticle?.excerpt && (
+                <motion.p variants={fadeUp} custom={2} className="text-sm text-muted-foreground leading-relaxed mb-6" style={{ fontFamily: "var(--font-body)" }}>
+                  {featuredArticle.excerpt}
+                </motion.p>
+              )}
+              {featuredArticle?.author_name && (
+                <motion.p variants={fadeUp} custom={3} className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-6" style={{ fontFamily: "var(--font-heading)" }}>
+                  By {featuredArticle.author_name}
+                  {featuredArticle.published_at && (
+                    <> · {new Date(featuredArticle.published_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</>
+                  )}
+                </motion.p>
+              )}
+              {featuredArticle?.tags && featuredArticle.tags.length > 0 && (
+                <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-2 mb-10">
+                  {featuredArticle.tags.map((tag) => (
+                    <span key={tag} className="text-[9px] tracking-[0.15em] uppercase px-2.5 py-1 border border-border text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                      {tag}
+                    </span>
+                  ))}
+                </motion.div>
+              )}
               <motion.div variants={fadeUp} custom={4}>
                 <Link
-                  to="/signup"
+                  to={featuredArticle ? `/journal/${featuredArticle.slug}` : "/journal"}
                   className="group inline-flex items-center gap-3 text-xs tracking-[0.15em] uppercase border-b border-foreground/30 pb-2 hover:border-primary transition-colors duration-700"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Join the Community
+                  Read Full Article
                   <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-700" />
                 </Link>
               </motion.div>
