@@ -45,12 +45,12 @@
     --sidebar-border: 30 8% 16%;
     --sidebar-ring: 32 95% 55%;
 
-    /* Scroll section backgrounds — cool & cinematic */
-    --scroll-bg-1: 210 12% 5%;
-    --scroll-bg-2: 200 18% 8%;
-    --scroll-bg-3: 195 14% 6%;
-    --scroll-bg-4: 185 20% 9%;
-    --scroll-bg-5: 205 16% 7%;
+    /* Scroll section backgrounds — 3 distinct eye-soothing tones */
+    --scroll-bg-1: 220 15% 6%;
+    --scroll-bg-2: 180 12% 8%;
+    --scroll-bg-3: 260 10% 7%;
+    --scroll-bg-4: 200 14% 9%;
+    --scroll-bg-5: 240 12% 6%;
 
     --font-display: 'Cormorant Garamond', serif;
     --font-heading: 'Syne', sans-serif;
@@ -95,12 +95,12 @@
     --sidebar-border: 30 15% 85%;
     --sidebar-ring: 32 95% 45%;
 
-    /* Scroll section backgrounds — light mode cool tones */
-    --scroll-bg-1: 210 20% 96%;
-    --scroll-bg-2: 200 22% 93%;
-    --scroll-bg-3: 205 18% 95%;
-    --scroll-bg-4: 195 24% 91%;
-    --scroll-bg-5: 200 20% 94%;
+    /* Scroll section backgrounds — light mode soothing tones */
+    --scroll-bg-1: 220 18% 95%;
+    --scroll-bg-2: 180 20% 93%;
+    --scroll-bg-3: 260 15% 94%;
+    --scroll-bg-4: 200 22% 92%;
+    --scroll-bg-5: 240 18% 95%;
   }
 
   * {
