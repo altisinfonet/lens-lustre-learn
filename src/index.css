@@ -52,10 +52,10 @@
     --scroll-bg-4: 200 14% 9%;
     --scroll-bg-5: 240 12% 6%;
 
-    /* Photo of the Day — warm yellow scroll tones (dark mode) */
-    --potd-bg-1: 40 20% 6%;
-    --potd-bg-2: 45 30% 9%;
-    --potd-bg-3: 48 35% 12%;
+    /* Photo of the Day — warm golden scroll tones (dark mode) rgb(252,192,11) base */
+    --potd-bg-1: 44 97% 4%;
+    --potd-bg-2: 44 97% 7%;
+    --potd-bg-3: 44 97% 10%;
 
     --font-display: 'Cormorant Garamond', serif;
     --font-heading: 'Syne', sans-serif;
@@ -107,10 +107,10 @@
     --scroll-bg-4: 200 22% 92%;
     --scroll-bg-5: 240 18% 95%;
 
-    /* Photo of the Day — warm yellow scroll tones (light mode) */
-    --potd-bg-1: 45 40% 95%;
-    --potd-bg-2: 48 50% 91%;
-    --potd-bg-3: 50 55% 87%;
+    /* Photo of the Day — warm golden scroll tones (light mode) rgb(252,192,11) base */
+    --potd-bg-1: 44 97% 95%;
+    --potd-bg-2: 44 97% 90%;
+    --potd-bg-3: 44 97% 85%;
   }
 
   * {
