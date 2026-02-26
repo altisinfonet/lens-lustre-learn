@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback, lazy, Suspense, memo } from "react";
 import Lightbox from "@/components/Lightbox";
+import PhotoOfTheDay from "@/components/PhotoOfTheDay";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -463,6 +464,9 @@ const Index = () => {
           <ArrowDown className="h-4 w-4 text-muted-foreground" />
         </motion.div>
       </section>
+
+      {/* Photo of the Day — Big Banner */}
+      <PhotoOfTheDay />
 
       {/* Marquee — slower, more elegant */}
       <div className="py-6 border-y border-border overflow-hidden" aria-hidden="true">
