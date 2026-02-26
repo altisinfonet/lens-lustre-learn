@@ -52,6 +52,11 @@
     --scroll-bg-4: 200 14% 9%;
     --scroll-bg-5: 240 12% 6%;
 
+    /* Photo of the Day — warm yellow scroll tones (dark mode) */
+    --potd-bg-1: 40 20% 6%;
+    --potd-bg-2: 45 30% 9%;
+    --potd-bg-3: 48 35% 12%;
+
     --font-display: 'Cormorant Garamond', serif;
     --font-heading: 'Syne', sans-serif;
     --font-body: 'Poppins', sans-serif;
@@ -101,6 +106,11 @@
     --scroll-bg-3: 260 15% 94%;
     --scroll-bg-4: 200 22% 92%;
     --scroll-bg-5: 240 18% 95%;
+
+    /* Photo of the Day — warm yellow scroll tones (light mode) */
+    --potd-bg-1: 45 40% 95%;
+    --potd-bg-2: 48 50% 91%;
+    --potd-bg-3: 50 55% 87%;
   }
 
   * {
