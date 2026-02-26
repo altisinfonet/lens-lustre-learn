@@ -865,6 +865,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_search_users: {
+        Args: { search_by?: string; search_query?: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_suspended: boolean
+          suspended_until: string
+          suspension_reason: string
+        }[]
+      }
       admin_wallet_credit: {
         Args: {
           _admin_id: string

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Newspaper } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ArticleRow {
@@ -57,73 +57,81 @@ const AdminJournal = () => {
     }
   };
 
-  const statusColor = (s: string) => {
-    if (s === "published") return "text-primary border-primary";
-    if (s === "archived") return "text-foreground/40 border-foreground/20";
-    return "text-yellow-500 border-yellow-500";
+  const statusStyle = (s: string) => {
+    if (s === "published") return "bg-primary/10 text-primary border-primary/30";
+    if (s === "archived") return "bg-muted text-muted-foreground border-border";
+    return "bg-yellow-500/10 text-yellow-600 border-yellow-500/30";
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
           {articles.length} article{articles.length !== 1 ? "s" : ""}
         </span>
         <button onClick={() => navigate("/journal/editor/new")}
-          className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity duration-500"
+          className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-sm"
           style={{ fontFamily: "var(--font-heading)" }}>
-          <Plus className="h-3.5 w-3.5" /> New Article
+          <Plus className="h-3 w-3" /> New Article
         </button>
       </div>
 
-      <div className="border border-border overflow-x-auto">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-border">
-              {["Title", "Author", "Tags", "Status", "Published", "Actions"].map((h) => (
-                <th key={h} className="px-4 py-3 text-[9px] tracking-[0.2em] uppercase text-muted-foreground font-normal" style={{ fontFamily: "var(--font-heading)" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {articles.map((a) => (
-              <tr key={a.id} className="hover:bg-muted/30 transition-colors duration-300">
-                <td className="px-4 py-3 text-sm" style={{ fontFamily: "var(--font-body)" }}>{a.title}</td>
-                <td className="px-4 py-3 text-[10px] text-muted-foreground">{a.author_name || "Unknown"}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-1 flex-wrap">
-                    {a.tags.slice(0, 3).map((t) => (
-                      <span key={t} className="text-[8px] px-1.5 py-0.5 border border-border text-muted-foreground">{t}</span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <select value={a.status} onChange={(e) => updateStatus(a.id, e.target.value)}
-                    className={`text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 border bg-transparent outline-none cursor-pointer ${statusColor(a.status)}`}
-                    style={{ fontFamily: "var(--font-heading)" }}>
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="archived">Archived</option>
-                  </select>
-                </td>
-                <td className="px-4 py-3 text-[10px] text-muted-foreground">
-                  {a.published_at ? new Date(a.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => navigate(`/journal/${a.slug}`)} className="p-1.5 hover:text-primary transition-colors" title="View"><Eye className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => navigate(`/journal/editor/${a.id}`)} className="p-1.5 hover:text-primary transition-colors" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => deleteArticle(a.id)} className="p-1.5 hover:text-destructive transition-colors" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {articles.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">No articles yet</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {articles.length > 0 ? (
+        <div className="border border-border rounded-sm overflow-hidden divide-y divide-border">
+          {articles.map((a) => (
+            <div key={a.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors group">
+              <Newspaper className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>{a.title}</span>
+                  <span className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider shrink-0 ${statusStyle(a.status)}`}>
+                    {a.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[10px] text-muted-foreground">{a.author_name || "Unknown"}</span>
+                  {a.published_at && (
+                    <>
+                      <span className="text-[10px] text-muted-foreground/40">·</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(a.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" })}
+                      </span>
+                    </>
+                  )}
+                  {a.tags.length > 0 && (
+                    <>
+                      <span className="text-[10px] text-muted-foreground/40">·</span>
+                      <div className="flex gap-1">
+                        {a.tags.slice(0, 2).map((t) => (
+                          <span key={t} className="text-[8px] px-1 py-0.5 bg-muted text-muted-foreground rounded-sm">{t}</span>
+                        ))}
+                        {a.tags.length > 2 && <span className="text-[8px] text-muted-foreground">+{a.tags.length - 2}</span>}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+              <select value={a.status} onChange={(e) => updateStatus(a.id, e.target.value)}
+                className="text-[9px] tracking-wider uppercase px-2 py-1 border border-border bg-transparent outline-none cursor-pointer rounded-sm"
+                style={{ fontFamily: "var(--font-heading)" }}>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+              <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => navigate(`/journal/${a.slug}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="View"><Eye className="h-3.5 w-3.5" /></button>
+                <button onClick={() => navigate(`/journal/editor/${a.id}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                <button onClick={() => deleteArticle(a.id)} className="p-1.5 hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 border border-dashed border-border rounded-sm">
+          <Newspaper className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
+          <p className="text-xs text-muted-foreground">No articles yet</p>
+        </div>
+      )}
     </div>
   );
 };

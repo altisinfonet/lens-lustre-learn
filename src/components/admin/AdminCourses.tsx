@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface CourseRow {
@@ -43,7 +43,6 @@ const AdminCourses = () => {
 
   const deleteCourse = async (id: string) => {
     if (!confirm("Delete this course and all its lessons?")) return;
-    // Delete lessons first
     await supabase.from("lessons").delete().eq("course_id", id);
     const { error } = await supabase.from("courses").delete().eq("id", id);
     if (error) toast({ title: "Delete failed", description: error.message, variant: "destructive" });
@@ -61,66 +60,70 @@ const AdminCourses = () => {
     }
   };
 
-  const statusColor = (s: string) => {
-    if (s === "published") return "text-primary border-primary";
-    if (s === "archived") return "text-foreground/40 border-foreground/20";
-    return "text-yellow-500 border-yellow-500";
+  const statusStyle = (s: string) => {
+    if (s === "published") return "bg-primary/10 text-primary border-primary/30";
+    if (s === "archived") return "bg-muted text-muted-foreground border-border";
+    return "bg-yellow-500/10 text-yellow-600 border-yellow-500/30";
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
           {courses.length} course{courses.length !== 1 ? "s" : ""}
         </span>
         <button onClick={() => navigate("/courses/editor/new")}
-          className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity duration-500"
+          className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-sm"
           style={{ fontFamily: "var(--font-heading)" }}>
-          <Plus className="h-3.5 w-3.5" /> New Course
+          <Plus className="h-3 w-3" /> New Course
         </button>
       </div>
 
-      <div className="border border-border overflow-x-auto">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-border">
-              {["Title", "Author", "Category", "Difficulty", "Price", "Status", "Actions"].map((h) => (
-                <th key={h} className="px-4 py-3 text-[9px] tracking-[0.2em] uppercase text-muted-foreground font-normal" style={{ fontFamily: "var(--font-heading)" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {courses.map((c) => (
-              <tr key={c.id} className="hover:bg-muted/30 transition-colors duration-300">
-                <td className="px-4 py-3 text-sm" style={{ fontFamily: "var(--font-body)" }}>{c.title}</td>
-                <td className="px-4 py-3 text-[10px] text-muted-foreground">{c.author_name || "Unknown"}</td>
-                <td className="px-4 py-3 text-[10px] text-muted-foreground">{c.category}</td>
-                <td className="px-4 py-3 text-[10px] text-muted-foreground">{c.difficulty}</td>
-                <td className="px-4 py-3 text-[11px] text-muted-foreground">{c.is_free ? "Free" : `$${c.price}`}</td>
-                <td className="px-4 py-3">
-                  <select value={c.status} onChange={(e) => updateStatus(c.id, e.target.value)}
-                    className={`text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 border bg-transparent outline-none cursor-pointer ${statusColor(c.status)}`}
-                    style={{ fontFamily: "var(--font-heading)" }}>
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="archived">Archived</option>
-                  </select>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => navigate(`/courses/${c.slug}`)} className="p-1.5 hover:text-primary transition-colors" title="View"><Eye className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => navigate(`/courses/editor/${c.id}`)} className="p-1.5 hover:text-primary transition-colors" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => deleteCourse(c.id)} className="p-1.5 hover:text-destructive transition-colors" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {courses.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-muted-foreground">No courses yet</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {courses.length > 0 ? (
+        <div className="border border-border rounded-sm overflow-hidden divide-y divide-border">
+          {courses.map((c) => (
+            <div key={c.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors group">
+              <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>{c.title}</span>
+                  <span className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider shrink-0 ${statusStyle(c.status)}`}>
+                    {c.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground">
+                  <span>{c.author_name || "Unknown"}</span>
+                  <span>·</span>
+                  <span>{c.category}</span>
+                  <span>·</span>
+                  <span>{c.difficulty}</span>
+                  <span>·</span>
+                  <span>{c.is_free ? "Free" : `$${c.price}`}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <select value={c.status} onChange={(e) => updateStatus(c.id, e.target.value)}
+                  className="text-[9px] tracking-wider uppercase px-2 py-1 border border-border bg-transparent outline-none cursor-pointer rounded-sm"
+                  style={{ fontFamily: "var(--font-heading)" }}>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => navigate(`/courses/${c.slug}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="View"><Eye className="h-3.5 w-3.5" /></button>
+                <button onClick={() => navigate(`/courses/editor/${c.id}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                <button onClick={() => deleteCourse(c.id)} className="p-1.5 hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 border border-dashed border-border rounded-sm">
+          <BookOpen className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
+          <p className="text-xs text-muted-foreground">No courses yet</p>
+        </div>
+      )}
     </div>
   );
 };
