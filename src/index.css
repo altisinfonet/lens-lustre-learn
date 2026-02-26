@@ -52,7 +52,6 @@
     --scroll-bg-4: 200 14% 9%;
     --scroll-bg-5: 240 12% 6%;
 
-    /* Photo of the Day — warm golden scroll tones (dark mode) rgb(252,192,11) base */
     --potd-bg-1: 44 97% 4%;
     --potd-bg-2: 44 97% 7%;
     --potd-bg-3: 44 97% 10%;
@@ -107,7 +106,6 @@
     --scroll-bg-4: 200 22% 92%;
     --scroll-bg-5: 240 18% 95%;
 
-    /* Photo of the Day — warm golden scroll tones (light mode) rgb(252,192,11) base */
     --potd-bg-1: 44 97% 95%;
     --potd-bg-2: 44 97% 90%;
     --potd-bg-3: 44 97% 85%;
