@@ -204,9 +204,8 @@ const Index = () => {
         supabase
           .from("competitions")
           .select("id, title, category, cover_image_url, status, starts_at, ends_at, prize_info")
-          .in("status", ["active", "upcoming"])
-          .order("starts_at", { ascending: true })
-          .limit(4),
+          .order("starts_at", { ascending: false })
+          .limit(12),
         supabase
           .from("courses")
           .select("id, title, slug, category, difficulty, cover_image_url, is_free, author_id")
@@ -795,8 +794,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Active Competitions Showcase */}
-      <section className="py-24 md:py-32 bg-card/30" aria-label="Active competitions">
+      {/* All Competitions Showcase — Grouped by Status */}
+      <section className="py-24 md:py-32 bg-card/30" aria-label="Competitions">
         <div className="container mx-auto px-6 md:px-12">
           <motion.header
             initial="hidden"
@@ -808,11 +807,11 @@ const Index = () => {
               <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-px bg-primary" />
                 <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Compete Now
+                  Competitions
                 </span>
               </motion.div>
               <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                Live <em className="italic">Competitions</em>
+                All <em className="italic">Competitions</em>
               </motion.h2>
             </div>
             <motion.div variants={fadeIn} custom={2}>
@@ -827,50 +826,86 @@ const Index = () => {
           </motion.header>
 
           {competitions.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {competitions.map((comp, i) => (
-                <motion.div
-                  key={comp.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
-                >
-                  <Link to={`/competitions/${comp.id}`} className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
-                    <div className="relative h-48 overflow-hidden bg-muted">
-                      {comp.cover_image_url ? (
-                        <img src={comp.cover_image_url} alt={comp.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]" loading="lazy" />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/10 to-muted flex items-center justify-center">
-                          <Trophy className="h-10 w-10 text-primary/30" />
-                        </div>
-                      )}
-                      <div className="absolute top-3 left-3">
-                        <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 inline-flex items-center gap-1 ${comp.status === "active" ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"}`} style={{ fontFamily: "var(--font-heading)" }}>
-                          {comp.status === "active" ? "● Live" : "Upcoming"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="p-5">
-                      <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                        {comp.category}
+            <>
+              {[
+                { label: "Upcoming", statuses: ["upcoming"], icon: "◎" },
+                { label: "Ongoing", statuses: ["open", "active", "judging"], icon: "●" },
+                { label: "Closed", statuses: ["closed"], icon: "◆" },
+              ].map((group) => {
+                const items = competitions.filter((c) => group.statuses.includes(c.status));
+                if (items.length === 0) return null;
+                return (
+                  <div key={group.label} className="mb-12 last:mb-0">
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.6 }}
+                      className="flex items-center gap-3 mb-6"
+                    >
+                      <span className="text-primary text-sm">{group.icon}</span>
+                      <span className="text-[11px] tracking-[0.25em] uppercase text-foreground/70" style={{ fontFamily: "var(--font-heading)" }}>
+                        {group.label}
                       </span>
-                      <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
-                        {comp.title}
-                      </h3>
-                      {comp.prize_info && (
-                        <p className="text-[10px] text-muted-foreground line-clamp-1 mb-2" style={{ fontFamily: "var(--font-body)" }}>
-                          🏆 {comp.prize_info}
-                        </p>
-                      )}
-                      <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                        {comp.status === "active" ? `Ends ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : `Starts ${new Date(comp.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-                      </span>
+                      <div className="flex-1 h-px bg-border" />
+                    </motion.div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {items.map((comp, i) => (
+                        <motion.div
+                          key={comp.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                        >
+                          <Link to={`/competitions/${comp.id}`} className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
+                            <div className="relative h-48 overflow-hidden bg-muted">
+                              {comp.cover_image_url ? (
+                                <img src={comp.cover_image_url} alt={comp.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]" loading="lazy" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-muted flex items-center justify-center">
+                                  <Trophy className="h-10 w-10 text-primary/30" />
+                                </div>
+                              )}
+                              <div className="absolute top-3 left-3">
+                                <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 inline-flex items-center gap-1 border bg-background/80 backdrop-blur-sm ${
+                                  comp.status === "open" || comp.status === "active" ? "border-primary text-primary" 
+                                  : comp.status === "judging" ? "border-yellow-500 text-yellow-500"
+                                  : comp.status === "closed" ? "border-foreground/20 text-foreground/40"
+                                  : "border-muted-foreground/40 text-muted-foreground"
+                                }`} style={{ fontFamily: "var(--font-heading)" }}>
+                                  {comp.status}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="p-5">
+                              <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                                {comp.category}
+                              </span>
+                              <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
+                                {comp.title}
+                              </h3>
+                              {comp.prize_info && (
+                                <p className="text-[10px] text-muted-foreground line-clamp-1 mb-2" style={{ fontFamily: "var(--font-body)" }}>
+                                  🏆 {comp.prize_info}
+                                </p>
+                              )}
+                              <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                                {comp.status === "closed"
+                                  ? `Ended ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                                  : comp.status === "open" || comp.status === "active"
+                                  ? `Ends ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                                  : `Starts ${new Date(comp.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                              </span>
+                            </div>
+                          </Link>
+                        </motion.div>
+                      ))}
                     </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+                  </div>
+                );
+              })}
+            </>
           ) : (
             <div className="text-center py-16 border border-dashed border-border rounded-sm">
               <Trophy className="h-10 w-10 text-primary/30 mx-auto mb-4" />
