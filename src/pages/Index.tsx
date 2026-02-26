@@ -84,6 +84,7 @@ const fallbackGalleryWorks = [
 ];
 
 interface PortfolioImage {
+  id?: string;
   src: string;
   title: string;
   category: string;
@@ -317,6 +318,7 @@ const Index = () => {
       const portfolioData = portfolioRes.data || [];
       if (portfolioData.length > 0) {
         setGalleryWorks(portfolioData.map((p) => ({
+          id: p.id,
           src: p.image_url,
           title: p.title,
           category: p.category,

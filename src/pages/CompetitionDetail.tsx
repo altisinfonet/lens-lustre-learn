@@ -1,5 +1,6 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Calendar, Clock, Trophy, Heart, Upload, Users } from "lucide-react";
+import ImageEngagement from "@/components/ImageEngagement";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import { motion } from "framer-motion";
@@ -322,6 +323,10 @@ const CompetitionDetail = () => {
                           <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                             {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </span>
+                        </div>
+                        {/* Image engagement: like, love, vote, comments */}
+                        <div className="mt-3 border-t border-border/50 pt-3">
+                          <ImageEngagement imageType="competition_entry" imageId={entry.id} />
                         </div>
                       </div>
                     </motion.div>

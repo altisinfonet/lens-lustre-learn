@@ -47,6 +47,53 @@ export type Database = {
         }
         Relationships: []
       }
+      comment_reports: {
+        Row: {
+          admin_action: string | null
+          comment_id: string
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_action?: string | null
+          comment_id: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reporter_id: string
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_action?: string | null
+          comment_id?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "image_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           article_id: string | null
@@ -431,6 +478,80 @@ export type Database = {
           sort_order?: number
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      image_comments: {
+        Row: {
+          content: string
+          created_at: string
+          flag_reason: string | null
+          id: string
+          image_id: string
+          image_type: string
+          is_flagged: boolean
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          flag_reason?: string | null
+          id?: string
+          image_id: string
+          image_type: string
+          is_flagged?: boolean
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          flag_reason?: string | null
+          id?: string
+          image_id?: string
+          image_type?: string
+          is_flagged?: boolean
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "image_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          image_id: string
+          image_type: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_id: string
+          image_type: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_id?: string
+          image_type?: string
+          reaction_type?: string
+          user_id?: string
         }
         Relationships: []
       }
