@@ -67,13 +67,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
             className="hidden md:flex items-center gap-6 lg:gap-8 text-xs tracking-[0.15em] uppercase flex-shrink-0"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            {isHome && (
-              <>
-                <a href="#works" className="hover:opacity-60 transition-opacity duration-500">Works</a>
-                <a href="#about" className="hover:opacity-60 transition-opacity duration-500">About</a>
-                <a href="#pillars" className="hover:opacity-60 transition-opacity duration-500">Explore</a>
-              </>
-            )}
+            
             {navLinks.map((l) => (
               <Link
                 key={l.to}
@@ -221,13 +215,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                     {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </button>
                 </div>
-                {isHome && (
-                  <>
-                    <a href="#works" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Works</a>
-                    <a href="#about" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">About</a>
-                    <a href="#pillars" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Explore</a>
-                  </>
-                )}
+                
                 {navLinks.map((l) => (
                   <Link
                     key={l.to}
