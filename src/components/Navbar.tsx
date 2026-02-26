@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import T from "@/components/T";
 import { LogOut, Shield, Menu, X, Sun, Moon, Scale, Wallet } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -77,15 +78,15 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                   location.pathname.startsWith(l.to) ? "text-primary" : ""
                 }`}
               >
-                {l.label}
+                <T>{l.label}</T>
               </Link>
             ))}
-            {user && <Link to="/profile" className="hover:opacity-60 transition-opacity duration-500">Profile</Link>}
-            {user && <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500">Dashboard</Link>}
+            {user && <Link to="/profile" className="hover:opacity-60 transition-opacity duration-500"><T>Profile</T></Link>}
+            {user && <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500"><T>Dashboard</T></Link>}
             {user && !isAdmin && (
               <Link to="/wallet" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
                 <Wallet className="h-3 w-3" />
-                Wallet
+                <T>Wallet</T>
                 {walletBalance !== null && (
                   <span className="text-[8px] tracking-[0.1em] px-1.5 py-0.5 bg-primary/15 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
                     ${Number(walletBalance).toFixed(2)}
@@ -96,13 +97,13 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
             {isAdmin && (
               <Link to="/admin" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
                 <Shield className="h-3 w-3" />
-                Admin
+                <T>Admin</T>
               </Link>
             )}
             {(hasRole("judge") || isAdmin) && (
               <Link to="/judge" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
                 <Scale className="h-3 w-3" />
-                Judge
+                <T>Judge</T>
               </Link>
             )}
           </div>
@@ -141,7 +142,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
                   <LogOut className="h-3 w-3" />
-                  Logout
+                  <T>Logout</T>
                 </button>
               </>
             ) : (
@@ -151,14 +152,14 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                   className="text-xs tracking-[0.15em] uppercase hover:opacity-60 transition-opacity duration-500"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Login
+                  <T>Login</T>
                 </Link>
                 <Link
                   to="/signup"
                   className="text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-700"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Join
+                  <T>Join</T>
                 </Link>
               </>
             )}
@@ -220,25 +221,21 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                 </div>
                 
                 {navLinks.map((l) => (
-                  <Link
-                    key={l.to}
-                    to={l.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors"
-                  >
-                    {l.label}
+                  <Link key={l.to} to={l.to} onClick={() => setMobileMenuOpen(false)}
+                    className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">
+                    <T>{l.label}</T>
                   </Link>
                 ))}
                 {user && (
-                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Profile</Link>
+                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors"><T>Profile</T></Link>
                 )}
                 {user && (
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Dashboard</Link>
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors"><T>Dashboard</T></Link>
                 )}
                 {user && !isAdmin && (
                   <Link to="/wallet" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
                     <Wallet className="h-3.5 w-3.5" />
-                    Wallet
+                    <T>Wallet</T>
                     {walletBalance !== null && (
                       <span className="text-[9px] px-1.5 py-0.5 bg-primary/15 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
                         ${Number(walletBalance).toFixed(2)}
@@ -249,13 +246,13 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                 {isAdmin && (
                   <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
                     <Shield className="h-3.5 w-3.5" />
-                    Admin
+                    <T>Admin</T>
                   </Link>
                 )}
                 {(hasRole("judge") || isAdmin) && (
                   <Link to="/judge" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
                     <Scale className="h-3.5 w-3.5" />
-                    Judge
+                    <T>Judge</T>
                   </Link>
                 )}
 
@@ -280,18 +277,18 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                       className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors inline-flex items-center gap-2"
                     >
                       <LogOut className="h-3.5 w-3.5" />
-                      Logout
+                      <T>Logout</T>
                     </button>
                   </>
                 ) : (
                   <>
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Login</Link>
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors"><T>Login</T></Link>
                     <Link
                       to="/signup"
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-sm tracking-[0.15em] uppercase px-5 py-2.5 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-500 text-center"
                     >
-                      Join
+                      <T>Join</T>
                     </Link>
                   </>
                 )}

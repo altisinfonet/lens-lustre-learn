@@ -1,4 +1,5 @@
 import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand } from "lucide-react";
+import T from "@/components/T";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 import { useEffect, useState, useCallback, lazy, Suspense, memo, useRef } from "react";
@@ -543,7 +544,7 @@ const Index = () => {
               >
                 <div className="w-16 h-px bg-primary" />
                 <span className="text-xs tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Photography Platform
+                  <T>Photography Platform</T>
                 </span>
               </motion.div>
 
@@ -554,8 +555,8 @@ const Index = () => {
                 className="text-5xl md:text-7xl lg:text-8xl font-light leading-[0.9] mb-6 tracking-tight"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Every Frame{" "}
-                <em className="text-primary font-light italic">Tells</em>
+                <T>Every Frame</T>{" "}
+                <em className="text-primary font-light italic"><T>Tells</T></em>
               </motion.h1>
 
               <motion.p
@@ -565,8 +566,7 @@ const Index = () => {
                 className="text-sm md:text-base text-muted-foreground max-w-md leading-relaxed mb-12"
                 style={{ fontFamily: "var(--font-body)" }}
               >
-                A curated space for photographers who see the world differently.
-                Compete globally. Learn from masters. Share your stories.
+                <T>A curated space for photographers who see the world differently. Compete globally. Learn from masters. Share your stories.</T>
               </motion.p>
 
               <motion.div
@@ -583,7 +583,7 @@ const Index = () => {
                   <span className="w-12 h-12 rounded-full bg-primary flex items-center justify-center group-hover:w-14 group-hover:h-14 transition-all duration-700">
                     <ArrowRight className="h-4 w-4 text-primary-foreground" />
                   </span>
-                  Begin Your Journey
+                  <T>Begin Your Journey</T>
                 </Link>
               </motion.div>
             </motion.div>
@@ -617,7 +617,7 @@ const Index = () => {
           transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
           className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2"
         >
-          <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>Scroll</span>
+          <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}><T>Scroll</T></span>
           <ArrowDown className="h-4 w-4 text-muted-foreground" />
         </motion.div>
       </section>
@@ -641,11 +641,11 @@ const Index = () => {
               <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-px bg-primary" />
                 <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Competitions
+                  <T>Competitions</T>
                 </span>
               </motion.div>
               <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                All <em className="italic">Competitions</em>
+                <T>All</T> <em className="italic"><T>Competitions</T></em>
               </motion.h2>
             </div>
             <motion.div variants={fadeIn} custom={2}>
@@ -654,7 +654,7 @@ const Index = () => {
                 className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+                <T>View All</T> <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
               </Link>
             </motion.div>
           </motion.header>
@@ -755,7 +755,7 @@ const Index = () => {
                     <Trophy className="h-10 w-10 text-primary/30 mx-auto mb-4" />
                     <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>No {compFilter.toLowerCase()} competitions found</p>
                     <Link to="/competitions" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                      Browse All <ArrowRight className="h-3 w-3" />
+                      <T>Browse All</T> <ArrowRight className="h-3 w-3" />
                     </Link>
                   </div>
                 )}
@@ -780,7 +780,7 @@ const Index = () => {
             <motion.div variants={fadeUp} custom={0} className="flex items-center justify-center gap-4 mb-6">
               <div className="w-16 h-px bg-primary" />
               <span className="text-[10px] tracking-[0.4em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                Portfolio
+                <T>Portfolio</T>
               </span>
               <div className="w-16 h-px bg-primary" />
             </motion.div>
@@ -790,7 +790,7 @@ const Index = () => {
               className="text-5xl md:text-7xl lg:text-8xl font-light tracking-tight"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Selected <em className="italic text-primary">Works</em>
+              <T>Selected</T> <em className="italic text-primary"><T>Works</T></em>
             </motion.h2>
             <motion.p
               variants={fadeIn}
@@ -967,14 +967,14 @@ const Index = () => {
               <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-px bg-primary" />
                 <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Featured from Journal
+                  <T>Featured from Journal</T>
                 </span>
               </motion.div>
               <motion.h2 variants={fadeUp} custom={1} className="text-4xl md:text-6xl font-light leading-[1.1] mb-8" style={{ fontFamily: "var(--font-display)" }}>
                 {featuredArticle ? (
                   <>{featuredArticle.title}</>
                 ) : (
-                  <>Photography is<br />the art of <em className="italic text-primary">seeing</em></>
+                  <><T>Photography is</T><br /><T>the art of</T> <em className="italic text-primary"><T>seeing</T></em></>
                 )}
               </motion.h2>
               <motion.p variants={fadeUp} custom={2} className="text-sm text-muted-foreground leading-relaxed mb-6 line-clamp-5" style={{ fontFamily: "var(--font-body)" }}>
@@ -1007,7 +1007,7 @@ const Index = () => {
                   className="group inline-flex items-center gap-3 text-xs tracking-[0.15em] uppercase border-b border-foreground/30 pb-2 hover:border-primary transition-colors duration-700"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Read Full Article
+                  <T>Read Full Article</T>
                   <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-700" />
                 </Link>
               </motion.div>
@@ -1028,12 +1028,12 @@ const Index = () => {
             <motion.div variants={fadeIn} custom={0} className="flex items-center justify-center gap-4 mb-4">
               <div className="w-12 h-px bg-primary" />
               <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                Explore
+                <T>Explore</T>
               </span>
               <div className="w-12 h-px bg-primary" />
             </motion.div>
             <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-              Three <em className="italic">Worlds</em>
+              <T>Three</T> <em className="italic"><T>Worlds</T></em>
             </motion.h2>
           </motion.header>
 
@@ -1100,7 +1100,7 @@ const Index = () => {
                       className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-[1s] delay-300"
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
-                      Explore <ArrowRight className="h-3 w-3" />
+                      <T>Explore</T> <ArrowRight className="h-3 w-3" />
                     </Link>
                   </div>
                 </div>
@@ -1123,11 +1123,11 @@ const Index = () => {
               <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-px bg-primary" />
                 <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Learn
+                  <T>Learn</T>
                 </span>
               </motion.div>
               <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                Featured <em className="italic">Courses</em>
+                <T>Featured</T> <em className="italic"><T>Courses</T></em>
               </motion.h2>
             </div>
             <motion.div variants={fadeIn} custom={2}>
@@ -1136,7 +1136,7 @@ const Index = () => {
                 className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+                <T>View All</T> <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
               </Link>
             </motion.div>
           </motion.header>
@@ -1204,9 +1204,9 @@ const Index = () => {
           ) : (
             <div className="text-center py-16 border border-dashed border-border rounded-sm">
               <BookOpen className="h-10 w-10 text-secondary/30 mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>Courses coming soon</p>
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}><T>Courses coming soon</T></p>
               <Link to="/courses" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                Browse All <ArrowRight className="h-3 w-3" />
+                <T>Browse All</T> <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           )}
@@ -1226,11 +1226,11 @@ const Index = () => {
                 <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-px bg-primary" />
                   <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                    Hall of Fame
+                    <T>Hall of Fame</T>
                   </span>
                 </motion.div>
                 <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                  Competition <em className="italic">Winners</em>
+                  <T>Competition</T> <em className="italic"><T>Winners</T></em>
                 </motion.h2>
               </div>
               <motion.div variants={fadeIn} custom={2}>
@@ -1239,7 +1239,7 @@ const Index = () => {
                   className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+                  <T>View All</T> <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
                 </Link>
               </motion.div>
             </motion.header>
@@ -1325,11 +1325,11 @@ const Index = () => {
                 <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-px bg-primary" />
                   <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                    Recognition
+                    <T>Recognition</T>
                   </span>
                 </motion.div>
                 <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                  Certified <em className="italic">Excellence</em>
+                  <T>Certified</T> <em className="italic"><T>Excellence</T></em>
                 </motion.h2>
               </div>
               <motion.div variants={fadeIn} custom={2}>
@@ -1338,7 +1338,7 @@ const Index = () => {
                   className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Verify Certificate <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+                  <T>Verify Certificate</T> <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
                 </Link>
               </motion.div>
             </motion.header>
@@ -1453,7 +1453,7 @@ const Index = () => {
               {/* Testimonials */}
               {testimonials.length > 0 && (
                 <div className="mt-16">
-                  <h3 className="text-[10px] tracking-[0.3em] uppercase text-primary mb-8 text-center" style={{ fontFamily: "var(--font-heading)" }}>What Our Certified Photographers Say</h3>
+                  <h3 className="text-[10px] tracking-[0.3em] uppercase text-primary mb-8 text-center" style={{ fontFamily: "var(--font-heading)" }}><T>What Our Certified Photographers Say</T></h3>
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {testimonials.map((t, i) => (
                       <motion.div key={t.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.8 }}
@@ -1486,7 +1486,7 @@ const Index = () => {
               {/* Leaderboard */}
               {certLeaderboard.length > 0 && (
                 <div className="mt-16">
-                  <h3 className="text-[10px] tracking-[0.3em] uppercase text-primary mb-8 text-center" style={{ fontFamily: "var(--font-heading)" }}>Top Certified Photographers</h3>
+                  <h3 className="text-[10px] tracking-[0.3em] uppercase text-primary mb-8 text-center" style={{ fontFamily: "var(--font-heading)" }}><T>Top Certified Photographers</T></h3>
                   <div className="max-w-lg mx-auto border border-border rounded-sm divide-y divide-border">
                     {certLeaderboard.map((entry, i) => (
                       <div key={entry.user_id} className="flex items-center gap-3 px-4 py-3">
@@ -1517,9 +1517,9 @@ const Index = () => {
           ) : (
             <div className="text-center py-16 border border-dashed border-border rounded-sm">
               <Award className="h-10 w-10 text-primary/30 mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>Certificates of excellence will appear here</p>
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}><T>Certificates of excellence will appear here</T></p>
               <Link to="/courses" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                Start Learning <ArrowRight className="h-3 w-3" />
+                <T>Start Learning</T> <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           )}
@@ -1539,11 +1539,11 @@ const Index = () => {
                 <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-px bg-primary" />
                   <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                    From the Journal
+                    <T>From the Journal</T>
                   </span>
                 </motion.div>
                 <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                  Stories & <em className="italic">Insights</em>
+                  <T>Stories &</T> <em className="italic"><T>Insights</T></em>
                 </motion.h2>
               </div>
               <motion.div variants={fadeIn} custom={2}>
@@ -1552,7 +1552,7 @@ const Index = () => {
                   className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+                  <T>View All</T> <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
                 </Link>
               </motion.div>
             </motion.header>
@@ -1579,7 +1579,7 @@ const Index = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
                       <div className="absolute top-3 left-3">
                         <span className="text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-primary text-primary-foreground inline-flex items-center gap-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-                          <Eye className="h-3 w-3" /> Featured
+                          <Eye className="h-3 w-3" /> <T>Featured</T>
                         </span>
                       </div>
                     </div>
@@ -1682,9 +1682,9 @@ const Index = () => {
           ) : (
             <div className="text-center py-16 border border-dashed border-border rounded-sm">
               <Newspaper className="h-10 w-10 text-primary/30 mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>Stories and insights coming soon</p>
+              <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}><T>Stories and insights coming soon</T></p>
               <Link to="/journal" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                Visit Journal <ArrowRight className="h-3 w-3" />
+                <T>Visit Journal</T> <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           )}
@@ -1724,11 +1724,10 @@ const Index = () => {
             viewport={{ once: true }}
           >
             <motion.h2 variants={fadeUp} custom={0} className="text-5xl md:text-7xl lg:text-8xl font-light tracking-tight mb-8" style={{ fontFamily: "var(--font-display)" }}>
-              Start <em className="italic text-primary">Creating</em>
+              <T>Start</T> <em className="italic text-primary"><T>Creating</T></em>
             </motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-sm text-muted-foreground max-w-md mx-auto mb-12 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
-              Your lens has stories to tell. Join a community that celebrates
-              the art of photography in its purest form.
+              <T>Your lens has stories to tell. Join a community that celebrates the art of photography in its purest form.</T>
             </motion.p>
             <motion.div variants={fadeUp} custom={2}>
               <Link
@@ -1739,7 +1738,7 @@ const Index = () => {
                 <span className="w-16 h-16 rounded-full border border-primary flex items-center justify-center group-hover:bg-primary group-hover:scale-105 transition-all duration-[1s]">
                   <ArrowRight className="h-5 w-5 text-primary group-hover:text-primary-foreground transition-colors duration-700" />
                 </span>
-                Create Free Account
+                <T>Create Free Account</T>
               </Link>
             </motion.div>
           </motion.div>
@@ -1758,22 +1757,21 @@ const Index = () => {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
-                A curated platform for photographers
-                <br />who see the world differently.
+                <T>A curated platform for photographers who see the world differently.</T>
               </p>
             </div>
             <nav className="flex flex-col gap-3" aria-label="Footer navigation">
-              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Navigate</span>
-              <a href="#works" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}>Works</a>
-              <Link to="/competitions" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}>Competitions</Link>
-              <Link to="/courses" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}>Education</Link>
-              <Link to="/journal" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}>Journal</Link>
-              <Link to="/verify" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}>Verify Certificate</Link>
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}><T>Navigate</T></span>
+              <a href="#works" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Works</T></a>
+              <Link to="/competitions" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Competitions</T></Link>
+              <Link to="/courses" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Education</T></Link>
+              <Link to="/journal" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Journal</T></Link>
+              <Link to="/verify" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Verify Certificate</T></Link>
             </nav>
             <div className="md:text-right">
-              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>Newsletter</span>
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}><T>Newsletter</T></span>
               <p className="text-[10px] text-muted-foreground mb-3 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
-                Stay inspired with updates & insights.
+                <T>Stay inspired with updates & insights.</T>
               </p>
               <form
                 onSubmit={(e) => {
@@ -1800,7 +1798,7 @@ const Index = () => {
                   className="h-8 px-3 rounded-sm bg-primary text-primary-foreground text-[9px] tracking-[0.15em] uppercase hover:bg-primary/90 transition-colors duration-300 shrink-0"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Subscribe
+                  <T>Subscribe</T>
                 </button>
               </form>
               <p className="text-[10px] text-muted-foreground mt-6" style={{ fontFamily: "var(--font-body)" }}>
