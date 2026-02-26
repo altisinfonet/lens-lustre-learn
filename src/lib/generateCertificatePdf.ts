@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import QRCode from "qrcode";
 
 interface CertificateData {
   recipientName: string;
@@ -8,7 +9,7 @@ interface CertificateData {
   type?: "course" | "competition";
 }
 
-export const generateCertificatePdf = ({
+export const generateCertificatePdf = async ({
   recipientName,
   courseTitle,
   issueDate,
@@ -139,6 +140,20 @@ export const generateCertificatePdf = ({
   doc.setDrawColor(200, 160, 60);
   doc.setLineWidth(0.4);
   doc.line(W / 2 - 30, H - 26, W / 2 + 30, H - 26);
+
+  // --- QR Code ---
+  try {
+    const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+      width: 200,
+      margin: 1,
+      color: { dark: "#c8a03c", light: "#0f0f0f" },
+    });
+    const qrSize = 22;
+    doc.addImage(qrDataUrl, "PNG", W - 42, H - 44, qrSize, qrSize);
+    doc.setFontSize(5);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Scan to verify", W - 42 + qrSize / 2, H - 20, { align: "center" });
+  } catch { /* QR generation failed silently */ }
 
   return doc;
 };

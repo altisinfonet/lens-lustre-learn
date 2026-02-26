@@ -139,7 +139,7 @@ const Certificates = () => {
                             const certName = cert.title
                               .replace(" — Completion Certificate", "")
                               .replace(" — Winner Certificate", "");
-                            const doc = generateCertificatePdf({
+                            const doc = await generateCertificatePdf({
                               recipientName: displayName,
                               courseTitle: certName,
                               issueDate: new Date(cert.issued_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
