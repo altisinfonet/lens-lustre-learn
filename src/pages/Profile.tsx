@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Edit2, ExternalLink, Globe, KeyRound, Mail, User } from "lucide-react";
+import { Camera, Edit2, ExternalLink, Globe, KeyRound, Mail, MapPin, Phone, User } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +15,7 @@ interface ProfileData {
   portfolio_url: string | null;
   photography_interests: string[] | null;
   created_at: string;
+  [key: string]: any;
 }
 
 const Profile = () => {
@@ -48,7 +50,7 @@ const Profile = () => {
     const fetchProfile = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at")
+        .select("*")
         .eq("id", user.id)
         .single();
       setProfile(data);
@@ -137,6 +139,34 @@ const Profile = () => {
               <Edit2 className="h-3 w-3" /> Edit Profile
             </Link>
           </div>
+
+          {/* Profile Completion */}
+          {profile && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15, duration: 0.8 }}>
+              <ProfileCompletionBar profile={profile} showSections className="mb-12 border border-border p-6" />
+            </motion.div>
+          )}
+
+          {/* Address */}
+          {profile?.city && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 0.8 }} className="mb-12">
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>Location</span>
+              <p className="text-sm text-muted-foreground flex items-center gap-2" style={{ fontFamily: "var(--font-body)" }}>
+                <MapPin className="h-3.5 w-3.5" />
+                {[profile.city, profile.state, profile.country].filter(Boolean).join(", ")}
+              </p>
+            </motion.div>
+          )}
+
+          {/* Phone */}
+          {profile?.phone && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25, duration: 0.8 }} className="mb-12">
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>Contact</span>
+              <p className="text-sm text-muted-foreground flex items-center gap-2" style={{ fontFamily: "var(--font-body)" }}>
+                <Phone className="h-3.5 w-3.5" /> {profile.phone}
+              </p>
+            </motion.div>
+          )}
 
           {/* Bio section */}
           {profile?.bio && (
