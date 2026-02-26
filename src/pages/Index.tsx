@@ -549,6 +549,143 @@ const Index = () => {
       {/* Photo of the Day — Big Banner */}
       <PhotoOfTheDay />
 
+      {/* All Competitions Showcase — Grouped by Status */}
+      <section className="py-24 md:py-32" aria-label="Competitions">
+        <div className="container mx-auto px-6 md:px-12">
+          <motion.header
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="flex items-end justify-between mb-16"
+          >
+            <div>
+              <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-px bg-primary" />
+                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                  Competitions
+                </span>
+              </motion.div>
+              <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                All <em className="italic">Competitions</em>
+              </motion.h2>
+            </div>
+            <motion.div variants={fadeIn} custom={2}>
+              <Link
+                to="/competitions"
+                className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+              </Link>
+            </motion.div>
+          </motion.header>
+
+          {(() => {
+            const compTabs = ["All", "Upcoming", "Ongoing", "Closed"];
+            const statusMap: Record<string, string[]> = {
+              All: [],
+              Upcoming: ["upcoming"],
+              Ongoing: ["open", "active", "judging"],
+              Closed: ["closed"],
+            };
+            const filtered = compFilter === "All" ? competitions : competitions.filter(c => statusMap[compFilter]?.includes(c.status));
+
+            return (
+              <>
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+                  {compTabs.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setCompFilter(tab)}
+                      className={`text-[10px] tracking-[0.25em] uppercase px-4 py-2 border transition-all duration-500 ${
+                        compFilter === tab
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                      }`}
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                {filtered.length > 0 ? (
+                  <motion.div layout className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <AnimatePresence mode="popLayout">
+                      {filtered.map((comp, i) => (
+                        <motion.div
+                          key={comp.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ delay: i * 0.05, duration: 0.5, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                        >
+                          <Link to={`/competitions/${comp.id}`} className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
+                            <div className="relative h-48 overflow-hidden bg-muted">
+                              {comp.cover_image_url ? (
+                                <img src={comp.cover_image_url} alt={comp.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]" loading="lazy" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-muted flex items-center justify-center">
+                                  <Trophy className="h-10 w-10 text-primary/30" />
+                                </div>
+                              )}
+                              <div className="absolute top-3 left-3">
+                                <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 inline-flex items-center gap-1 border bg-background/80 backdrop-blur-sm ${
+                                  comp.status === "open" || comp.status === "active" ? "border-primary text-primary"
+                                  : comp.status === "judging" ? "border-yellow-500 text-yellow-500"
+                                  : comp.status === "closed" ? "border-foreground/20 text-foreground/40"
+                                  : "border-muted-foreground/40 text-muted-foreground"
+                                }`} style={{ fontFamily: "var(--font-heading)" }}>
+                                  {comp.status}
+                                </span>
+                              </div>
+                              {comp.prize_info && (
+                                <div className="absolute bottom-0 right-0 p-3 text-right max-w-[70%]">
+                                  <span className="text-[8px] tracking-[0.3em] uppercase text-white/70 block mb-0.5" style={{ fontFamily: "var(--font-heading)", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
+                                    Grand Prize
+                                  </span>
+                                  <span className="text-lg md:text-xl font-light text-white leading-tight line-clamp-1" style={{ fontFamily: "var(--font-display)", textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}>
+                                    {comp.prize_info}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-5">
+                              <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                                {comp.category}
+                              </span>
+                              <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
+                                {comp.title}
+                              </h3>
+                              <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                                {comp.status === "closed"
+                                  ? `Ended ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                                  : comp.status === "open" || comp.status === "active"
+                                  ? `Ends ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                                  : `Starts ${new Date(comp.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                              </span>
+                            </div>
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </motion.div>
+                ) : (
+                  <div className="text-center py-16 border border-dashed border-border rounded-sm">
+                    <Trophy className="h-10 w-10 text-primary/30 mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>No {compFilter.toLowerCase()} competitions found</p>
+                    <Link to="/competitions" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                      Browse All <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      </section>
+
       {/* Featured Works — Redesigned */}
       <section id="works" className="py-12 md:py-20 relative" aria-label="Selected photography works">
         {/* Background accent */}
@@ -719,8 +856,8 @@ const Index = () => {
         onPrev={prevLightbox}
         onNext={nextLightbox}
       />
+      </motion.div>
 
-      {/* Philosophy / Featured Journal — Split layout */}
       <section id="about" className="py-24 md:py-32 relative" aria-label="Featured from the Journal">
         <div className="absolute inset-0 bg-gradient-to-b from-card/50 to-transparent pointer-events-none" />
         <div className="container mx-auto px-6 md:px-12 relative z-10">
@@ -894,145 +1031,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* All Competitions Showcase — Grouped by Status */}
-      <section className="py-24 md:py-32" aria-label="Competitions">
-        <div className="container mx-auto px-6 md:px-12">
-          <motion.header
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
-            className="flex items-end justify-between mb-16"
-          >
-            <div>
-              <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-px bg-primary" />
-                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Competitions
-                </span>
-              </motion.div>
-              <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                All <em className="italic">Competitions</em>
-              </motion.h2>
-            </div>
-            <motion.div variants={fadeIn} custom={2}>
-              <Link
-                to="/competitions"
-                className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
-              </Link>
-            </motion.div>
-          </motion.header>
 
-          {(() => {
-            const compTabs = ["All", "Upcoming", "Ongoing", "Closed"];
-            const statusMap: Record<string, string[]> = {
-              All: [],
-              Upcoming: ["upcoming"],
-              Ongoing: ["open", "active", "judging"],
-              Closed: ["closed"],
-            };
-            const filtered = compFilter === "All" ? competitions : competitions.filter(c => statusMap[compFilter]?.includes(c.status));
-
-            return (
-              <>
-                <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
-                  {compTabs.map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setCompFilter(tab)}
-                      className={`text-[10px] tracking-[0.25em] uppercase px-4 py-2 border transition-all duration-500 ${
-                        compFilter === tab
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
-                      }`}
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-
-                {filtered.length > 0 ? (
-                  <motion.div layout className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <AnimatePresence mode="popLayout">
-                      {filtered.map((comp, i) => (
-                        <motion.div
-                          key={comp.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          transition={{ delay: i * 0.05, duration: 0.5, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
-                        >
-                          <Link to={`/competitions/${comp.id}`} className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
-                            <div className="relative h-48 overflow-hidden bg-muted">
-                              {comp.cover_image_url ? (
-                                <img src={comp.cover_image_url} alt={comp.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]" loading="lazy" />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-primary/10 to-muted flex items-center justify-center">
-                                  <Trophy className="h-10 w-10 text-primary/30" />
-                                </div>
-                              )}
-                              <div className="absolute top-3 left-3">
-                                <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 inline-flex items-center gap-1 border bg-background/80 backdrop-blur-sm ${
-                                  comp.status === "open" || comp.status === "active" ? "border-primary text-primary"
-                                  : comp.status === "judging" ? "border-yellow-500 text-yellow-500"
-                                  : comp.status === "closed" ? "border-foreground/20 text-foreground/40"
-                                  : "border-muted-foreground/40 text-muted-foreground"
-                                }`} style={{ fontFamily: "var(--font-heading)" }}>
-                                  {comp.status}
-                                </span>
-                              </div>
-                              {/* Prize — bold oversized typography at bottom-right */}
-                              {comp.prize_info && (
-                                <div className="absolute bottom-0 right-0 p-3 text-right max-w-[70%]">
-                                  <span className="text-[8px] tracking-[0.3em] uppercase text-white/70 block mb-0.5" style={{ fontFamily: "var(--font-heading)", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
-                                    Grand Prize
-                                  </span>
-                                  <span className="text-lg md:text-xl font-light text-white leading-tight line-clamp-1" style={{ fontFamily: "var(--font-display)", textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}>
-                                    {comp.prize_info}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="p-5">
-                              <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                                {comp.category}
-                              </span>
-                              <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
-                                {comp.title}
-                              </h3>
-                              <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                                {comp.status === "closed"
-                                  ? `Ended ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                                  : comp.status === "open" || comp.status === "active"
-                                  ? `Ends ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                                  : `Starts ${new Date(comp.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-                              </span>
-                            </div>
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </motion.div>
-                ) : (
-                  <div className="text-center py-16 border border-dashed border-border rounded-sm">
-                    <Trophy className="h-10 w-10 text-primary/30 mx-auto mb-4" />
-                    <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>No {compFilter.toLowerCase()} competitions found</p>
-                    <Link to="/competitions" className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                      Browse All <ArrowRight className="h-3 w-3" />
-                    </Link>
-                  </div>
-                )}
-              </>
-            );
-          })()}
-        </div>
-      </section>
-
-      {/* Featured Courses */}
       <section className="py-24 md:py-32" aria-label="Featured courses">
         <div className="container mx-auto px-6 md:px-12">
           <motion.header
@@ -1528,7 +1527,6 @@ const Index = () => {
           </motion.div>
         </div>
       </section>
-      </motion.div>
 
       {/* Footer */}
       <footer className="border-t border-border py-16" role="contentinfo">
