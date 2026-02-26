@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Facebook, Instagram, Globe, KeyRound, Loader2, Mail, Save, X } from "lucide-react";
+import { Camera, Facebook, Instagram, Globe, KeyRound, Loader2, Mail, Save, User, X } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -40,6 +40,9 @@ const EditProfile = () => {
   const [facebookUrl, setFacebookUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -52,7 +55,7 @@ const EditProfile = () => {
     const fetch = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, bio, portfolio_url, photography_interests, facebook_url, instagram_url, website_url")
+        .select("full_name, bio, portfolio_url, photography_interests, facebook_url, instagram_url, website_url, avatar_url")
         .eq("id", user.id)
         .single();
       if (data) {
@@ -63,11 +66,48 @@ const EditProfile = () => {
         setFacebookUrl((data as any).facebook_url || "");
         setInstagramUrl((data as any).instagram_url || "");
         setWebsiteUrl((data as any).website_url || "");
+        setAvatarUrl(data.avatar_url || null);
       }
       setLoading(false);
     };
     fetch();
   }, [user]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please select an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image must be under 5MB", variant: "destructive" });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    const ext = file.name.split(".").pop();
+    const filePath = `${user.id}/avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setUploadingAvatar(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+    await supabase.from("profiles").update({ avatar_url: newUrl } as any).eq("id", user.id);
+    setAvatarUrl(newUrl);
+    setUploadingAvatar(false);
+    toast({ title: "Profile picture updated" });
+  };
 
   const toggleInterest = (interest: string) => {
     setInterests((prev) =>
@@ -134,6 +174,58 @@ const EditProfile = () => {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Profile Picture */}
+          <div className="flex items-center gap-6">
+            <div className="relative group">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="h-24 w-24 rounded-full object-cover border-2 border-border"
+                />
+              ) : (
+                <div className="h-24 w-24 rounded-full bg-muted border-2 border-border flex items-center justify-center">
+                  <User className="h-8 w-8 text-muted-foreground/40" />
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="h-5 w-5 text-white animate-spin" />
+                ) : (
+                  <Camera className="h-5 w-5 text-white" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+            <div>
+              <span className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Profile Picture
+              </span>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="text-xs text-primary hover:underline transition-all duration-300"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
+                {uploadingAvatar ? "Uploading…" : "Change photo"}
+              </button>
+              <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                JPG, PNG or WebP. Max 5MB.
+              </p>
+            </div>
+          </div>
           {/* Full Name */}
           <div>
             <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
