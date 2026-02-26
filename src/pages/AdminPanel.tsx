@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star } from "lucide-react";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
 import AdminVoteRewards from "@/components/admin/AdminVoteRewards";
@@ -8,6 +8,7 @@ import AdminCourses from "@/components/admin/AdminCourses";
 import AdminJournal from "@/components/admin/AdminJournal";
 import AdminCertificates from "@/components/admin/AdminCertificates";
 import AdminUsers from "@/components/admin/AdminUsers";
+import AdminPhotoOfDay from "@/components/admin/AdminPhotoOfDay";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,7 +74,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -486,7 +487,7 @@ const AdminPanel = () => {
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {([["banners", "Banners", LayoutDashboard], ["portfolio", "Gallery", Image], ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award], ["users", "Users", UserCog], ["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["comments", "Comments", MessageSquare], ["reports", "Reports", AlertTriangle], ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["vote_rewards", "Vote Rewards", Vote]] as const).map(([key, label, Icon]) => (
+          {([["banners", "Banners", LayoutDashboard], ["potd", "Photo of Day", Star], ["portfolio", "Gallery", Image], ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award], ["users", "Users", UserCog], ["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["comments", "Comments", MessageSquare], ["reports", "Reports", AlertTriangle], ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["vote_rewards", "Vote Rewards", Vote]] as const).map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -503,6 +504,9 @@ const AdminPanel = () => {
 
         {/* Banners Tab */}
         {tab === "banners" && <AdminBanners user={user} />}
+
+        {/* Photo of the Day Tab */}
+        {tab === "potd" && <AdminPhotoOfDay user={user} />}
 
         {/* Courses Tab */}
         {tab === "courses" && <AdminCourses />}

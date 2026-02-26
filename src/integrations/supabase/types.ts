@@ -717,6 +717,51 @@ export type Database = {
           },
         ]
       }
+      photo_of_the_day: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          featured_date: string
+          id: string
+          image_url: string
+          is_active: boolean
+          photographer_id: string | null
+          photographer_name: string | null
+          source_entry_id: string | null
+          source_type: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          featured_date?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          photographer_id?: string | null
+          photographer_name?: string | null
+          source_entry_id?: string | null
+          source_type?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          featured_date?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          photographer_id?: string | null
+          photographer_name?: string | null
+          source_entry_id?: string | null
+          source_type?: string
+          title?: string
+        }
+        Relationships: []
+      }
       portfolio_images: {
         Row: {
           category: string

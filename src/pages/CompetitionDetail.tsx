@@ -1,5 +1,5 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { Calendar, Clock, Trophy, Heart, Upload, Users } from "lucide-react";
+import { Calendar, Clock, Trophy, Heart, Upload, Users, Star } from "lucide-react";
 import ImageEngagement from "@/components/ImageEngagement";
 import PhaseBanner from "@/components/PhaseBanner";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { toast } from "@/hooks/use-toast";
 
 
 interface Competition {
@@ -48,6 +50,7 @@ const statusColors: Record<string, string> = {
 const CompetitionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -360,6 +363,33 @@ const CompetitionDetail = () => {
                             {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </span>
                         </div>
+                        {/* Admin: Mark as Photo of the Day — only on closed competitions */}
+                        {competition.status === "closed" && isAdmin && entry.photos.length > 0 && (
+                          <button
+                            onClick={async () => {
+                              if (!user) return;
+                              const { error } = await supabase.from("photo_of_the_day").insert({
+                                image_url: entry.photos[0],
+                                title: entry.title,
+                                photographer_name: entry.profiles?.full_name || null,
+                                photographer_id: entry.user_id,
+                                source_type: "competition_entry",
+                                source_entry_id: entry.id,
+                                created_by: user.id,
+                                is_active: true,
+                              } as any);
+                              if (error) {
+                                toast({ title: "Failed", description: error.message, variant: "destructive" });
+                              } else {
+                                toast({ title: "⭐ Marked as Photo of the Day!" });
+                              }
+                            }}
+                            className="mt-2 w-full inline-flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] uppercase px-3 py-2 border border-yellow-500/30 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/10 transition-all duration-300"
+                            style={{ fontFamily: "var(--font-heading)" }}
+                          >
+                            <Star className="h-3 w-3" /> Photo of the Day
+                          </button>
+                        )}
                         {/* Like/Love/Comment engagement — hidden during judging & closed phases */}
                         {competition.status !== "judging" && competition.status !== "closed" && (
                           <div className="mt-3 border-t border-border/50 pt-3">
