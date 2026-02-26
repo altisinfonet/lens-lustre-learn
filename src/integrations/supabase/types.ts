@@ -320,7 +320,9 @@ export type Database = {
           description: string | null
           difficulty: string
           id: string
+          is_featured: boolean
           is_free: boolean
+          labels: string[]
           price: number | null
           published_at: string | null
           slug: string
@@ -336,7 +338,9 @@ export type Database = {
           description?: string | null
           difficulty?: string
           id?: string
+          is_featured?: boolean
           is_free?: boolean
+          labels?: string[]
           price?: number | null
           published_at?: string | null
           slug: string
@@ -352,7 +356,9 @@ export type Database = {
           description?: string | null
           difficulty?: string
           id?: string
+          is_featured?: boolean
           is_free?: boolean
+          labels?: string[]
           price?: number | null
           published_at?: string | null
           slug?: string

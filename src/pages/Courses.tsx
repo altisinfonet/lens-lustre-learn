@@ -21,6 +21,8 @@ interface Course {
   published_at: string | null;
   author_name?: string | null;
   lesson_count?: number;
+  is_featured?: boolean;
+  labels?: string[];
 }
 
 const difficultyColor = (d: string) => {
@@ -60,8 +62,9 @@ const Courses = () => {
     const fetchCourses = async () => {
       const { data } = await supabase
         .from("courses")
-        .select("id, title, slug, description, cover_image_url, category, difficulty, price, is_free, published_at, author_id")
+        .select("id, title, slug, description, cover_image_url, category, difficulty, price, is_free, published_at, author_id, is_featured, labels")
         .eq("status", "published")
+        .order("is_featured", { ascending: false })
         .order("published_at", { ascending: false });
 
       if (data) {
@@ -167,12 +170,26 @@ const Courses = () => {
                         <BookOpen className="h-10 w-10 text-muted-foreground/30" />
                       </div>
                     )}
-                    {!course.is_free && (
-                      <div className="absolute top-3 right-3 bg-background/90 backdrop-blur-sm px-3 py-1 text-xs text-primary flex items-center gap-1" style={{ fontFamily: "var(--font-heading)" }}>
-                        <DollarSign className="h-3 w-3" />
-                        {course.price}
-                      </div>
-                    )}
+                    <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                      {course.is_featured && (
+                        <span className="text-[8px] tracking-[0.15em] uppercase px-2.5 py-1 bg-yellow-500 text-yellow-950 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>★ Featured</span>
+                      )}
+                      {course.labels?.map((label) => (
+                        <span key={label} className={`text-[8px] tracking-[0.1em] uppercase px-2.5 py-1 font-semibold ${
+                          label === "Few Seats Left" ? "bg-red-500 text-white" :
+                          label === "Filling Up 1st" ? "bg-orange-500 text-white" :
+                          label === "Early Bird Offer" ? "bg-green-500 text-white" :
+                          label === "Most Demand" ? "bg-blue-500 text-white" :
+                          "bg-primary text-primary-foreground"
+                        }`} style={{ fontFamily: "var(--font-heading)" }}>{label}</span>
+                      ))}
+                      {!course.is_free && (
+                        <div className="bg-background/90 backdrop-blur-sm px-3 py-1 text-xs text-primary flex items-center gap-1" style={{ fontFamily: "var(--font-heading)" }}>
+                          <DollarSign className="h-3 w-3" />
+                          {course.price}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3 mb-3">

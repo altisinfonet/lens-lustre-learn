@@ -140,6 +140,8 @@ interface CoursePreview {
   cover_image_url: string | null;
   is_free: boolean;
   author_name: string | null;
+  is_featured: boolean;
+  labels: string[];
 }
 
 const Index = () => {
@@ -249,8 +251,9 @@ const Index = () => {
           .limit(12),
         supabase
           .from("courses")
-          .select("id, title, slug, category, difficulty, cover_image_url, is_free, author_id")
+          .select("id, title, slug, category, difficulty, cover_image_url, is_free, author_id, is_featured, labels")
           .eq("status", "published")
+          .order("is_featured", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(4),
         supabase
@@ -352,6 +355,8 @@ const Index = () => {
           cover_image_url: c.cover_image_url,
           is_free: c.is_free,
           author_name: profileMap.get(c.author_id)?.full_name || null,
+          is_featured: c.is_featured,
+          labels: c.labels || [],
         })));
       }
 
@@ -1081,7 +1086,19 @@ const Index = () => {
                           <BookOpen className="h-10 w-10 text-secondary/30" />
                         </div>
                       )}
-                      <div className="absolute top-3 right-3">
+                      <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                        {course.is_featured && (
+                          <span className="text-[8px] tracking-[0.15em] uppercase px-2.5 py-1 bg-yellow-500 text-yellow-950 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>★ Featured</span>
+                        )}
+                        {course.labels.map((label) => (
+                          <span key={label} className={`text-[8px] tracking-[0.1em] uppercase px-2.5 py-1 font-semibold ${
+                            label === "Few Seats Left" ? "bg-red-500 text-white" :
+                            label === "Filling Up 1st" ? "bg-orange-500 text-white" :
+                            label === "Early Bird Offer" ? "bg-green-500 text-white" :
+                            label === "Most Demand" ? "bg-blue-500 text-white" :
+                            "bg-primary text-primary-foreground"
+                          }`} style={{ fontFamily: "var(--font-heading)" }}>{label}</span>
+                        ))}
                         <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 ${course.is_free ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground"}`} style={{ fontFamily: "var(--font-heading)" }}>
                           {course.is_free ? "Free" : "Premium"}
                         </span>
