@@ -297,37 +297,71 @@ const CompetitionDetail = () => {
                           )}
                         </div>
                       )}
-                      <div className="p-4">
+                    <div className="p-4">
                         <h4 className="text-sm font-light tracking-tight mb-1" style={{ fontFamily: "var(--font-display)" }}>{entry.title}</h4>
-                        <p className="text-[10px] text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
-                          by {entry.profiles?.full_name || "Anonymous"}
-                        </p>
-                        {entry.description && (
+                        {/* During judging: anonymous — hide participant name & description */}
+                        {competition.status !== "judging" && (
+                          <p className="text-[10px] text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
+                            by {entry.profiles?.full_name || "Anonymous"}
+                          </p>
+                        )}
+                        {competition.status !== "judging" && entry.description && (
                           <p className="text-[11px] text-muted-foreground line-clamp-2 mb-3" style={{ fontFamily: "var(--font-body)" }}>
                             {entry.description}
                           </p>
                         )}
+                        {competition.status === "judging" && (
+                          <p className="text-[9px] text-muted-foreground/60 italic mb-3" style={{ fontFamily: "var(--font-body)" }}>
+                            Participant details hidden during judging
+                          </p>
+                        )}
                         <div className="flex items-center justify-between">
-                          <button
-                            onClick={() => handleVote(entry.id, entry.user_voted)}
-                            className={`inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] px-3 py-1.5 border transition-all duration-500 ${
-                              entry.user_voted
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-border text-muted-foreground hover:border-primary hover:text-primary"
-                            }`}
-                            style={{ fontFamily: "var(--font-heading)" }}
-                          >
-                            <Heart className={`h-3 w-3 ${entry.user_voted ? "fill-primary" : ""}`} />
-                            {entry.vote_count}
-                          </button>
+                          {/* Voting only allowed during judging phase */}
+                          {competition.status === "judging" ? (
+                            <button
+                              onClick={() => handleVote(entry.id, entry.user_voted)}
+                              className={`inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] px-3 py-1.5 border transition-all duration-500 ${
+                                entry.user_voted
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                              }`}
+                              style={{ fontFamily: "var(--font-heading)" }}
+                            >
+                              <Heart className={`h-3 w-3 ${entry.user_voted ? "fill-primary" : ""}`} />
+                              {entry.vote_count}
+                            </button>
+                          ) : competition.status === "closed" ? (
+                            <span
+                              className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] px-3 py-1.5 border border-border text-muted-foreground"
+                              style={{ fontFamily: "var(--font-heading)" }}
+                            >
+                              <Heart className="h-3 w-3" />
+                              {entry.vote_count} votes
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleVote(entry.id, entry.user_voted)}
+                              className={`inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] px-3 py-1.5 border transition-all duration-500 ${
+                                entry.user_voted
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                              }`}
+                              style={{ fontFamily: "var(--font-heading)" }}
+                            >
+                              <Heart className={`h-3 w-3 ${entry.user_voted ? "fill-primary" : ""}`} />
+                              {entry.vote_count}
+                            </button>
+                          )}
                           <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                             {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </span>
                         </div>
-                        {/* Image engagement: like, love, vote, comments */}
-                        <div className="mt-3 border-t border-border/50 pt-3">
-                          <ImageEngagement imageType="competition_entry" imageId={entry.id} />
-                        </div>
+                        {/* Like/Love/Comment engagement — hidden during judging & closed phases */}
+                        {competition.status !== "judging" && competition.status !== "closed" && (
+                          <div className="mt-3 border-t border-border/50 pt-3">
+                            <ImageEngagement imageType="competition_entry" imageId={entry.id} />
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   ))}
@@ -335,8 +369,8 @@ const CompetitionDetail = () => {
               )}
             </div>
 
-            {/* Comments on entries */}
-            {entries.map((entry) => (
+            {/* Comments on entries — hidden during judging & closed */}
+            {competition.status !== "judging" && competition.status !== "closed" && entries.map((entry) => (
               <div key={`comments-${entry.id}`} className="mt-4 border border-border p-4">
                 <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-2 block" style={{ fontFamily: "var(--font-heading)" }}>
                   Comments on "{entry.title}"
