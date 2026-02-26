@@ -13,9 +13,14 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password is required").max(72),
 });
 
+const isNetworkError = (msg: string): boolean => {
+  const lower = msg.toLowerCase();
+  return lower.includes("failed to fetch") || lower.includes("networkerror") || lower.includes("load failed");
+};
+
 const friendlyError = (raw: string): string => {
   const lower = raw.toLowerCase();
-  if (lower.includes("failed to fetch") || lower.includes("networkerror") || lower.includes("load failed"))
+  if (isNetworkError(raw))
     return "Unable to connect to the server. Please check your internet connection and try again.";
   if (lower.includes("invalid login credentials"))
     return "Incorrect email or password. Please try again.";
@@ -93,22 +98,46 @@ const Login = () => {
     }
 
     setLoading("email");
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
+    const attemptLogin = () =>
+      supabase.auth.signInWithPassword({
         email: result.data.email,
         password: result.data.password,
       });
 
-      if (error) {
+    try {
+      let res = await attemptLogin();
+
+      // Auto-retry once on network errors
+      if (res.error && isNetworkError(res.error.message)) {
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await attemptLogin();
+      }
+
+      if (res.error) {
         const attempts = failedAttempts + 1;
         setFailedAttempts(attempts);
         setCaptchaVerified(false);
-        setError(friendlyError(error.message));
+        setError(friendlyError(res.error.message));
       }
     } catch (err: any) {
+      // Auto-retry once on thrown network errors
+      if (isNetworkError(err?.message || "")) {
+        try {
+          await new Promise((r) => setTimeout(r, 1500));
+          const res = await attemptLogin();
+          if (!res.error) {
+            setLoading(null);
+            return;
+          }
+          setError(friendlyError(res.error.message));
+        } catch {
+          setError(friendlyError(err?.message || "Something went wrong."));
+        }
+      } else {
+        setError(friendlyError(err?.message || "Something went wrong."));
+      }
       setFailedAttempts((p) => p + 1);
       setCaptchaVerified(false);
-      setError(friendlyError(err?.message || "Something went wrong."));
     }
     setLoading(null);
   };
