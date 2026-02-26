@@ -407,26 +407,41 @@ const Index = () => {
     <main className="min-h-screen text-foreground overflow-hidden">
       {/* Hero — Slow crossfade slideshow */}
       <section className="relative h-screen flex items-end pb-20 md:pb-28" aria-label="Featured photography">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 2.5, ease: slowEase }}
-            className="absolute inset-0"
-          >
-            <motion.img
-              src={heroSlides[currentSlide].src}
-              alt={`${heroSlides[currentSlide].title} — ${heroSlides[currentSlide].category} photography by 50mm Retina`}
-              className="w-full h-full object-cover"
-              initial={{ scale: 1.08 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 8, ease: slowEase }}
-              loading={currentSlide === 0 ? "eager" : "lazy"}
-              fetchPriority={currentSlide === 0 ? "high" : "auto"}
-            />
-          </motion.div>
+        <AnimatePresence mode="sync">
+          {heroSlides.map((slide, i) => i === currentSlide && (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 2, ease: slowEase }}
+              className="absolute inset-0"
+            >
+              {/* Parallax layer — background shifts subtly */}
+              <motion.div
+                className="absolute inset-0"
+                initial={{ scale: 1.15, x: "-3%", y: "2%" }}
+                animate={{ scale: 1.05, x: "0%", y: "0%" }}
+                exit={{ scale: 1, x: "3%", y: "-1%" }}
+                transition={{ duration: 10, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <img
+                  src={slide.src}
+                  alt={`${slide.title} — ${slide.category} photography by 50mm Retina`}
+                  className="w-full h-full object-cover"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  fetchPriority={i === 0 ? "high" : "auto"}
+                />
+              </motion.div>
+              {/* Depth overlay — subtle vignette for parallax depth feel */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-br from-background/20 via-transparent to-background/30"
+                initial={{ opacity: 0.6 }}
+                animate={{ opacity: 0.3 }}
+                transition={{ duration: 4, ease: slowEase }}
+              />
+            </motion.div>
+          ))}
         </AnimatePresence>
 
         {/* Overlays */}
