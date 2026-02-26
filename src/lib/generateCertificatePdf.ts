@@ -133,7 +133,11 @@ export const generateCertificatePdf = async ({
   // --- Verification URL ---
   doc.setFontSize(6);
   doc.setTextColor(100, 100, 100);
-  const verifyUrl = `${window.location.origin}/verify?id=${certificateId}`;
+  const publishedOrigin = "https://lens-lustre-learn.lovable.app";
+  const origin = window.location.hostname === "localhost" || window.location.hostname.includes("preview")
+    ? publishedOrigin
+    : window.location.origin;
+  const verifyUrl = `${origin}/verify?id=${certificateId}`;
   doc.text(`Verify at: ${verifyUrl}`, W / 2, H - 16, { align: "center" });
 
   // --- Bottom accent ---
