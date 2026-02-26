@@ -886,9 +886,12 @@ const Index = () => {
                                 {comp.title}
                               </h3>
                               {comp.prize_info && (
-                                <p className="text-[10px] text-muted-foreground line-clamp-1 mb-2" style={{ fontFamily: "var(--font-body)" }}>
-                                  🏆 {comp.prize_info}
-                                </p>
+                                <div className="flex items-center gap-1.5 mb-2 px-2 py-1.5 bg-primary/10 border border-primary/20 rounded-sm">
+                                  <Trophy className="h-3 w-3 text-primary shrink-0" />
+                                  <p className="text-[10px] font-medium text-primary line-clamp-1" style={{ fontFamily: "var(--font-heading)" }}>
+                                    {comp.prize_info}
+                                  </p>
+                                </div>
                               )}
                               <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                                 {comp.status === "closed"
