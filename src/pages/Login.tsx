@@ -1,15 +1,30 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Mail, Eye, EyeOff } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ArrowLeft, Loader2, Mail, Eye, EyeOff, ShieldCheck, ShieldX } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import SimpleCaptcha from "@/components/SimpleCaptcha";
+import { useTrustedDevice } from "@/hooks/useTrustedDevice";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Please enter a valid email").max(255),
   password: z.string().min(1, "Password is required").max(72),
 });
+
+const friendlyError = (raw: string): string => {
+  const lower = raw.toLowerCase();
+  if (lower.includes("failed to fetch") || lower.includes("networkerror") || lower.includes("load failed"))
+    return "Unable to connect to the server. Please check your internet connection and try again.";
+  if (lower.includes("invalid login credentials"))
+    return "Incorrect email or password. Please try again.";
+  if (lower.includes("email not confirmed"))
+    return "Your email hasn't been verified yet. Please check your inbox.";
+  if (lower.includes("too many requests") || lower.includes("rate limit"))
+    return "Too many attempts. Please wait a moment before trying again.";
+  return raw;
+};
 
 const Login = () => {
   const [error, setError] = useState<string | null>(null);
@@ -17,22 +32,47 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [showTrustPrompt, setShowTrustPrompt] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isDeviceTrusted, trustDevice } = useTrustedDevice();
+
+  const needsCaptcha = failedAttempts >= 3;
 
   useEffect(() => {
-    if (user) navigate("/dashboard");
-  }, [user, navigate]);
+    if (user && !showTrustPrompt) {
+      // Check if device is already trusted
+      if (isDeviceTrusted(user.id)) {
+        navigate("/dashboard");
+      } else {
+        setShowTrustPrompt(true);
+      }
+    }
+  }, [user, navigate, isDeviceTrusted, showTrustPrompt]);
+
+  const handleTrustDecision = (trust: boolean) => {
+    if (trust && user) {
+      trustDevice(user.id);
+    }
+    setShowTrustPrompt(false);
+    navigate("/dashboard");
+  };
 
   const handleOAuth = async (provider: "google" | "apple") => {
     setError(null);
     setLoading(provider);
-    const { error } = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
-    });
-    if (error) {
-      setError(error instanceof Error ? error.message : String(error));
+    try {
+      const { error } = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+      if (error) {
+        setError(friendlyError(error instanceof Error ? error.message : String(error)));
+        setLoading(null);
+      }
+    } catch (err: any) {
+      setError(friendlyError(err?.message || "Something went wrong. Please try again."));
       setLoading(null);
     }
   };
@@ -47,17 +87,69 @@ const Login = () => {
       return;
     }
 
-    setLoading("email");
-    const { error } = await supabase.auth.signInWithPassword({
-      email: result.data.email,
-      password: result.data.password,
-    });
+    if (needsCaptcha && !captchaVerified) {
+      setError("Please complete the security check first.");
+      return;
+    }
 
-    if (error) {
-      setError(error.message);
+    setLoading("email");
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: result.data.email,
+        password: result.data.password,
+      });
+
+      if (error) {
+        const attempts = failedAttempts + 1;
+        setFailedAttempts(attempts);
+        setCaptchaVerified(false);
+        setError(friendlyError(error.message));
+      }
+    } catch (err: any) {
+      setFailedAttempts((p) => p + 1);
+      setCaptchaVerified(false);
+      setError(friendlyError(err?.message || "Something went wrong."));
     }
     setLoading(null);
   };
+
+  const onCaptchaVerified = useCallback((v: boolean) => setCaptchaVerified(v), []);
+
+  // Trust this device prompt
+  if (showTrustPrompt) {
+    return (
+      <main className="min-h-screen bg-background text-foreground flex items-center justify-center px-6">
+        <div className="max-w-sm w-full text-center space-y-8">
+          <ShieldCheck className="h-12 w-12 text-primary mx-auto" />
+          <h1 className="text-2xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+            Trust This <em className="italic text-primary">Device</em>?
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+            Would you like to remember this device? You won't be asked again on future logins from this browser.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => handleTrustDecision(true)}
+              className="w-full py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity duration-500 flex items-center justify-center gap-2"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              <ShieldCheck className="h-4 w-4" /> Yes, Trust This Device
+            </button>
+            <button
+              onClick={() => handleTrustDecision(false)}
+              className="w-full py-3.5 border border-border text-foreground text-xs tracking-[0.15em] uppercase hover:bg-muted transition-colors duration-500 flex items-center justify-center gap-2"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              <ShieldX className="h-4 w-4" /> No, Don't Trust
+            </button>
+          </div>
+          <p className="text-[10px] text-muted-foreground/60" style={{ fontFamily: "var(--font-body)" }}>
+            You can manage trusted devices from your profile settings.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background text-foreground flex">
@@ -86,6 +178,12 @@ const Login = () => {
         {error && (
           <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
             {error}
+          </div>
+        )}
+
+        {failedAttempts > 0 && failedAttempts < 3 && (
+          <div className="mb-4 text-[10px] tracking-[0.15em] uppercase text-muted-foreground max-w-sm" style={{ fontFamily: "var(--font-heading)" }}>
+            {3 - failedAttempts} attempt{3 - failedAttempts > 1 ? "s" : ""} remaining before security check
           </div>
         )}
 
@@ -182,20 +280,14 @@ const Login = () => {
                 </button>
               </div>
             </div>
-            <label className="flex items-center gap-2.5 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-3.5 w-3.5 rounded-sm border border-border accent-primary cursor-pointer"
-              />
-              <span className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground group-hover:text-foreground transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
-                Remember me
-              </span>
-            </label>
+
+            {needsCaptcha && (
+              <SimpleCaptcha onVerified={onCaptchaVerified} />
+            )}
+
             <button
               type="submit"
-              disabled={!!loading}
+              disabled={!!loading || (needsCaptcha && !captchaVerified)}
               className="w-full py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50 flex items-center justify-center gap-3"
               style={{ fontFamily: "var(--font-heading)" }}
             >
