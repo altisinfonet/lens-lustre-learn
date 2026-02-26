@@ -133,7 +133,7 @@ export const generateCertificatePdf = async ({
   // --- Verification URL ---
   doc.setFontSize(6);
   doc.setTextColor(100, 100, 100);
-  const verifyUrl = `${window.location.origin}/verify-certificate?id=${certificateId}`;
+  const verifyUrl = `${window.location.origin}/verify?id=${certificateId}`;
   doc.text(`Verify at: ${verifyUrl}`, W / 2, H - 16, { align: "center" });
 
   // --- Bottom accent ---
