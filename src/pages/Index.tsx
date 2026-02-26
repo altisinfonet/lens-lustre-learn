@@ -704,17 +704,13 @@ const Index = () => {
                   <>Photography is<br />the art of <em className="italic text-primary">seeing</em></>
                 )}
               </motion.h2>
-              {featuredArticle?.body && (
-                <motion.div variants={fadeUp} custom={2} className="text-sm text-muted-foreground leading-relaxed mb-6 line-clamp-5" style={{ fontFamily: "var(--font-body)" }}>
-                  {/* Strip HTML tags and show first ~5 lines of plain text */}
-                  {featuredArticle.body.replace(/<[^>]*>/g, '').substring(0, 500)}
-                </motion.div>
-              )}
-              {!featuredArticle?.body && featuredArticle?.excerpt && (
-                <motion.p variants={fadeUp} custom={2} className="text-sm text-muted-foreground leading-relaxed mb-6" style={{ fontFamily: "var(--font-body)" }}>
-                  {featuredArticle.excerpt}
-                </motion.p>
-              )}
+              <motion.p variants={fadeUp} custom={2} className="text-sm text-muted-foreground leading-relaxed mb-6 line-clamp-5" style={{ fontFamily: "var(--font-body)" }}>
+                {featuredArticle?.body
+                  ? featuredArticle.body.replace(/<[^>]*>/g, '').substring(0, 500)
+                  : featuredArticle?.excerpt
+                  ? featuredArticle.excerpt
+                  : "We believe every photographer has a unique perspective. Our platform brings together competing visions, educational paths, and storytelling — creating a space where the art of photography thrives in all its forms. From wildlife to street, portrait to aerial — every genre has a home here."}
+              </motion.p>
               {featuredArticle?.author_name && (
                 <motion.p variants={fadeUp} custom={3} className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-6" style={{ fontFamily: "var(--font-heading)" }}>
                   By {featuredArticle.author_name}
