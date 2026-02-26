@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogOut, Shield, Menu, X, Sun, Moon, Scale } from "lucide-react";
+import { LogOut, Shield, Menu, X, Sun, Moon, Scale, Wallet } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -79,6 +79,12 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
             ))}
             {user && <Link to="/profile" className="hover:opacity-60 transition-opacity duration-500">Profile</Link>}
             {user && <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500">Dashboard</Link>}
+            {user && !isAdmin && (
+              <Link to="/wallet" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
+                <Wallet className="h-3 w-3" />
+                Wallet
+              </Link>
+            )}
             {isAdmin && (
               <Link to="/admin" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
                 <Shield className="h-3 w-3" />
@@ -224,6 +230,12 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                 )}
                 {user && (
                   <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">Dashboard</Link>
+                )}
+                {user && !isAdmin && (
+                  <Link to="/wallet" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
+                    <Wallet className="h-3.5 w-3.5" />
+                    Wallet
+                  </Link>
                 )}
                 {isAdmin && (
                   <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">

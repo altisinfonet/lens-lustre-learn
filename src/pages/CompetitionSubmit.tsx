@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useWallet } from "@/hooks/useWallet";
 import { toast } from "@/hooks/use-toast";
 
 
@@ -12,6 +13,7 @@ const CompetitionSubmit = () => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const { hasRole, loading: rolesLoading } = useUserRoles();
+  const { balance, deductFunds, loading: walletLoading, toINR } = useWallet();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -113,6 +115,20 @@ const CompetitionSubmit = () => {
       return;
     }
 
+    // Deduct entry fee from wallet if applicable
+    if (entryFee > 0) {
+      if (balance < entryFee) {
+        toast({ title: "Insufficient wallet balance", description: `You need $${entryFee} but have $${Number(balance).toFixed(2)}. Add funds to your wallet first.`, variant: "destructive" });
+        return;
+      }
+      try {
+        await deductFunds(entryFee, "competition_fee", `Entry fee for "${compTitle}"`, id, "competition");
+      } catch (err: any) {
+        toast({ title: "Payment failed", description: err.message, variant: "destructive" });
+        return;
+      }
+    }
+
     setSubmitting(true);
     const { error } = await supabase.from("competition_entries").insert({
       competition_id: id,
@@ -131,7 +147,7 @@ const CompetitionSubmit = () => {
     }
   };
 
-  if (authLoading || loading || rolesLoading) {
+  if (authLoading || loading || rolesLoading || walletLoading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}>Loading...</div>
@@ -257,16 +273,31 @@ const CompetitionSubmit = () => {
             </p>
           </div>
 
+          {/* Entry Fee & Wallet Balance */}
+          {entryFee > 0 && (
+            <div className="p-4 border border-border bg-muted/30 space-y-2">
+              <p className="text-xs" style={{ fontFamily: "var(--font-heading)" }}>
+                Entry Fee: <strong>${entryFee}</strong> (≈ ₹{toINR(entryFee).toLocaleString("en-IN", { minimumFractionDigits: 2 })})
+              </p>
+              <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                Wallet Balance: ${Number(balance).toFixed(2)}
+                {balance < entryFee && (
+                  <> — <Link to="/wallet" className="text-primary underline">Add funds</Link></>
+                )}
+              </p>
+            </div>
+          )}
+
           {/* Submit */}
           <div className="pt-4 border-t border-border">
             <button
               type="submit"
-              disabled={submitting || photos.length === 0 || (entryFee > 0 && !paymentConfirmed)}
+              disabled={submitting || photos.length === 0 || (entryFee > 0 && balance < entryFee)}
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
               style={{ fontFamily: "var(--font-heading)" }}
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-              Submit Entry
+              {entryFee > 0 ? `Pay $${entryFee} & Submit` : "Submit Entry"}
             </button>
           </div>
         </form>
