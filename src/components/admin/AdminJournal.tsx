@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, Newspaper } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Newspaper, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ArticleRow {
@@ -13,6 +13,7 @@ interface ArticleRow {
   published_at: string | null;
   created_at: string;
   author_name: string | null;
+  is_featured: boolean;
 }
 
 const AdminJournal = () => {
@@ -23,7 +24,7 @@ const AdminJournal = () => {
   const fetchArticles = async () => {
     const { data } = await supabase
       .from("journal_articles")
-      .select("id, title, slug, status, tags, published_at, created_at, author_id")
+      .select("id, title, slug, status, tags, published_at, created_at, author_id, is_featured")
       .order("created_at", { ascending: false });
 
     if (data && data.length > 0) {
@@ -54,6 +55,19 @@ const AdminJournal = () => {
     else {
       setArticles((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
       toast({ title: `Article ${status}` });
+    }
+  };
+
+  const toggleFeatured = async (id: string, current: boolean) => {
+    // If featuring, unfeatured all others first
+    if (!current) {
+      await supabase.from("journal_articles").update({ is_featured: false }).eq("is_featured", true);
+    }
+    const { error } = await supabase.from("journal_articles").update({ is_featured: !current }).eq("id", id);
+    if (error) toast({ title: "Update failed", variant: "destructive" });
+    else {
+      setArticles((prev) => prev.map((a) => ({ ...a, is_featured: a.id === id ? !current : (current ? a.is_featured : false) })));
+      toast({ title: !current ? "Article featured on homepage" : "Removed from homepage" });
     }
   };
 
@@ -119,6 +133,7 @@ const AdminJournal = () => {
                 <option value="archived">Archived</option>
               </select>
               <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => toggleFeatured(a.id, a.is_featured)} className={`p-1.5 transition-colors rounded-sm ${a.is_featured ? "text-yellow-500 bg-yellow-500/10" : "hover:text-yellow-500 hover:bg-yellow-500/10"}`} title={a.is_featured ? "Remove from homepage" : "Feature on homepage"}><Star className={`h-3.5 w-3.5 ${a.is_featured ? "fill-current" : ""}`} /></button>
                 <button onClick={() => navigate(`/journal/${a.slug}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="View"><Eye className="h-3.5 w-3.5" /></button>
                 <button onClick={() => navigate(`/journal/editor/${a.id}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                 <button onClick={() => deleteArticle(a.id)} className="p-1.5 hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
