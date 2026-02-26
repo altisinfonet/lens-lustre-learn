@@ -14,11 +14,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      certificate_testimonials: {
+        Row: {
+          certificate_id: string
+          created_at: string
+          id: string
+          is_visible: boolean
+          photo_url: string | null
+          sort_order: number
+          testimonial: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          certificate_id: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          photo_url?: string | null
+          sort_order?: number
+          testimonial: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          certificate_id?: string
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          photo_url?: string | null
+          sort_order?: number
+          testimonial?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_testimonials_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certificates: {
         Row: {
           description: string | null
+          featured_order: number
+          featured_quote: string | null
           file_url: string | null
           id: string
+          is_featured: boolean
           issued_at: string
           reference_id: string | null
           title: string
@@ -27,8 +74,11 @@ export type Database = {
         }
         Insert: {
           description?: string | null
+          featured_order?: number
+          featured_quote?: string | null
           file_url?: string | null
           id?: string
+          is_featured?: boolean
           issued_at?: string
           reference_id?: string | null
           title: string
@@ -37,8 +87,11 @@ export type Database = {
         }
         Update: {
           description?: string | null
+          featured_order?: number
+          featured_quote?: string | null
           file_url?: string | null
           id?: string
+          is_featured?: boolean
           issued_at?: string
           reference_id?: string | null
           title?: string

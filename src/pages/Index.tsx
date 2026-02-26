@@ -107,6 +107,30 @@ interface CertificateShowcase {
   issued_at: string;
   recipient_name: string | null;
   recipient_avatar: string | null;
+  is_featured: boolean;
+  featured_quote: string | null;
+}
+
+interface Testimonial {
+  id: string;
+  testimonial: string;
+  user_name: string | null;
+  cert_title: string | null;
+  photo_url: string | null;
+}
+
+interface TierConfig {
+  name: string;
+  min_certs: number;
+  color: string;
+}
+
+interface LeaderboardEntry {
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  cert_count: number;
+  tier: string;
 }
 
 interface JournalPreview {
@@ -151,6 +175,9 @@ const Index = () => {
   const [heroSlides, setHeroSlides] = useState(defaultHeroSlides);
   const [winners, setWinners] = useState<WinnerShowcase[]>([]);
   const [certificates, setCertificates] = useState<CertificateShowcase[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [certTiers, setCertTiers] = useState<TierConfig[]>([]);
+  const [certLeaderboard, setCertLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [journalArticles, setJournalArticles] = useState<JournalPreview[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionPreview[]>([]);
   const [featuredArticle, setFeaturedArticle] = useState<(JournalPreview & { cover_image_url: string | null; body?: string }) | null>(null);
@@ -235,9 +262,11 @@ const Index = () => {
           .limit(6),
         supabase
           .from("certificates")
-          .select("id, title, type, issued_at, user_id")
+          .select("id, title, type, issued_at, user_id, is_featured, featured_quote")
+          .order("is_featured", { ascending: false })
+          .order("featured_order")
           .order("issued_at", { ascending: false })
-          .limit(6),
+          .limit(12),
         supabase
           .from("journal_articles")
           .select("id, title, slug, excerpt, cover_image_url, tags, published_at, author_id")
@@ -314,7 +343,52 @@ const Index = () => {
           issued_at: c.issued_at,
           recipient_name: profileMap.get(c.user_id)?.full_name || null,
           recipient_avatar: profileMap.get(c.user_id)?.avatar_url || null,
+          is_featured: c.is_featured,
+          featured_quote: c.featured_quote,
         })));
+
+        // Build mini leaderboard from cert data
+        const countMap = new Map<string, number>();
+        certData.forEach((c) => countMap.set(c.user_id, (countMap.get(c.user_id) || 0) + 1));
+      }
+
+      // Fetch testimonials and tier config
+      const [{ data: testData }, { data: tierSetting }] = await Promise.all([
+        supabase.from("certificate_testimonials").select("id, testimonial, user_id, certificate_id, photo_url").eq("is_visible", true).order("sort_order").limit(6),
+        supabase.from("site_settings").select("value").eq("key", "certificate_tiers").maybeSingle(),
+      ]);
+
+      if (testData && testData.length > 0) {
+        const tUserIds = [...new Set(testData.map((t) => t.user_id))];
+        const tCertIds = [...new Set(testData.map((t) => t.certificate_id))];
+        const [{ data: tProfiles }, { data: tCerts }] = await Promise.all([
+          supabase.from("profiles").select("id, full_name").in("id", tUserIds),
+          supabase.from("certificates").select("id, title").in("id", tCertIds),
+        ]);
+        const tpMap = new Map(tProfiles?.map((p) => [p.id, p.full_name]) || []);
+        const tcMap = new Map(tCerts?.map((c) => [c.id, c.title]) || []);
+        setTestimonials(testData.map((t) => ({
+          id: t.id, testimonial: t.testimonial, user_name: tpMap.get(t.user_id) || null,
+          cert_title: tcMap.get(t.certificate_id) || null, photo_url: t.photo_url,
+        })));
+      }
+
+      if (tierSetting?.value) {
+        const tiersArr = tierSetting.value as unknown as TierConfig[];
+        setCertTiers(tiersArr);
+        // Build leaderboard
+        if (certData.length > 0) {
+          const countMap = new Map<string, number>();
+          certData.forEach((c) => countMap.set(c.user_id, (countMap.get(c.user_id) || 0) + 1));
+          const sorted = [...countMap.entries()]
+            .map(([uid, count]) => {
+              const tier = [...tiersArr].reverse().find((t) => count >= t.min_certs)?.name || "";
+              return { user_id: uid, full_name: profileMap.get(uid)?.full_name || null, avatar_url: profileMap.get(uid)?.avatar_url || null, cert_count: count, tier };
+            })
+            .sort((a, b) => b.cert_count - a.cert_count)
+            .slice(0, 5);
+          setCertLeaderboard(sorted);
+        }
       }
 
       if (articleData.length > 0) {
@@ -1238,7 +1312,7 @@ const Index = () => {
           </div>
         </section>
 
-      {/* Certificate Holders Showcase */}
+      {/* Certificate Holders Showcase — Enhanced */}
       <section className="py-24 md:py-32" aria-label="Certified photographers">
           <div className="container mx-auto px-6 md:px-12">
             <motion.header
@@ -1264,55 +1338,182 @@ const Index = () => {
                   className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  View All <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+                  Verify Certificate <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
                 </Link>
               </motion.div>
             </motion.header>
 
+            {/* Tier Badges */}
+            {certTiers.length > 0 && (
+              <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="flex flex-wrap items-center gap-4 mb-12">
+                {certTiers.map((tier) => (
+                  <div key={tier.name} className="flex items-center gap-2 border border-border px-4 py-2 rounded-sm">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tier.color }} />
+                    <span className="text-[10px] tracking-[0.15em] uppercase font-semibold" style={{ fontFamily: "var(--font-heading)", color: tier.color }}>{tier.name}</span>
+                    <span className="text-[9px] text-muted-foreground">({tier.min_certs}+ certs)</span>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+
           {certificates.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {certificates.map((cert, i) => (
-                <motion.div
-                  key={cert.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
-                  className="border border-border p-6 hover:border-primary/40 transition-all duration-700 group"
-                >
-                  <div className="flex items-start justify-between mb-5">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Award className="h-5 w-5 text-primary" />
-                    </div>
-                    <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                      {cert.type === "competition_winner" ? "Competition" : cert.type === "course_completion" ? "Course" : "Achievement"}
-                    </span>
-                  </div>
-
-                  <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
-                    {cert.title}
-                  </h3>
-
-                  <p className="text-[10px] text-muted-foreground mb-5" style={{ fontFamily: "var(--font-body)" }}>
-                    Issued {new Date(cert.issued_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                  </p>
-
-                  {/* Recipient */}
-                  <div className="flex items-center gap-2.5 pt-4 border-t border-border">
-                    {cert.recipient_avatar ? (
-                      <img src={cert.recipient_avatar} alt="" className="h-7 w-7 rounded-full object-cover border border-border" />
-                    ) : (
-                      <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center border border-border">
-                        <User className="h-3 w-3 text-muted-foreground" />
+            <>
+              {/* Featured certificates first */}
+              {certificates.filter((c) => c.is_featured).length > 0 && (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                  {certificates.filter((c) => c.is_featured).slice(0, 6).map((cert, i) => (
+                    <motion.div
+                      key={cert.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                      className="border-2 border-primary/30 p-6 hover:border-primary transition-all duration-700 group relative"
+                    >
+                      <div className="absolute top-3 right-3">
+                        <span className="text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 bg-yellow-500 text-yellow-950 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>★ Featured</span>
                       </div>
-                    )}
-                    <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                      {cert.recipient_name || "Photographer"}
-                    </span>
+                      <div className="flex items-start justify-between mb-5">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Award className="h-5 w-5 text-primary" />
+                        </div>
+                        <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                          {cert.type === "competition_winner" ? "Competition" : cert.type === "course_completion" ? "Course" : "Achievement"}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
+                        {cert.title}
+                      </h3>
+                      {cert.featured_quote && (
+                        <p className="text-xs italic text-muted-foreground leading-relaxed mb-3 border-l-2 border-primary/30 pl-3" style={{ fontFamily: "var(--font-body)" }}>
+                          "{cert.featured_quote}"
+                        </p>
+                      )}
+                      <p className="text-[10px] text-muted-foreground mb-5" style={{ fontFamily: "var(--font-body)" }}>
+                        Issued {new Date(cert.issued_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                      </p>
+                      <div className="flex items-center gap-2.5 pt-4 border-t border-border">
+                        {cert.recipient_avatar ? (
+                          <img src={cert.recipient_avatar} alt="" className="h-7 w-7 rounded-full object-cover border border-border" />
+                        ) : (
+                          <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center border border-border">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                          {cert.recipient_name || "Photographer"}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {/* Recent certificates */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {certificates.filter((c) => !c.is_featured).slice(0, 6).map((cert, i) => (
+                  <motion.div
+                    key={cert.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                    className="border border-border p-6 hover:border-primary/40 transition-all duration-700 group"
+                  >
+                    <div className="flex items-start justify-between mb-5">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Award className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                        {cert.type === "competition_winner" ? "Competition" : cert.type === "course_completion" ? "Course" : "Achievement"}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
+                      {cert.title}
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground mb-5" style={{ fontFamily: "var(--font-body)" }}>
+                      Issued {new Date(cert.issued_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    </p>
+                    <div className="flex items-center gap-2.5 pt-4 border-t border-border">
+                      {cert.recipient_avatar ? (
+                        <img src={cert.recipient_avatar} alt="" className="h-7 w-7 rounded-full object-cover border border-border" />
+                      ) : (
+                        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center border border-border">
+                          <User className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      )}
+                      <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                        {cert.recipient_name || "Photographer"}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Testimonials */}
+              {testimonials.length > 0 && (
+                <div className="mt-16">
+                  <h3 className="text-[10px] tracking-[0.3em] uppercase text-primary mb-8 text-center" style={{ fontFamily: "var(--font-heading)" }}>What Our Certified Photographers Say</h3>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {testimonials.map((t, i) => (
+                      <motion.div key={t.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.8 }}
+                        className="border border-border p-6 hover:border-primary/40 transition-all duration-700">
+                        <div className="text-primary/30 mb-3 text-2xl" style={{ fontFamily: "serif" }}>"</div>
+                        <p className="text-sm italic text-muted-foreground leading-relaxed mb-4" style={{ fontFamily: "var(--font-body)" }}>
+                          {t.testimonial}
+                        </p>
+                        <div className="flex items-center gap-2.5 pt-3 border-t border-border">
+                          {t.photo_url ? (
+                            <img src={t.photo_url} alt="" className="h-7 w-7 rounded-full object-cover border border-border" />
+                          ) : (
+                            <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center border border-border">
+                              <User className="h-3 w-3 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-[10px] tracking-[0.1em] uppercase text-foreground block" style={{ fontFamily: "var(--font-heading)" }}>
+                              {t.user_name || "Photographer"}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground">{t.cert_title}</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                </motion.div>
-              ))}
-            </div>
+                </div>
+              )}
+
+              {/* Leaderboard */}
+              {certLeaderboard.length > 0 && (
+                <div className="mt-16">
+                  <h3 className="text-[10px] tracking-[0.3em] uppercase text-primary mb-8 text-center" style={{ fontFamily: "var(--font-heading)" }}>Top Certified Photographers</h3>
+                  <div className="max-w-lg mx-auto border border-border rounded-sm divide-y divide-border">
+                    {certLeaderboard.map((entry, i) => (
+                      <div key={entry.user_id} className="flex items-center gap-3 px-4 py-3">
+                        <span className="text-lg font-light text-muted-foreground/40 w-8 text-center" style={{ fontFamily: "var(--font-display)" }}>{i + 1}</span>
+                        {entry.avatar_url ? (
+                          <img src={entry.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover border border-border" />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center border border-border">
+                            <User className="h-3.5 w-3.5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium block truncate" style={{ fontFamily: "var(--font-body)" }}>{entry.full_name || "Unknown"}</span>
+                          <span className="text-[10px] text-muted-foreground">{entry.cert_count} certificate{entry.cert_count !== 1 ? "s" : ""}</span>
+                        </div>
+                        {entry.tier && (
+                          <span className="text-[9px] px-2 py-0.5 border rounded-sm uppercase tracking-wider font-semibold"
+                            style={{ fontFamily: "var(--font-heading)", borderColor: certTiers.find((t) => t.name === entry.tier)?.color, color: certTiers.find((t) => t.name === entry.tier)?.color }}>
+                            {entry.tier}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-16 border border-dashed border-border rounded-sm">
               <Award className="h-10 w-10 text-primary/30 mx-auto mb-4" />
