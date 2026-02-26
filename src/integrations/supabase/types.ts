@@ -627,6 +627,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_certificates: {
+        Args: { _course_title?: string; _issued_date?: string; _name?: string }
+        Returns: {
+          description: string
+          id: string
+          issued_at: string
+          recipient_name: string
+          title: string
+          type: string
+        }[]
+      }
       verify_certificate: {
         Args: { _cert_id: string }
         Returns: {
