@@ -620,7 +620,7 @@ const PublicProfile = () => {
         {/* Footer */}
         <div className="py-12 border-t border-border text-center">
           <Link to="/" className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500" style={{ fontFamily: "var(--font-heading)" }}>
-            ← Back to ArteFoto Global
+            ← Back to 50mm Retina
           </Link>
         </div>
       </div>

@@ -119,7 +119,7 @@ const Signup = () => {
     <main className="min-h-screen bg-background text-foreground flex">
       {/* Left — Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
-        <img src="/images/innocence.jpg" alt="Photography by ArteFoto Global" className="w-full h-full object-cover" />
+        <img src="/images/innocence.jpg" alt="Photography by 50mm Retina" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
       </div>
 
@@ -130,8 +130,8 @@ const Signup = () => {
         </Link>
 
         <div className="flex items-center gap-3 mb-12">
-          <img src="/images/logo.png" alt="ArteFoto Global" className="h-8 w-8 object-contain" />
-          <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>ArteFoto Global</span>
+          <img src="/images/logo.png" alt="50mm Retina" className="h-8 w-8 object-contain" />
+          <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>50mm Retina</span>
         </div>
 
         <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
