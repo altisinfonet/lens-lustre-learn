@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LogOut, Shield, Menu, X, Sun, Moon, Scale, Wallet } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -8,6 +8,7 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import GlobalSearch from "@/components/GlobalSearch";
 import { useTheme } from "@/hooks/useTheme";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NavbarProps {
   /** When true the nav is rendered absolute/transparent over a hero section */
@@ -28,7 +29,14 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (!user || isAdmin) return;
+    supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setWalletBalance(data?.balance ?? 0));
+  }, [user, isAdmin]);
 
   const isHome = location.pathname === "/";
 
@@ -83,6 +91,11 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
               <Link to="/wallet" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
                 <Wallet className="h-3 w-3" />
                 Wallet
+                {walletBalance !== null && (
+                  <span className="text-[8px] tracking-[0.1em] px-1.5 py-0.5 bg-primary/15 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
+                    ${Number(walletBalance).toFixed(2)}
+                  </span>
+                )}
               </Link>
             )}
             {isAdmin && (
@@ -235,6 +248,11 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                   <Link to="/wallet" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
                     <Wallet className="h-3.5 w-3.5" />
                     Wallet
+                    {walletBalance !== null && (
+                      <span className="text-[9px] px-1.5 py-0.5 bg-primary/15 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
+                        ${Number(walletBalance).toFixed(2)}
+                      </span>
+                    )}
                   </Link>
                 )}
                 {isAdmin && (
