@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Award, CheckCircle, Search, XCircle, Calendar, Shield } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
-
 import { Button } from "@/components/ui/button";
 
 interface VerifiedCert {
@@ -17,49 +16,98 @@ interface VerifiedCert {
   recipient_name: string | null;
 }
 
+type SearchMode = "id" | "details";
+
 const VerifyCertificate = () => {
   const [searchParams] = useSearchParams();
   const initialId = searchParams.get("id") || "";
+
+  // Search mode
+  const [mode, setMode] = useState<SearchMode>(initialId ? "id" : "details");
+
+  // ID search
   const [certId, setCertId] = useState(initialId);
-  const [result, setResult] = useState<VerifiedCert | null>(null);
+
+  // Details search
+  const [recipientName, setRecipientName] = useState("");
+  const [courseTitle, setCourseTitle] = useState("");
+  const [issuedDate, setIssuedDate] = useState("");
+
+  // Results
+  const [results, setResults] = useState<VerifiedCert[]>([]);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  const handleVerify = async () => {
+  const handleVerifyById = async () => {
     const trimmed = certId.trim();
     if (!trimmed) return;
 
-    // Basic UUID format validation
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(trimmed)) {
       setNotFound(true);
-      setResult(null);
+      setResults([]);
       setSearched(true);
       return;
     }
 
     setLoading(true);
     setNotFound(false);
-    setResult(null);
+    setResults([]);
 
     const { data, error } = await supabase.rpc("verify_certificate", { _cert_id: trimmed });
 
     if (error || !data || data.length === 0) {
       setNotFound(true);
     } else {
-      setResult(data[0] as VerifiedCert);
+      setResults(data as VerifiedCert[]);
     }
     setSearched(true);
     setLoading(false);
   };
 
+  const handleSearchByDetails = async () => {
+    const name = recipientName.trim() || undefined;
+    const title = courseTitle.trim() || undefined;
+    const date = issuedDate || undefined;
+
+    if (!name && !title && !date) return;
+
+    setLoading(true);
+    setNotFound(false);
+    setResults([]);
+
+    const { data, error } = await supabase.rpc("search_certificates", {
+      _name: name ?? null,
+      _course_title: title ?? null,
+      _issued_date: date ?? null,
+    });
+
+    if (error || !data || data.length === 0) {
+      setNotFound(true);
+    } else {
+      setResults(data as VerifiedCert[]);
+    }
+    setSearched(true);
+    setLoading(false);
+  };
+
+  const handleSubmit = () => {
+    if (mode === "id") handleVerifyById();
+    else handleSearchByDetails();
+  };
+
   // Auto-verify if ID is in URL params
   useState(() => {
     if (initialId) {
-      handleVerify();
+      handleVerifyById();
     }
   });
+
+  const canSearch =
+    mode === "id"
+      ? certId.trim().length > 0
+      : recipientName.trim().length > 0 || courseTitle.trim().length > 0 || issuedDate.length > 0;
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -83,89 +131,173 @@ const VerifyCertificate = () => {
               Verify <em className="italic text-primary">Certificate</em>
             </h1>
             <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-              Enter a certificate ID to verify its authenticity.
+              Search by certificate ID or by recipient name, course, and date.
             </p>
           </div>
 
-          {/* Search */}
-          <div className="flex gap-3 mb-10">
-            <Input
-              value={certId}
-              onChange={(e) => setCertId(e.target.value)}
-              placeholder="e.g. a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-              className="bg-transparent font-mono text-sm"
-              maxLength={36}
-              onKeyDown={(e) => e.key === "Enter" && handleVerify()}
-            />
-            <Button
-              onClick={handleVerify}
-              disabled={loading || !certId.trim()}
-              className="shrink-0 bg-primary text-primary-foreground text-xs tracking-[0.1em] uppercase px-6"
+          {/* Mode toggle */}
+          <div className="flex justify-center gap-1 mb-8 p-1 border border-border inline-flex mx-auto w-full max-w-sm">
+            <button
+              onClick={() => { setMode("id"); setSearched(false); setResults([]); setNotFound(false); }}
+              className={`flex-1 text-[10px] tracking-[0.15em] uppercase py-2.5 transition-all duration-300 ${
+                mode === "id" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              <Search className="h-3.5 w-3.5 mr-1.5" />
-              {loading ? "Checking…" : "Verify"}
-            </Button>
+              By Certificate ID
+            </button>
+            <button
+              onClick={() => { setMode("details"); setSearched(false); setResults([]); setNotFound(false); }}
+              className={`flex-1 text-[10px] tracking-[0.15em] uppercase py-2.5 transition-all duration-300 ${
+                mode === "details" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              By Name / Course
+            </button>
           </div>
 
-          {/* Result: Valid */}
-          {result && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="border border-primary/30 p-8 md:p-10"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <CheckCircle className="h-5 w-5 text-primary" />
-                <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Valid Certificate
-                </span>
+          {/* Search forms */}
+          <div className="mb-10">
+            {mode === "id" ? (
+              <div className="flex gap-3">
+                <Input
+                  value={certId}
+                  onChange={(e) => setCertId(e.target.value)}
+                  placeholder="e.g. a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  className="bg-transparent font-mono text-sm"
+                  maxLength={36}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                />
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading || !canSearch}
+                  className="shrink-0 bg-primary text-primary-foreground text-xs tracking-[0.1em] uppercase px-6"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  <Search className="h-3.5 w-3.5 mr-1.5" />
+                  {loading ? "Checking…" : "Verify"}
+                </Button>
               </div>
-
-              <div className="flex items-start gap-5 mb-6">
-                <div className="shrink-0 w-14 h-14 flex items-center justify-center bg-primary/10 rounded-full">
-                  <Award className="h-6 w-6 text-primary" />
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5 block" style={{ fontFamily: "var(--font-heading)" }}>
+                    Recipient Name
+                  </label>
+                  <Input
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    className="bg-transparent text-sm"
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                  />
                 </div>
                 <div>
-                  <h2 className="text-xl font-light tracking-tight mb-1" style={{ fontFamily: "var(--font-display)" }}>
-                    {result.title}
-                  </h2>
-                  {result.description && (
-                    <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                      {result.description}
-                    </p>
-                  )}
+                  <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5 block" style={{ fontFamily: "var(--font-heading)" }}>
+                    Course / Certificate Title
+                  </label>
+                  <Input
+                    value={courseTitle}
+                    onChange={(e) => setCourseTitle(e.target.value)}
+                    placeholder="e.g. Photography Masterclass"
+                    className="bg-transparent text-sm"
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                  />
                 </div>
+                <div>
+                  <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5 block" style={{ fontFamily: "var(--font-heading)" }}>
+                    Date of Completion
+                  </label>
+                  <Input
+                    type="date"
+                    value={issuedDate}
+                    onChange={(e) => setIssuedDate(e.target.value)}
+                    className="bg-transparent text-sm"
+                    onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                  />
+                </div>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading || !canSearch}
+                  className="w-full bg-primary text-primary-foreground text-xs tracking-[0.1em] uppercase px-6"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  <Search className="h-3.5 w-3.5 mr-1.5" />
+                  {loading ? "Searching…" : "Search Certificates"}
+                </Button>
               </div>
+            )}
+          </div>
 
-              <div className="border-t border-border pt-5 space-y-3">
-                <div className="flex justify-between text-xs" style={{ fontFamily: "var(--font-body)" }}>
-                  <span className="text-muted-foreground">Recipient</span>
-                  <span className="text-foreground">{result.recipient_name || "—"}</span>
-                </div>
-                <div className="flex justify-between text-xs" style={{ fontFamily: "var(--font-body)" }}>
-                  <span className="text-muted-foreground">Type</span>
-                  <span className="tracking-[0.15em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                    {result.type.replace("_", " ")}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs" style={{ fontFamily: "var(--font-body)" }}>
-                  <span className="text-muted-foreground">Issued</span>
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                    {new Date(result.issued_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs" style={{ fontFamily: "var(--font-body)" }}>
-                  <span className="text-muted-foreground">Certificate ID</span>
-                  <span className="font-mono text-[10px] text-muted-foreground">{result.id}</span>
-                </div>
-              </div>
-            </motion.div>
+          {/* Results */}
+          {results.length > 0 && (
+            <div className="space-y-4">
+              {results.length > 1 && (
+                <p className="text-xs text-muted-foreground mb-2" style={{ fontFamily: "var(--font-body)" }}>
+                  Found {results.length} certificate{results.length > 1 ? "s" : ""}
+                </p>
+              )}
+              {results.map((result, idx) => (
+                <motion.div
+                  key={result.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: idx * 0.1 }}
+                  className="border border-primary/30 p-8 md:p-10"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                    <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                      Valid Certificate
+                    </span>
+                  </div>
+
+                  <div className="flex items-start gap-5 mb-6">
+                    <div className="shrink-0 w-14 h-14 flex items-center justify-center bg-primary/10 rounded-full">
+                      <Award className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-light tracking-tight mb-1" style={{ fontFamily: "var(--font-display)" }}>
+                        {result.title}
+                      </h2>
+                      {result.description && (
+                        <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                          {result.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-5 space-y-3">
+                    <div className="flex justify-between text-xs" style={{ fontFamily: "var(--font-body)" }}>
+                      <span className="text-muted-foreground">Recipient</span>
+                      <span className="text-foreground">{result.recipient_name || "—"}</span>
+                    </div>
+                    <div className="flex justify-between text-xs" style={{ fontFamily: "var(--font-body)" }}>
+                      <span className="text-muted-foreground">Type</span>
+                      <span className="tracking-[0.15em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                        {result.type.replace("_", " ")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs" style={{ fontFamily: "var(--font-body)" }}>
+                      <span className="text-muted-foreground">Issued</span>
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                        {new Date(result.issued_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs" style={{ fontFamily: "var(--font-body)" }}>
+                      <span className="text-muted-foreground">Certificate ID</span>
+                      <span className="font-mono text-[10px] text-muted-foreground">{result.id}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           )}
 
-          {/* Result: Not found */}
+          {/* Not found */}
           {searched && notFound && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -175,10 +307,12 @@ const VerifyCertificate = () => {
             >
               <XCircle className="h-8 w-8 text-destructive mx-auto mb-3" />
               <p className="text-sm text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                Certificate Not Found
+                No Certificates Found
               </p>
               <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                The certificate ID you entered does not match any records. Please double-check and try again.
+                {mode === "id"
+                  ? "The certificate ID you entered does not match any records. Please double-check and try again."
+                  : "No certificates match your search criteria. Try adjusting the name, course title, or date."}
               </p>
             </motion.div>
           )}
