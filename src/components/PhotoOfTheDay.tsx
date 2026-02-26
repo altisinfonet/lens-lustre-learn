@@ -34,7 +34,7 @@ export default function PhotoOfTheDay() {
   if (!potd) return null;
 
   return (
-    <section className="relative py-16 md:py-24" aria-label="Photo of the Day">
+    <section className="relative py-10 md:py-16" aria-label="Photo of the Day">
       <div className="container mx-auto px-6 md:px-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
           {/* Left — Image */}

@@ -468,23 +468,8 @@ const Index = () => {
       {/* Photo of the Day — Big Banner */}
       <PhotoOfTheDay />
 
-      {/* Marquee — slower, more elegant */}
-      <div className="py-6 border-y border-border overflow-hidden" aria-hidden="true">
-        <motion.div
-          animate={{ x: [0, -1200] }}
-          transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
-          className="flex gap-12 whitespace-nowrap will-change-transform"
-        >
-          {Array.from({ length: 3 }).map((_, i) => (
-            <span key={i} className="text-7xl md:text-8xl font-light tracking-tight text-foreground opacity-[0.12]" style={{ fontFamily: "var(--font-display)" }}>
-              Wildlife • Street • Portrait • Aerial • Documentary •
-            </span>
-          ))}
-        </motion.div>
-      </div>
-
       {/* Featured Works — Redesigned */}
-      <section id="works" className="py-28 md:py-40 relative" aria-label="Selected photography works">
+      <section id="works" className="py-12 md:py-20 relative" aria-label="Selected photography works">
         {/* Background accent */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-card/30 to-transparent pointer-events-none" />
 
