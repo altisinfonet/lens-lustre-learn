@@ -3,7 +3,7 @@ import Navbar from "@/components/Navbar";
 import GiftCelebrationModal from "@/components/GiftCelebrationModal";
 
 /** Pages where the Navbar should NOT be shown (auth screens) */
-const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
+const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
 
 /** Home page gets a transparent overlay navbar */
 const Layout = () => {

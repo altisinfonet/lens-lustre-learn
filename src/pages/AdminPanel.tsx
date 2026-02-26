@@ -472,35 +472,56 @@ const AdminPanel = () => {
     }
   };
 
+  const tabs = [
+    ["banners", "Banners", LayoutDashboard], ["potd", "Photo of Day", Star], ["portfolio", "Gallery", Image],
+    ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award],
+    ["users", "Users", UserCog], ["competitions", "Competitions", Trophy], ["entries", "Entries", Users],
+    ["applications", "Applications", Briefcase], ["comments", "Comments", MessageSquare], ["reports", "Reports", AlertTriangle],
+    ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["vote_rewards", "Vote Rewards", Vote],
+  ] as const;
+
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-6 md:px-12 py-12 md:py-16">
-        <Breadcrumbs items={[{ label: "Dashboard", to: "/dashboard" }, { label: "Admin Panel" }]} className="mb-8" />
-
-        <div className="flex items-center gap-4 mb-2">
-          <div className="w-12 h-px bg-primary" />
-          <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Administration</span>
+    <div className="min-h-screen bg-background text-foreground flex">
+      {/* Sidebar */}
+      <aside className="w-56 shrink-0 border-r border-border bg-card/50 flex flex-col h-screen sticky top-0 overflow-y-auto">
+        <div className="px-5 py-6 border-b border-border">
+          <Link to="/" className="flex items-center gap-2 mb-1">
+            <img src="/images/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
+            <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+              50mm Retina
+            </span>
+          </Link>
+          <h2 className="text-lg font-light mt-3" style={{ fontFamily: "var(--font-display)" }}>
+            Admin <em className="italic text-primary">Panel</em>
+          </h2>
         </div>
-        <h1 className="text-3xl md:text-5xl font-light tracking-tight mb-10" style={{ fontFamily: "var(--font-display)" }}>
-          Admin <em className="italic text-primary">Panel</em>
-        </h1>
-
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          {([["banners", "Banners", LayoutDashboard], ["potd", "Photo of Day", Star], ["portfolio", "Gallery", Image], ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award], ["users", "Users", UserCog], ["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["applications", "Applications", Briefcase], ["comments", "Comments", MessageSquare], ["reports", "Reports", AlertTriangle], ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["vote_rewards", "Vote Rewards", Vote]] as const).map(([key, label, Icon]) => (
+        <nav className="flex-1 py-3 px-2 space-y-0.5">
+          {tabs.map(([key, label, Icon]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 border transition-all duration-500 ${
-                tab === key ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-foreground/50"
+              className={`w-full flex items-center gap-2.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2.5 rounded-sm transition-all duration-300 ${
+                tab === key
+                  ? "bg-primary/10 text-primary border-l-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
               }`}
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className="h-3.5 w-3.5 shrink-0" />
               {label}
             </button>
           ))}
+        </nav>
+        <div className="px-5 py-4 border-t border-border">
+          <Link to="/" className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
+            ← Back to Site
+          </Link>
         </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 min-h-screen overflow-y-auto">
+        <div className="px-8 md:px-12 py-8 md:py-12 max-w-6xl">
 
         {/* Banners Tab */}
         {tab === "banners" && <AdminBanners user={user} />}
@@ -956,8 +977,9 @@ const AdminPanel = () => {
 
         {/* Comment Reports Tab */}
         {tab === "reports" && <AdminCommentReports user={user} />}
-      </div>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 };
 
@@ -979,7 +1001,6 @@ const FormField = ({
   </div>
 );
 
-export default AdminPanel;
 
 /* ─── Admin Wallet Tab ─── */
 import type { User } from "@supabase/supabase-js";
@@ -1218,3 +1239,5 @@ const AdminWalletTab = ({ user }: { user: User | null }) => {
     </div>
   );
 };
+
+export default AdminPanel;
