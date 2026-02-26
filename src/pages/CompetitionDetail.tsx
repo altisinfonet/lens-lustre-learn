@@ -124,6 +124,40 @@ const CompetitionDetail = () => {
       await supabase.from("competition_votes").delete().eq("entry_id", entryId).eq("user_id", user.id);
     } else {
       await supabase.from("competition_votes").insert({ entry_id: entryId, user_id: user.id });
+
+      // Award vote rewards if configured
+      try {
+        const { data: rewardSetting } = await supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "vote_reward_config")
+          .maybeSingle();
+        const cfg = rewardSetting?.value as any;
+        if (cfg?.active) {
+          const entry = entries.find(e => e.id === entryId);
+          // Reward voter
+          if (cfg.voter_reward > 0) {
+            await supabase.rpc("wallet_transaction", {
+              _user_id: user.id,
+              _type: "vote_reward",
+              _amount: cfg.voter_reward,
+              _description: "Vote reward — thank you for voting!",
+            });
+          }
+          // Reward entry owner
+          if (cfg.entry_owner_reward > 0 && entry && entry.user_id !== user.id) {
+            await supabase.rpc("wallet_transaction", {
+              _user_id: entry.user_id,
+              _type: "vote_reward",
+              _amount: cfg.entry_owner_reward,
+              _description: "Someone voted on your entry!",
+            });
+          }
+        }
+      } catch (err) {
+        // Non-blocking: rewards are best-effort
+        console.error("Vote reward error:", err);
+      }
     }
     // Optimistic update
     setEntries((prev) =>
