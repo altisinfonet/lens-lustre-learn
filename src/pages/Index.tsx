@@ -886,6 +886,17 @@ const Index = () => {
                                   {comp.status}
                                 </span>
                               </div>
+                              {/* Prize — bold oversized typography at bottom-right */}
+                              {comp.prize_info && (
+                                <div className="absolute bottom-0 right-0 p-3 text-right max-w-[70%]">
+                                  <span className="text-[8px] tracking-[0.3em] uppercase text-white/70 block mb-0.5" style={{ fontFamily: "var(--font-heading)", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
+                                    Grand Prize
+                                  </span>
+                                  <span className="text-lg md:text-xl font-light text-white leading-tight line-clamp-1" style={{ fontFamily: "var(--font-display)", textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}>
+                                    {comp.prize_info}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             <div className="p-5">
                               <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
@@ -894,14 +905,6 @@ const Index = () => {
                               <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
                                 {comp.title}
                               </h3>
-                              {comp.prize_info && (
-                                <div className="flex items-center gap-1.5 mb-2 px-2 py-1.5 bg-primary/10 border border-primary/20 rounded-sm">
-                                  <Trophy className="h-3 w-3 text-primary shrink-0" />
-                                  <p className="text-[10px] font-medium text-primary line-clamp-1" style={{ fontFamily: "var(--font-heading)" }}>
-                                    {comp.prize_info}
-                                  </p>
-                                </div>
-                              )}
                               <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                                 {comp.status === "closed"
                                   ? `Ended ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
