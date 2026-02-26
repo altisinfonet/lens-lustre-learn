@@ -164,8 +164,13 @@ const Index = () => {
   const middleRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: middleRef, offset: ["start start", "end end"] });
 
+  // Separate scroll ref for Photo of the Day section
+  const potdRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: potdScrollProgress } = useScroll({ target: potdRef, offset: ["start end", "end start"] });
+
   // Read resolved CSS colors from the DOM so framer-motion can interpolate real color values
   const [scrollColors, setScrollColors] = useState<string[]>([]);
+  const [potdColors, setPotdColors] = useState<string[]>([]);
   useEffect(() => {
     const readColors = () => {
       const style = getComputedStyle(document.documentElement);
@@ -182,6 +187,14 @@ const Index = () => {
         get("--scroll-bg-3"),
         get("--scroll-bg-1"),
       ]);
+      // POTD light-yellow scroll colors
+      setPotdColors([
+        get("--potd-bg-1"),
+        get("--potd-bg-2"),
+        get("--potd-bg-3"),
+        get("--potd-bg-2"),
+        get("--potd-bg-1"),
+      ]);
     };
     readColors();
     // Re-read when theme changes
@@ -196,6 +209,14 @@ const Index = () => {
     scrollColors.length === 7 ? scrollColors : [
       "hsl(210 12% 5%)", "hsl(200 18% 8%)", "hsl(195 14% 6%)",
       "hsl(185 20% 9%)", "hsl(205 16% 7%)", "hsl(195 14% 6%)", "hsl(210 12% 5%)",
+    ]
+  );
+
+  const potdBg = useTransform(
+    potdScrollProgress,
+    [0, 0.25, 0.5, 0.75, 1],
+    potdColors.length === 5 ? potdColors : [
+      "hsl(45 30% 8%)", "hsl(48 35% 10%)", "hsl(50 40% 12%)", "hsl(48 35% 10%)", "hsl(45 30% 8%)",
     ]
   );
 
@@ -543,11 +564,13 @@ const Index = () => {
         </motion.div>
       </section>
 
+      {/* Photo of the Day — with its own scroll-linked light yellow background */}
+      <motion.div ref={potdRef} style={{ backgroundColor: potdBg }} className="transition-colors duration-700">
+        <PhotoOfTheDay />
+      </motion.div>
+
       {/* Middle sections with scroll-based background */}
       <motion.div ref={middleRef} style={{ backgroundColor: scrollBg }} className="transition-colors duration-700">
-
-      {/* Photo of the Day — Big Banner */}
-      <PhotoOfTheDay />
 
       {/* All Competitions Showcase — Grouped by Status */}
       <section className="py-24 md:py-32" aria-label="Competitions">
