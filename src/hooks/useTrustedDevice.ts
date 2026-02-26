@@ -1,10 +1,10 @@
-const TRUST_KEY = "artefoto_trusted_devices";
+const TRUST_KEY = "50mmretina_trusted_devices";
 
 const getDeviceId = (): string => {
-  let id = localStorage.getItem("artefoto_device_id");
+  let id = localStorage.getItem("50mmretina_device_id");
   if (!id) {
     id = crypto.randomUUID();
-    localStorage.setItem("artefoto_device_id", id);
+    localStorage.setItem("50mmretina_device_id", id);
   }
   return id;
 };

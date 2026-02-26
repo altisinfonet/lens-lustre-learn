@@ -69,10 +69,10 @@ export const generateCertificatePdf = async ({
   const spacedLabel = labelText.split("").join("  ");
   doc.text(spacedLabel, W / 2, 36, { align: "center" });
 
-  // --- "ArteFoto Global" ---
+  // --- "50mm Retina" ---
   doc.setFontSize(8);
   doc.setTextColor(140, 140, 140);
-  doc.text("ARTEFOTO GLOBAL", W / 2, 50, { align: "center" });
+  doc.text("50MM RETINA", W / 2, 50, { align: "center" });
 
   // --- "This is to certify that" ---
   doc.setFontSize(10);

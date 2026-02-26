@@ -146,7 +146,7 @@ const Certificates = () => {
                               certificateId: cert.id,
                               type: cert.type === "competition_winner" ? "competition" : "course",
                             });
-                            doc.save(`ArteFoto-Certificate-${cert.id.slice(0, 8)}.pdf`);
+                            doc.save(`50mmRetina-Certificate-${cert.id.slice(0, 8)}.pdf`);
                           } catch {
                             toast({ title: "Download failed", variant: "destructive" });
                           }

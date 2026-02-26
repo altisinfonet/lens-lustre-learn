@@ -379,7 +379,7 @@ const Index = () => {
           >
             <motion.img
               src={heroSlides[currentSlide].src}
-              alt={`${heroSlides[currentSlide].title} — ${heroSlides[currentSlide].category} photography by ArteFoto Global`}
+              alt={`${heroSlides[currentSlide].title} — ${heroSlides[currentSlide].category} photography by 50mm Retina`}
               className="w-full h-full object-cover"
               initial={{ scale: 1.08 }}
               animate={{ scale: 1 }}
@@ -1442,7 +1442,7 @@ const Index = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-24 md:py-32" aria-label="Join ArteFoto Global">
+      <section className="py-24 md:py-32" aria-label="Join 50mm Retina">
         <div className="container mx-auto px-6 md:px-12 text-center">
           <motion.div
             initial="hidden"
@@ -1478,9 +1478,9 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-12 items-start">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <img src="/images/logo.png" alt="ArteFoto Global" className="h-7 w-7 object-contain" />
+                <img src="/images/logo.png" alt="50mm Retina" className="h-7 w-7 object-contain" />
                 <span className="text-sm tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-                  ArteFoto Global
+                  50mm Retina
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
@@ -1530,7 +1530,7 @@ const Index = () => {
                 </button>
               </form>
               <p className="text-[10px] text-muted-foreground mt-6" style={{ fontFamily: "var(--font-body)" }}>
-                © 2026 ArteFoto Global. All rights reserved.
+                © 2026 50mm Retina. All rights reserved.
               </p>
             </div>
           </div>
