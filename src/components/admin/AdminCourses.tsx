@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, BookOpen, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+const LABEL_OPTIONS = ["Filling Up 1st", "Few Seats Left", "Early Bird Offer", "Most Demand"] as const;
 
 interface CourseRow {
   id: string;
@@ -15,6 +17,8 @@ interface CourseRow {
   price: number | null;
   created_at: string;
   author_name: string | null;
+  is_featured: boolean;
+  labels: string[];
 }
 
 const AdminCourses = () => {
@@ -25,7 +29,7 @@ const AdminCourses = () => {
   const fetchCourses = async () => {
     const { data } = await supabase
       .from("courses")
-      .select("id, title, slug, category, difficulty, status, is_free, price, created_at, author_id")
+      .select("id, title, slug, category, difficulty, status, is_free, price, created_at, author_id, is_featured, labels")
       .order("created_at", { ascending: false });
 
     if (data && data.length > 0) {
@@ -60,10 +64,40 @@ const AdminCourses = () => {
     }
   };
 
+  const toggleFeatured = async (id: string, current: boolean) => {
+    const { error } = await supabase.from("courses").update({ is_featured: !current, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) toast({ title: "Update failed", variant: "destructive" });
+    else {
+      setCourses((prev) => prev.map((c) => (c.id === id ? { ...c, is_featured: !current } : c)));
+      toast({ title: !current ? "Course featured" : "Removed from featured" });
+    }
+  };
+
+  const toggleLabel = async (id: string, label: string, currentLabels: string[]) => {
+    const newLabels = currentLabels.includes(label)
+      ? currentLabels.filter((l) => l !== label)
+      : [...currentLabels, label];
+    const { error } = await supabase.from("courses").update({ labels: newLabels, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) toast({ title: "Update failed", variant: "destructive" });
+    else {
+      setCourses((prev) => prev.map((c) => (c.id === id ? { ...c, labels: newLabels } : c)));
+    }
+  };
+
   const statusStyle = (s: string) => {
     if (s === "published") return "bg-primary/10 text-primary border-primary/30";
     if (s === "archived") return "bg-muted text-muted-foreground border-border";
     return "bg-yellow-500/10 text-yellow-600 border-yellow-500/30";
+  };
+
+  const labelColor = (l: string) => {
+    switch (l) {
+      case "Filling Up 1st": return "bg-orange-500/15 text-orange-500 border-orange-500/30";
+      case "Few Seats Left": return "bg-red-500/15 text-red-500 border-red-500/30";
+      case "Early Bird Offer": return "bg-green-500/15 text-green-500 border-green-500/30";
+      case "Most Demand": return "bg-blue-500/15 text-blue-500 border-blue-500/30";
+      default: return "bg-muted text-muted-foreground border-border";
+    }
   };
 
   return (
@@ -82,38 +116,68 @@ const AdminCourses = () => {
       {courses.length > 0 ? (
         <div className="border border-border rounded-sm overflow-hidden divide-y divide-border">
           {courses.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors group">
-              <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>{c.title}</span>
-                  <span className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider shrink-0 ${statusStyle(c.status)}`}>
-                    {c.status}
-                  </span>
+            <div key={c.id} className="px-3 py-3 hover:bg-muted/30 transition-colors group">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => toggleFeatured(c.id, c.is_featured)}
+                  className={`p-1 rounded-sm transition-colors shrink-0 ${c.is_featured ? "text-yellow-500" : "text-muted-foreground/30 hover:text-yellow-500/60"}`}
+                  title={c.is_featured ? "Remove from featured" : "Mark as featured"}
+                >
+                  <Star className="h-4 w-4" fill={c.is_featured ? "currentColor" : "none"} />
+                </button>
+                <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>{c.title}</span>
+                    <span className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider shrink-0 ${statusStyle(c.status)}`}>
+                      {c.status}
+                    </span>
+                    {c.is_featured && (
+                      <span className="text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider shrink-0 bg-yellow-500/15 text-yellow-500 border-yellow-500/30">Featured</span>
+                    )}
+                    {c.labels.map((label) => (
+                      <span key={label} className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider shrink-0 ${labelColor(label)}`}>{label}</span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground">
+                    <span>{c.author_name || "Unknown"}</span>
+                    <span>·</span>
+                    <span>{c.category}</span>
+                    <span>·</span>
+                    <span>{c.difficulty}</span>
+                    <span>·</span>
+                    <span>{c.is_free ? "Free" : `$${c.price}`}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 mt-0.5 text-[10px] text-muted-foreground">
-                  <span>{c.author_name || "Unknown"}</span>
-                  <span>·</span>
-                  <span>{c.category}</span>
-                  <span>·</span>
-                  <span>{c.difficulty}</span>
-                  <span>·</span>
-                  <span>{c.is_free ? "Free" : `$${c.price}`}</span>
+                <div className="flex items-center gap-1">
+                  <select value={c.status} onChange={(e) => updateStatus(c.id, e.target.value)}
+                    className="text-[9px] tracking-wider uppercase px-2 py-1 border border-border bg-transparent outline-none cursor-pointer rounded-sm"
+                    style={{ fontFamily: "var(--font-heading)" }}>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => navigate(`/courses/${c.slug}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="View"><Eye className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => navigate(`/courses/editor/${c.id}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => deleteCourse(c.id)} className="p-1.5 hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <select value={c.status} onChange={(e) => updateStatus(c.id, e.target.value)}
-                  className="text-[9px] tracking-wider uppercase px-2 py-1 border border-border bg-transparent outline-none cursor-pointer rounded-sm"
-                  style={{ fontFamily: "var(--font-heading)" }}>
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => navigate(`/courses/${c.slug}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="View"><Eye className="h-3.5 w-3.5" /></button>
-                <button onClick={() => navigate(`/courses/editor/${c.id}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                <button onClick={() => deleteCourse(c.id)} className="p-1.5 hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+              {/* Labels toggles */}
+              <div className="flex items-center gap-2 mt-2 ml-10">
+                {LABEL_OPTIONS.map((label) => (
+                  <button
+                    key={label}
+                    onClick={() => toggleLabel(c.id, label, c.labels)}
+                    className={`text-[8px] tracking-[0.1em] uppercase px-2 py-1 border rounded-sm transition-all ${
+                      c.labels.includes(label) ? labelColor(label) : "border-border/50 text-muted-foreground/40 hover:text-muted-foreground hover:border-border"
+                    }`}
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
           ))}
