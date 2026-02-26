@@ -319,6 +319,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          expires_at: string | null
           gift_credit_id: string
           id: string
           is_read: boolean
@@ -328,6 +329,7 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          expires_at?: string | null
           gift_credit_id: string
           id?: string
           is_read?: boolean
@@ -337,6 +339,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          expires_at?: string | null
           gift_credit_id?: string
           id?: string
           is_read?: boolean
@@ -359,6 +362,7 @@ export type Database = {
           amount: number
           auto_apply_future: boolean
           created_at: string
+          expires_at: string | null
           id: string
           reason: string
           recipients_count: number
@@ -371,6 +375,7 @@ export type Database = {
           amount: number
           auto_apply_future?: boolean
           created_at?: string
+          expires_at?: string | null
           id?: string
           reason: string
           recipients_count?: number
@@ -383,6 +388,7 @@ export type Database = {
           amount?: number
           auto_apply_future?: boolean
           created_at?: string
+          expires_at?: string | null
           id?: string
           reason?: string
           recipients_count?: number
@@ -879,18 +885,32 @@ export type Database = {
           suspension_reason: string
         }[]
       }
-      admin_wallet_credit: {
-        Args: {
-          _admin_id: string
-          _amount: number
-          _description?: string
-          _reference_id?: string
-          _reference_type?: string
-          _target_user_id: string
-          _type: string
-        }
-        Returns: string
-      }
+      admin_wallet_credit:
+        | {
+            Args: {
+              _admin_id: string
+              _amount: number
+              _description?: string
+              _reference_id?: string
+              _reference_type?: string
+              _target_user_id: string
+              _type: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _admin_id: string
+              _amount: number
+              _description?: string
+              _metadata?: Json
+              _reference_id?: string
+              _reference_type?: string
+              _target_user_id: string
+              _type: string
+            }
+            Returns: string
+          }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
