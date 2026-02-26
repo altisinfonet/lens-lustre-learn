@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
 import AdminVoteRewards from "@/components/admin/AdminVoteRewards";
@@ -505,31 +506,37 @@ const AdminPanel = () => {
             Admin <em className="italic text-primary">Panel</em>
           </h2>
         </div>
-        <nav className="flex-1 py-3 px-2 space-y-4">
-          {tabGroups.map((group) => (
-            <div key={group.label}>
-              <p className="px-3 pb-1.5 text-[8px] tracking-[0.25em] uppercase text-muted-foreground/60 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-                {group.label}
-              </p>
-              <div className="space-y-0.5">
-                {group.items.map(([key, label, Icon]) => (
-                  <button
-                    key={key}
-                    onClick={() => setTab(key)}
-                    className={`w-full flex items-center gap-2.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2.5 rounded-sm transition-all duration-300 ${
-                      tab === key
-                        ? "bg-primary/10 text-primary border-l-2 border-primary"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
-                    }`}
-                    style={{ fontFamily: "var(--font-heading)" }}
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0" />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+        <nav className="flex-1 py-3 px-2 space-y-1">
+          {tabGroups.map((group) => {
+            const isGroupActive = group.items.some((item) => item[0] === tab);
+            return (
+              <Collapsible key={group.label} defaultOpen={isGroupActive}>
+                <CollapsibleTrigger className="w-full flex items-center justify-between px-3 py-2 text-[8px] tracking-[0.25em] uppercase text-muted-foreground/60 font-semibold hover:text-muted-foreground transition-colors group/collapsible" style={{ fontFamily: "var(--font-heading)" }}>
+                  {group.label}
+                  <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="space-y-0.5 pb-2">
+                    {group.items.map(([key, label, Icon]) => (
+                      <button
+                        key={key}
+                        onClick={() => setTab(key)}
+                        className={`w-full flex items-center gap-2.5 text-[10px] tracking-[0.15em] uppercase px-3 py-2.5 rounded-sm transition-all duration-300 ${
+                          tab === key
+                            ? "bg-primary/10 text-primary border-l-2 border-primary"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
+                        }`}
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })}
         </nav>
         <div className="px-5 py-4 border-t border-border">
           <Link to="/" className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
