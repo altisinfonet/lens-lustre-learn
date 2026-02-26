@@ -1,10 +1,11 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Calendar, Clock, Trophy, Heart, Upload, Users } from "lucide-react";
 import ImageEngagement from "@/components/ImageEngagement";
+import PhaseBanner from "@/components/PhaseBanner";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -214,6 +215,9 @@ const CompetitionDetail = () => {
           </h1>
         </div>
       </div>
+
+      {/* Phase Banner with Countdown */}
+      <PhaseBanner competition={competition} />
 
       <div className="container mx-auto px-6 md:px-12 py-12">
         <div className="grid lg:grid-cols-3 gap-12">
