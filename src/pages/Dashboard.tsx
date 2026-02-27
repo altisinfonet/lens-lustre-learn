@@ -366,7 +366,7 @@ const Dashboard = () => {
                 <div className="w-12 h-px bg-primary" />
                 <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Dashboard</T></span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+              <h2 className="text-2xl md:text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
                 <T>Welcome,</T> <em className="italic text-primary">{displayName.split(" ")[0]}</em>
               </h2>
             </motion.div>

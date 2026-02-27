@@ -222,7 +222,7 @@ const Friends = () => {
                 <T>Connections</T>
               </span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-6" style={displayFont}>
+            <h1 className="text-2xl md:text-3xl font-light tracking-tight mb-6" style={displayFont}>
               <T>Friends</T> & <em className="italic text-primary"><T>Network</T></em>
             </h1>
 
