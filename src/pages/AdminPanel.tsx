@@ -11,6 +11,7 @@ import AdminCertificates from "@/components/admin/AdminCertificates";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminPhotoOfDay from "@/components/admin/AdminPhotoOfDay";
 import AdminExcellence from "@/components/admin/AdminExcellence";
+import AdminFeaturedArtist from "@/components/admin/AdminFeaturedArtist";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,7 +77,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -476,7 +477,7 @@ const AdminPanel = () => {
 
   const tabGroups = [
     { label: "Content", items: [
-      ["banners", "Banners", LayoutDashboard], ["potd", "Photo of Day", Star], ["portfolio", "Gallery", Image],
+      ["banners", "Banners", LayoutDashboard], ["potd", "Photo of Day", Star], ["portfolio", "Gallery", Image], ["featured_artist", "Featured Artist", Star],
     ] as const },
     { label: "Learning", items: [
       ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award], ["excellence", "Excellence", Star],
@@ -567,6 +568,9 @@ const AdminPanel = () => {
 
         {/* Excellence Tab */}
         {tab === "excellence" && <AdminExcellence user={user} />}
+
+        {/* Featured Artist Tab */}
+        {tab === "featured_artist" && <AdminFeaturedArtist user={user} />}
 
         {/* Users Tab */}
         {tab === "users" && <AdminUsers user={user} />}

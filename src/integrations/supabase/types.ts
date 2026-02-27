@@ -421,6 +421,63 @@ export type Database = {
         }
         Relationships: []
       }
+      featured_artists: {
+        Row: {
+          artist_avatar_url: string | null
+          artist_bio: string | null
+          artist_name: string | null
+          body: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string
+          excerpt: string | null
+          id: string
+          is_active: boolean
+          photo_gallery: string[]
+          published_at: string | null
+          slug: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          artist_avatar_url?: string | null
+          artist_bio?: string | null
+          artist_name?: string | null
+          body?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by: string
+          excerpt?: string | null
+          id?: string
+          is_active?: boolean
+          photo_gallery?: string[]
+          published_at?: string | null
+          slug: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          artist_avatar_url?: string | null
+          artist_bio?: string | null
+          artist_name?: string | null
+          body?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string
+          excerpt?: string | null
+          id?: string
+          is_active?: boolean
+          photo_gallery?: string[]
+          published_at?: string | null
+          slug?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gift_announcements: {
         Row: {
           amount: number

@@ -5,6 +5,7 @@ import { motion, type Variants, AnimatePresence, useScroll, useTransform, useMot
 import { useEffect, useState, useCallback, lazy, Suspense, memo, useRef } from "react";
 import Lightbox from "@/components/Lightbox";
 import PhotoOfTheDay from "@/components/PhotoOfTheDay";
+import FeaturedArtist from "@/components/FeaturedArtist";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -627,6 +628,9 @@ const Index = () => {
 
       {/* Photo of the Day — Big Banner */}
       <PhotoOfTheDay />
+
+      {/* Featured Artist */}
+      <FeaturedArtist />
 
       {/* All Competitions Showcase — Grouped by Status */}
       <section className="py-24 md:py-32" aria-label="Competitions">
@@ -1766,6 +1770,7 @@ const Index = () => {
               <Link to="/competitions" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Competitions</T></Link>
               <Link to="/courses" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Education</T></Link>
               <Link to="/journal" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Journal</T></Link>
+              <Link to="/#featured-artist" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Featured Artist</T></Link>
               <Link to="/verify" className="text-xs text-foreground/70 hover:text-foreground transition-colors duration-500" style={{ fontFamily: "var(--font-body)" }}><T>Verify Certificate</T></Link>
             </nav>
             <div className="md:text-right">
