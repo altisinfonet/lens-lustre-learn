@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube } from "lucide-react";
+import FriendFollowActions from "@/components/FriendFollowActions";
 import { AnimatePresence, motion } from "framer-motion";
 import { BADGES, type BadgeType } from "@/lib/badgeConfig";
 
@@ -373,6 +374,11 @@ const PublicProfile = () => {
                     <ExternalLink className="h-3 w-3 opacity-50" />
                   </a>
                 )}
+              </div>
+
+              {/* Friend / Follow actions & counts */}
+              <div className="mt-6">
+                <FriendFollowActions targetUserId={userId!} />
               </div>
             </div>
           </motion.div>
