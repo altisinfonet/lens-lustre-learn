@@ -8,6 +8,7 @@ import GlobalSearch from "@/components/GlobalSearch";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useTheme } from "@/hooks/useTheme";
 import UserMenu from "@/components/UserMenu";
+import NotificationBell from "@/components/NotificationBell";
 
 interface NavbarProps {
   transparent?: boolean;
@@ -77,6 +78,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <GlobalSearch />
+            {user && <NotificationBell />}
             {user ? (
               <UserMenu variant="desktop" />
             ) : (
