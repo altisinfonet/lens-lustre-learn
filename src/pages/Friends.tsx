@@ -260,7 +260,7 @@ const Friends = () => {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name, city or country..."
+                placeholder="Search by name..."
                 className="pl-9 bg-transparent text-sm"
               />
             </div>
