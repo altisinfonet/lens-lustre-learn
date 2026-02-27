@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { BADGES, type BadgeType } from "@/lib/badgeConfig";
 
 interface ProfileData {
   full_name: string | null;
@@ -25,6 +26,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [sendingReset, setSendingReset] = useState(false);
+  const [userBadges, setUserBadges] = useState<string[]>([]);
 
   const handlePasswordReset = async () => {
     if (!user?.email) return;
@@ -49,12 +51,12 @@ const Profile = () => {
   useEffect(() => {
     if (!user) return;
     const fetchProfile = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      setProfile(data);
+      const [profileRes, badgesRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("user_badges").select("badge_type").eq("user_id", user.id),
+      ]);
+      setProfile(profileRes.data);
+      setUserBadges((badgesRes.data as any[])?.map((b: any) => b.badge_type) || []);
       setLoading(false);
     };
     fetchProfile();
@@ -111,6 +113,25 @@ const Profile = () => {
               <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
                 {displayName}
               </h1>
+              {/* Badge Ribbons */}
+              {userBadges.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3 justify-center md:justify-start">
+                  {userBadges.map((b) => {
+                    const cfg = BADGES[b as BadgeType];
+                    if (!cfg) return null;
+                    return (
+                      <span
+                        key={b}
+                        className={`inline-flex items-center gap-1.5 text-[9px] tracking-[0.2em] uppercase px-4 py-1.5 rounded-full shadow-lg ${cfg.ribbonClass}`}
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        <span className="text-xs">{cfg.icon}</span>
+                        {cfg.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
               <div className="flex items-center gap-4 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                 {memberSince && <span><T>Member since</T> {memberSince}</span>}
                 {user?.email && (

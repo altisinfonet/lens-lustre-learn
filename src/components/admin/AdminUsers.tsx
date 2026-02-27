@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield, Plus, X, CheckSquare, Square } from "lucide-react";
+import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield, Plus, X, CheckSquare, Square, Award } from "lucide-react";
 import type { User as AuthUser } from "@supabase/supabase-js";
+import { BADGES, BADGE_TYPES, type BadgeType } from "@/lib/badgeConfig";
 
 const ALL_ROLES = ["user", "admin", "judge", "content_editor", "registered_photographer", "student"] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -25,6 +26,7 @@ interface UserRow {
   suspension_reason: string | null;
   created_at: string;
   roles: string[];
+  badges: string[];
 }
 
 const AdminUsers = ({ user }: { user: AuthUser | null }) => {
@@ -46,6 +48,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkRole, setBulkRole] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [badgeTarget, setBadgeTarget] = useState<UserRow | null>(null);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -113,14 +116,23 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
 
     if (data && data.length > 0) {
       const userIds = data.map((u: any) => u.id);
-      const { data: roles } = await supabase.from("user_roles").select("user_id, role").in("user_id", userIds);
+      const [rolesRes, badgesRes] = await Promise.all([
+        supabase.from("user_roles").select("user_id, role").in("user_id", userIds),
+        supabase.from("user_badges").select("user_id, badge_type").in("user_id", userIds),
+      ]);
       const roleMap = new Map<string, string[]>();
-      roles?.forEach((r) => {
+      rolesRes.data?.forEach((r) => {
         const existing = roleMap.get(r.user_id) || [];
         existing.push(r.role);
         roleMap.set(r.user_id, existing);
       });
-      setUsers(data.map((u: any) => ({ ...u, roles: roleMap.get(u.id) || [] })));
+      const badgeMap = new Map<string, string[]>();
+      (badgesRes.data as any[])?.forEach((b: any) => {
+        const existing = badgeMap.get(b.user_id) || [];
+        existing.push(b.badge_type);
+        badgeMap.set(b.user_id, existing);
+      });
+      setUsers(data.map((u: any) => ({ ...u, roles: roleMap.get(u.id) || [], badges: badgeMap.get(u.id) || [] })));
     } else {
       setUsers([]);
       if (query) toast({ title: "No users found" });
@@ -218,6 +230,33 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
     else {
       toast({ title: `${ROLE_LABELS[role] || role} role removed` });
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, roles: u.roles.filter((r) => r !== role) } : u));
+    }
+    setActionLoading(null);
+  };
+
+  const assignBadge = async (userId: string, badgeType: string) => {
+    setActionLoading(userId);
+    const { error } = await supabase.from("user_badges").insert({ user_id: userId, badge_type: badgeType, assigned_by: user?.id } as any);
+    if (error) {
+      if (error.code === "23505") toast({ title: "Badge already assigned" });
+      else toast({ title: "Assign failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `${BADGES[badgeType as BadgeType]?.label || badgeType} badge assigned` });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, badges: [...u.badges, badgeType] } : u));
+      if (badgeTarget?.id === userId) setBadgeTarget({ ...badgeTarget, badges: [...badgeTarget.badges, badgeType] });
+    }
+    setActionLoading(null);
+  };
+
+  const removeBadge = async (userId: string, badgeType: string) => {
+    if (!confirm(`Remove "${BADGES[badgeType as BadgeType]?.label}" badge?`)) return;
+    setActionLoading(userId);
+    const { error } = await supabase.from("user_badges").delete().eq("user_id", userId).eq("badge_type", badgeType);
+    if (error) toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+    else {
+      toast({ title: `${BADGES[badgeType as BadgeType]?.label || badgeType} badge removed` });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, badges: u.badges.filter((b) => b !== badgeType) } : u));
+      if (badgeTarget?.id === userId) setBadgeTarget({ ...badgeTarget, badges: badgeTarget.badges.filter((b) => b !== badgeType) });
     }
     setActionLoading(null);
   };
@@ -459,8 +498,17 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
                   </div>
                 </div>
 
-                {/* Roles */}
-                <div className="flex gap-1 shrink-0 flex-wrap max-w-[200px] justify-end">
+                {/* Roles + Badges */}
+                <div className="flex gap-1 shrink-0 flex-wrap max-w-[280px] justify-end">
+                  {u.badges.map((b) => {
+                    const cfg = BADGES[b as BadgeType];
+                    if (!cfg) return null;
+                    return (
+                      <span key={b} className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider ${cfg.badgeClass}`}>
+                        {cfg.icon} {cfg.label}
+                      </span>
+                    );
+                  })}
                   {u.roles.map((r) => (
                     <span key={r} className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider ${roleColor(r)}`}>
                       {ROLE_LABELS[r] || r.replace(/_/g, " ")}
@@ -473,6 +521,10 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
                   <button onClick={() => setRoleTarget(u)}
                     className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Manage Roles" disabled={actionLoading === u.id}>
                     <Shield className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={() => setBadgeTarget(u)}
+                    className="p-1.5 hover:text-amber-600 transition-colors rounded-sm hover:bg-amber-500/10" title="Manage Badges" disabled={actionLoading === u.id}>
+                    <Award className="h-3.5 w-3.5" />
                   </button>
                   <button onClick={() => { setEditTarget(u); setEditName(u.full_name || ""); setEditBio(u.bio || ""); }}
                     className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit" disabled={actionLoading === u.id}>
