@@ -63,6 +63,12 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      height: {
+        "screen-safe": "100dvh",
+      },
+      minHeight: {
+        "screen-safe": "100dvh",
+      },
       keyframes: {
         "accordion-down": {
           from: {

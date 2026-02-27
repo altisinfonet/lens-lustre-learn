@@ -48,7 +48,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
         className={`${
           transparent
             ? "absolute top-0 left-0 right-0 z-50"
-            : "sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md"
+            : "sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
         }`}
         aria-label="Main navigation"
       >

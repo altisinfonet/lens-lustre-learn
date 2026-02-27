@@ -105,15 +105,68 @@
 
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
     transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   h1, h2, h3 {
     font-family: var(--font-display);
+  }
+}
+
+/* Cross-browser viewport height fix (mobile Safari address bar) */
+.h-screen-safe {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Webkit backdrop-blur fallback */
+@supports not (backdrop-filter: blur(1px)) {
+  .backdrop-blur-sm,
+  .backdrop-blur-md {
+    background-color: hsl(var(--background) / 0.95) !important;
+  }
+}
+
+/* Cross-browser line-clamp support */
+.line-clamp-2,
+.line-clamp-3,
+.line-clamp-5 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Fix for Safari flex gap support */
+@supports not (gap: 1px) {
+  .flex {
+    --gap: 0px;
+  }
+  .flex > * + * {
+    margin-left: var(--gap);
+  }
+}
+
+/* Touch device hover fix — prevent sticky hover states on mobile */
+@media (hover: none) {
+  .group:hover .group-hover\:scale-110,
+  .group:hover .group-hover\:scale-\[1\.03\],
+  .group:hover .group-hover\:scale-\[1\.05\] {
+    transform: none;
+  }
+  .group:hover .group-hover\:opacity-100 {
+    opacity: 1;
+  }
+  .group:hover .group-hover\:translate-y-0 {
+    transform: translateY(0);
   }
 }
