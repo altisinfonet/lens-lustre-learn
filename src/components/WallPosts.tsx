@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ThumbsUp, MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X } from "lucide-react";
-import { compressImageToFiles } from "@/lib/imageCompression";
+import { ThumbsUp, MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X, Download } from "lucide-react";
+import { compressImageToFiles, getJpegDownloadUrl } from "@/lib/imageCompression";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
@@ -520,13 +520,22 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
 
               {/* ── Post Image ── */}
               {post.image_url && (
-                <div className="mt-2">
+                <div className="mt-2 relative group/img">
                   <img
                     src={post.image_url}
                     alt=""
                     className="w-full max-h-[600px] object-cover cursor-pointer"
                     loading="lazy"
                   />
+                  <a
+                    href={getJpegDownloadUrl(post.image_url)}
+                    download
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute bottom-3 right-3 p-2 rounded-full bg-card/80 backdrop-blur-sm text-foreground opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-card shadow-sm"
+                    title="Download JPEG"
+                  >
+                    <Download className="h-4 w-4" />
+                  </a>
                 </div>
               )}
 
