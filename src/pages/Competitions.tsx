@@ -188,7 +188,7 @@ const Competitions = () => {
                   {comp.prize_info && (
                     <div className="px-5 py-3 border-t border-border bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
                       <div className="flex items-center gap-2">
-                        <span className="text-[8px] tracking-[0.3em] uppercase text-primary/70" style={{ fontFamily: "var(--font-heading)" }}>
+                        <span className="text-[8px] tracking-[0.3em] uppercase text-primary/70 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                           🏆 Grand Prize
                         </span>
                         <div className="flex-1 h-px bg-gradient-to-r from-primary/20 to-transparent" />
