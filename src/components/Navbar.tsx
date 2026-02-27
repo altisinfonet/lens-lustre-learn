@@ -15,6 +15,7 @@ interface NavbarProps {
 }
 
 const navLinks = [
+  { to: "/feed", label: "Feed" },
   { to: "/competitions", label: "Competitions" },
   { to: "/journal", label: "Journal" },
   { to: "/courses", label: "Courses" },

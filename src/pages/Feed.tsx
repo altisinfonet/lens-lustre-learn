@@ -1,0 +1,371 @@
+import { useEffect, useState, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Heart, MessageCircle, Send, Globe, Users, Rss, RefreshCw } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
+import { motion, AnimatePresence } from "framer-motion";
+
+const headingFont = { fontFamily: "var(--font-heading)" };
+const bodyFont = { fontFamily: "var(--font-body)" };
+const displayFont = { fontFamily: "var(--font-display)" };
+
+interface FeedPost {
+  id: string;
+  user_id: string;
+  content: string;
+  image_url: string | null;
+  privacy: string;
+  created_at: string;
+  author_name: string | null;
+  author_avatar: string | null;
+  like_count: number;
+  comment_count: number;
+  is_liked: boolean;
+}
+
+interface PostComment {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  author_name: string | null;
+  author_avatar: string | null;
+}
+
+const Feed = () => {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+  const [commentsByPost, setCommentsByPost] = useState<Record<string, PostComment[]>>({});
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [commentLoading, setCommentLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) navigate("/login");
+  }, [user, authLoading, navigate]);
+
+  const fetchFeed = useCallback(async (isRefresh = false) => {
+    if (!user) return;
+    if (isRefresh) setRefreshing(true);
+
+    // Get followed user IDs and friend IDs
+    const [followsRes, friendsRes] = await Promise.all([
+      supabase.from("follows").select("following_id").eq("follower_id", user.id),
+      supabase.from("friendships").select("requester_id, addressee_id").eq("status", "accepted")
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`),
+    ]);
+
+    const followedIds = new Set((followsRes.data || []).map((f) => f.following_id));
+    const friendIds = new Set<string>();
+    (friendsRes.data || []).forEach((f) => {
+      if (f.requester_id === user.id) friendIds.add(f.addressee_id);
+      else friendIds.add(f.requester_id);
+    });
+
+    // Combine: followed + friends + self
+    const relevantUserIds = new Set([...followedIds, ...friendIds, user.id]);
+    const userIdArray = Array.from(relevantUserIds);
+
+    if (userIdArray.length === 0) {
+      setPosts([]);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    // Fetch posts from these users (RLS will handle privacy filtering via can_view_post)
+    const { data: postsData } = await supabase
+      .from("posts")
+      .select("*")
+      .in("user_id", userIdArray)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (!postsData || postsData.length === 0) {
+      setPosts([]);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    // Get profiles
+    const authorIds = [...new Set(postsData.map((p) => p.user_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", authorIds);
+    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+
+    // Get counts
+    const postIds = postsData.map((p) => p.id);
+    const [reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
+      supabase.from("post_reactions").select("post_id").in("post_id", postIds),
+      supabase.from("post_reactions").select("post_id").in("post_id", postIds).eq("user_id", user.id),
+      supabase.from("post_comments").select("post_id").in("post_id", postIds),
+    ]);
+
+    const likeCounts: Record<string, number> = {};
+    (reactionsRes.data || []).forEach((r) => { likeCounts[r.post_id] = (likeCounts[r.post_id] || 0) + 1; });
+    const userLikedSet = new Set((userReactionsRes.data || []).map((r) => r.post_id));
+    const commentCounts: Record<string, number> = {};
+    (commentsCountRes.data || []).forEach((c) => { commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
+
+    setPosts(postsData.map((p) => ({
+      ...p,
+      author_name: profileMap.get(p.user_id)?.full_name || null,
+      author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
+      like_count: likeCounts[p.id] || 0,
+      comment_count: commentCounts[p.id] || 0,
+      is_liked: userLikedSet.has(p.id),
+    })));
+
+    setLoading(false);
+    setRefreshing(false);
+  }, [user]);
+
+  useEffect(() => { fetchFeed(); }, [fetchFeed]);
+
+  const toggleLike = async (postId: string) => {
+    if (!user) return;
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+    if (post.is_liked) {
+      await supabase.from("post_reactions").delete().eq("post_id", postId).eq("user_id", user.id);
+      setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, is_liked: false, like_count: p.like_count - 1 } : p));
+    } else {
+      const { error } = await supabase.from("post_reactions").insert({ post_id: postId, user_id: user.id, reaction_type: "like" });
+      if (!error) setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, is_liked: true, like_count: p.like_count + 1 } : p));
+    }
+  };
+
+  const loadComments = async (postId: string) => {
+    const { data } = await supabase
+      .from("post_comments")
+      .select("id, user_id, content, created_at")
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true })
+      .limit(30);
+    if (!data) return;
+    const authorIds = [...new Set(data.map((c) => c.user_id))];
+    const { data: profiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", authorIds);
+    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+    setCommentsByPost((prev) => ({
+      ...prev,
+      [postId]: data.map((c) => ({
+        ...c,
+        author_name: profileMap.get(c.user_id)?.full_name || null,
+        author_avatar: profileMap.get(c.user_id)?.avatar_url || null,
+      })),
+    }));
+  };
+
+  const toggleComments = async (postId: string) => {
+    const s = new Set(expandedComments);
+    if (s.has(postId)) { s.delete(postId); } else { s.add(postId); if (!commentsByPost[postId]) await loadComments(postId); }
+    setExpandedComments(s);
+  };
+
+  const submitComment = async (postId: string) => {
+    if (!user) return;
+    const content = commentInputs[postId]?.trim();
+    if (!content) return;
+    setCommentLoading(postId);
+    const { error } = await supabase.from("post_comments").insert({ post_id: postId, user_id: user.id, content });
+    if (error) { toast({ title: "Failed to comment", variant: "destructive" }); }
+    else {
+      setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+      await loadComments(postId);
+      setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, comment_count: p.comment_count + 1 } : p));
+      if (!expandedComments.has(postId)) setExpandedComments((prev) => new Set(prev).add(postId));
+    }
+    setCommentLoading(null);
+  };
+
+  const timeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return `${days}d`;
+    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  const privacyIcon = (p: string) => p === "friends" ? <Users className="h-3 w-3" /> : <Globe className="h-3 w-3" />;
+
+  if (authLoading || !user) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <span className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={headingFont}><T>Loading...</T></span>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <div className="container mx-auto px-4 md:px-8 py-8 md:py-14 max-w-2xl">
+        <Breadcrumbs items={[{ label: "News Feed" }]} className="mb-6" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-px bg-primary" />
+              <span className="text-[9px] tracking-[0.3em] uppercase text-primary" style={headingFont}>
+                <Rss className="h-3 w-3 inline mr-1.5" /><T>News Feed</T>
+              </span>
+            </div>
+            <h1 className="text-xl md:text-2xl font-light tracking-tight" style={displayFont}>
+              <T>Your Feed</T>
+            </h1>
+          </div>
+          <button
+            onClick={() => fetchFeed(true)}
+            disabled={refreshing}
+            className="p-2 text-muted-foreground hover:text-primary transition-colors disabled:animate-spin"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Feed */}
+        {loading ? (
+          <div className="text-center py-16">
+            <span className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={headingFont}><T>Loading feed...</T></span>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="border border-dashed border-border p-12 text-center">
+            <Rss className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground mb-2" style={bodyFont}><T>Your feed is empty</T></p>
+            <p className="text-xs text-muted-foreground" style={bodyFont}><T>Follow people or add friends to see their posts here.</T></p>
+            <Link to="/competitions" className="inline-block mt-4 text-[10px] tracking-[0.15em] uppercase text-primary hover:underline" style={headingFont}>
+              <T>Discover photographers</T>
+            </Link>
+          </div>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {posts.map((post, i) => (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.03 }}
+                className="border border-border mb-4"
+              >
+                {/* Header */}
+                <div className="flex items-center gap-3 p-4 pb-0">
+                  <Link to={`/profile/${post.user_id}`} className="shrink-0">
+                    {post.author_avatar ? (
+                      <img src={post.author_avatar} alt="" className="w-9 h-9 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-xs text-primary" style={displayFont}>{(post.author_name || "?")[0]?.toUpperCase()}</span>
+                      </div>
+                    )}
+                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <Link to={`/profile/${post.user_id}`} className="text-sm font-light hover:text-primary transition-colors block truncate" style={headingFont}>
+                      {post.author_name || "User"}
+                    </Link>
+                    <div className="flex items-center gap-2 text-[9px] text-muted-foreground" style={headingFont}>
+                      <span>{timeAgo(post.created_at)}</span>
+                      <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="px-4 py-3">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={bodyFont}>{post.content}</p>
+                  {post.image_url && <img src={post.image_url} alt="" className="mt-3 rounded-sm max-h-96 w-full object-cover" />}
+                </div>
+
+                {/* Counts */}
+                {(post.like_count > 0 || post.comment_count > 0) && (
+                  <div className="flex items-center gap-4 px-4 pb-2 text-[10px] text-muted-foreground" style={headingFont}>
+                    {post.like_count > 0 && (
+                      <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3 fill-primary text-primary" />{post.like_count}</span>
+                    )}
+                    {post.comment_count > 0 && (
+                      <button onClick={() => toggleComments(post.id)} className="hover:text-foreground transition-colors">
+                        {post.comment_count} <T>{post.comment_count === 1 ? "comment" : "comments"}</T>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex border-t border-border divide-x divide-border">
+                  <button onClick={() => toggleLike(post.id)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase transition-all duration-300 ${post.is_liked ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} style={headingFont}>
+                    <Heart className={`h-3.5 w-3.5 ${post.is_liked ? "fill-current" : ""}`} /><T>Like</T>
+                  </button>
+                  <button onClick={() => toggleComments(post.id)} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
+                    <MessageCircle className="h-3.5 w-3.5" /><T>Comment</T>
+                  </button>
+                </div>
+
+                {/* Comments section */}
+                {expandedComments.has(post.id) && (
+                  <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-3">
+                    {(commentsByPost[post.id] || []).map((c) => (
+                      <div key={c.id} className="flex gap-2">
+                        <Link to={`/profile/${c.user_id}`} className="shrink-0">
+                          {c.author_avatar ? (
+                            <img src={c.author_avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                              <span className="text-[8px] text-primary">{(c.author_name || "?")[0]?.toUpperCase()}</span>
+                            </div>
+                          )}
+                        </Link>
+                        <div className="flex-1 min-w-0">
+                          <div className="bg-muted/50 px-3 py-2 rounded-sm">
+                            <Link to={`/profile/${c.user_id}`} className="text-[11px] font-medium hover:text-primary transition-colors" style={headingFont}>
+                              {c.author_name || "User"}
+                            </Link>
+                            <p className="text-xs leading-relaxed" style={bodyFont}>{c.content}</p>
+                          </div>
+                          <span className="text-[9px] text-muted-foreground ml-3" style={headingFont}>{timeAgo(c.created_at)}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Comment input */}
+                    <div className="flex gap-2 pt-1">
+                      <input
+                        type="text"
+                        value={commentInputs[post.id] || ""}
+                        onChange={(e) => setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                        placeholder="Write a comment..."
+                        maxLength={1000}
+                        className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-1.5 text-xs transition-colors"
+                        style={bodyFont}
+                        onKeyDown={(e) => e.key === "Enter" && submitComment(post.id)}
+                      />
+                      <button
+                        onClick={() => submitComment(post.id)}
+                        disabled={commentLoading === post.id || !commentInputs[post.id]?.trim()}
+                        className="p-1.5 text-primary hover:opacity-70 transition-opacity disabled:opacity-30"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
+      </div>
+    </main>
+  );
+};
+
+export default Feed;
