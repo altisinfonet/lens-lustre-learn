@@ -965,9 +965,11 @@ export type Database = {
           state: string | null
           suspended_until: string | null
           suspension_reason: string | null
+          twitter_url: string | null
           updated_at: string
           website_url: string | null
           whatsapp: string | null
+          youtube_url: string | null
         }
         Insert: {
           address_line1?: string | null
@@ -995,9 +997,11 @@ export type Database = {
           state?: string | null
           suspended_until?: string | null
           suspension_reason?: string | null
+          twitter_url?: string | null
           updated_at?: string
           website_url?: string | null
           whatsapp?: string | null
+          youtube_url?: string | null
         }
         Update: {
           address_line1?: string | null
@@ -1025,9 +1029,11 @@ export type Database = {
           state?: string | null
           suspended_until?: string | null
           suspension_reason?: string | null
+          twitter_url?: string | null
           updated_at?: string
           website_url?: string | null
           whatsapp?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }
