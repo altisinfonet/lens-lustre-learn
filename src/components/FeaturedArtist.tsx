@@ -56,7 +56,7 @@ export default function FeaturedArtist() {
       </div>
 
       {/* Image */}
-      <div className="relative overflow-hidden rounded-sm aspect-[3/4] bg-muted mb-5">
+      <div className="relative overflow-hidden rounded-sm aspect-[4/3] bg-muted mb-4">
         {artist.cover_image_url ? (
           <motion.img
             src={artist.cover_image_url}
