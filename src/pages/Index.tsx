@@ -626,11 +626,15 @@ const Index = () => {
       {/* Middle sections with scroll-based background */}
       <motion.div ref={middleRef} style={{ backgroundColor: scrollBg }} className="transition-colors duration-700">
 
-      {/* Photo of the Day — Big Banner */}
-      <PhotoOfTheDay />
-
-      {/* Featured Artist */}
-      <FeaturedArtist />
+      {/* Photo of the Day + Featured Artist — Split Layout */}
+      <section className="py-16 md:py-24" aria-label="Spotlight">
+        <div className="container mx-auto px-6 md:px-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <PhotoOfTheDay />
+            <FeaturedArtist />
+          </div>
+        </div>
+      </section>
 
       {/* All Competitions Showcase — Grouped by Status */}
       <section className="py-24 md:py-32" aria-label="Competitions">
