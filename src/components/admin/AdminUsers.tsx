@@ -49,6 +49,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
   const [bulkRole, setBulkRole] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
   const [badgeTarget, setBadgeTarget] = useState<UserRow | null>(null);
+  const [badgeFilter, setBadgeFilter] = useState<string>("");
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -313,6 +314,38 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
         </button>
       </div>
 
+      {/* Badge Filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground shrink-0" style={{ fontFamily: "var(--font-heading)" }}>
+          <Award className="h-3 w-3 inline mr-1" />Filter by badge:
+        </span>
+        <button
+          onClick={() => setBadgeFilter("")}
+          className={`px-2.5 py-1 text-[9px] tracking-wider uppercase border rounded-sm transition-all ${
+            !badgeFilter ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+          }`}
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          All
+        </button>
+        {BADGE_TYPES.map((b) => {
+          const cfg = BADGES[b];
+          const count = users.filter((u) => u.badges.includes(b)).length;
+          return (
+            <button
+              key={b}
+              onClick={() => setBadgeFilter(badgeFilter === b ? "" : b)}
+              className={`px-2.5 py-1 text-[9px] tracking-wider uppercase border rounded-sm transition-all ${
+                badgeFilter === b ? `${cfg.badgeClass} font-medium` : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+              }`}
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {cfg.icon} {cfg.label} {count > 0 && <span className="ml-1 opacity-70">({count})</span>}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 border border-primary/30 bg-primary/5 p-3 rounded-sm">
@@ -493,14 +526,18 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
       )}
       {users.length > 0 && (
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-            <button onClick={selectAll} className="hover:text-primary transition-colors" title="Select all">
-              {selectedIds.size === users.length && users.length > 0 ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
-            </button>
-            {users.length} user{users.length !== 1 ? "s" : ""} found
-          </div>
-          <div className="border border-border rounded-sm overflow-hidden divide-y divide-border">
-            {users.map((u) => (
+          {(() => {
+            const filteredUsers = badgeFilter ? users.filter((u) => u.badges.includes(badgeFilter)) : users;
+            return (
+              <>
+                <div className="flex items-center gap-2 text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <button onClick={selectAll} className="hover:text-primary transition-colors" title="Select all">
+                    {selectedIds.size === users.length && users.length > 0 ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+                  </button>
+                  {filteredUsers.length} user{filteredUsers.length !== 1 ? "s" : ""} {badgeFilter ? `with ${BADGES[badgeFilter as BadgeType]?.label} badge` : "found"}
+                </div>
+                <div className="border border-border rounded-sm overflow-hidden divide-y divide-border">
+                  {filteredUsers.map((u) => (
               <div key={u.id} className={`flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors group ${u.is_suspended ? "opacity-60 bg-destructive/5" : ""} ${selectedIds.has(u.id) ? "bg-primary/5" : ""}`}>
                 {/* Checkbox */}
                 <button onClick={() => toggleSelect(u.id)} className="shrink-0 hover:text-primary transition-colors">
@@ -589,6 +626,9 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
               </div>
             ))}
           </div>
+              </>
+            );
+          })()}
         </div>
       )}
 
