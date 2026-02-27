@@ -103,6 +103,61 @@ const EditProfile = () => {
     return "";
   };
 
+  const validateFacebook = (value: string): string => {
+    if (!value.trim()) return "";
+    if (!/^[a-zA-Z0-9.]{1,100}$/.test(value.trim())) return "Invalid Facebook username. Use only letters, numbers, and periods.";
+    if (value.trim().length < 3) return "Facebook username must be at least 3 characters.";
+    return "";
+  };
+
+  const validateInstagram = (value: string): string => {
+    if (!value.trim()) return "";
+    if (!/^[a-zA-Z0-9._]{1,30}$/.test(value.trim())) return "Invalid Instagram handle. Use only letters, numbers, periods, and underscores.";
+    if (value.trim().length < 2) return "Instagram handle must be at least 2 characters.";
+    return "";
+  };
+
+  const validateTwitter = (value: string): string => {
+    if (!value.trim()) return "";
+    if (!/^[a-zA-Z0-9_]{1,15}$/.test(value.trim())) return "Invalid X/Twitter handle. Use only letters, numbers, and underscores (max 15 chars).";
+    return "";
+  };
+
+  const validateYoutube = (value: string): string => {
+    if (!value.trim()) return "";
+    if (!/^[a-zA-Z0-9._\-]{1,100}$/.test(value.trim())) return "Invalid YouTube channel name. Use only letters, numbers, periods, dashes, and underscores.";
+    if (value.trim().length < 2) return "YouTube channel name must be at least 2 characters.";
+    return "";
+  };
+
+  const handleFacebookChange = (val: string) => {
+    const cleaned = val.replace(/\s/g, "");
+    setFacebookUrl(cleaned);
+    setFbVerified(null);
+    setErrors((prev) => ({ ...prev, facebook: validateFacebook(cleaned) }));
+  };
+
+  const handleInstagramChange = (val: string) => {
+    const cleaned = val.replace(/\s/g, "");
+    setInstagramUrl(cleaned);
+    setIgVerified(null);
+    setErrors((prev) => ({ ...prev, instagram: validateInstagram(cleaned) }));
+  };
+
+  const handleTwitterChange = (val: string) => {
+    const cleaned = val.replace(/\s/g, "");
+    setTwitterUrl(cleaned);
+    setTwVerified(null);
+    setErrors((prev) => ({ ...prev, twitter: validateTwitter(cleaned) }));
+  };
+
+  const handleYoutubeChange = (val: string) => {
+    const cleaned = val.replace(/\s/g, "");
+    setYoutubeUrl(cleaned);
+    setYtVerified(null);
+    setErrors((prev) => ({ ...prev, youtube: validateYoutube(cleaned) }));
+  };
+
   const handlePhoneChange = (val: string) => {
     setPhone(val);
     setErrors((prev) => ({ ...prev, phone: validatePhone(val) }));
@@ -270,12 +325,16 @@ const EditProfile = () => {
       toast({ title: "Profile picture is required", variant: "destructive" });
       return;
     }
-    // Validate phone/whatsapp/postal
+    // Validate phone/whatsapp/postal/social
     const phoneErr = validatePhone(phone);
     const whatsappErr = validatePhone(whatsapp);
     const postalErr = validatePostalCode(postalCode);
-    if (phoneErr || whatsappErr || postalErr) {
-      setErrors({ phone: phoneErr, whatsapp: whatsappErr, postalCode: postalErr });
+    const fbErr = validateFacebook(facebookUrl);
+    const igErr = validateInstagram(instagramUrl);
+    const twErr = validateTwitter(twitterUrl);
+    const ytErr = validateYoutube(youtubeUrl);
+    if (phoneErr || whatsappErr || postalErr || fbErr || igErr || twErr || ytErr) {
+      setErrors({ phone: phoneErr, whatsapp: whatsappErr, postalCode: postalErr, facebook: fbErr, instagram: igErr, twitter: twErr, youtube: ytErr });
       toast({ title: "Please fix validation errors before saving", variant: "destructive" });
       return;
     }
@@ -585,45 +644,38 @@ const EditProfile = () => {
                   <input
                     type="text"
                     value={facebookUrl}
-                    onChange={(e) => { setFacebookUrl(e.target.value.replace(/\s/g, "")); setFbVerified(null); }}
+                    onChange={(e) => handleFacebookChange(e.target.value)}
                     maxLength={100}
-                    className={`${inputCls} flex-1`}
+                    className={`${inputCls} flex-1 ${errors.facebook ? "border-destructive" : ""}`}
                     placeholder="yourprofile"
                     style={{ fontFamily: "var(--font-body)" }}
                   />
-                  {facebookUrl.trim() && (
+                  {facebookUrl.trim() && !errors.facebook && (
                     <button
                       type="button"
                       disabled={verifyingFb}
-                      onClick={async () => {
+                      onClick={() => {
                         setVerifyingFb(true);
-                        try {
-                          const url = `https://www.facebook.com/${facebookUrl.trim()}`;
-                          const res = await fetch(url, { method: "HEAD", mode: "no-cors" });
-                          // no-cors always returns opaque, so we open in new tab for manual check
-                          window.open(url, "_blank", "noopener,noreferrer");
-                          setFbVerified(true);
-                        } catch {
-                          setFbVerified(false);
-                        }
+                        window.open(`https://www.facebook.com/${facebookUrl.trim()}`, "_blank", "noopener,noreferrer");
+                        setFbVerified(true);
                         setVerifyingFb(false);
                       }}
                       className="ml-2 inline-flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase px-3 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-300 whitespace-nowrap"
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
-                      {verifyingFb ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
+                      <ExternalLink className="h-3 w-3" />
                       <T>Verify</T>
                     </button>
                   )}
                 </div>
-                {fbVerified === true && (
-                  <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
-                    <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
+                {errors.facebook && (
+                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <AlertCircle className="h-3 w-3" /> {errors.facebook}
                   </span>
                 )}
-                {fbVerified === false && (
-                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
-                    <AlertCircle className="h-3 w-3" /> <T>Could not verify — please check the username</T>
+                {!errors.facebook && fbVerified === true && (
+                  <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
                   </span>
                 )}
               </div>
@@ -640,43 +692,38 @@ const EditProfile = () => {
                   <input
                     type="text"
                     value={instagramUrl}
-                    onChange={(e) => { setInstagramUrl(e.target.value.replace(/\s/g, "")); setIgVerified(null); }}
-                    maxLength={100}
-                    className={`${inputCls} flex-1`}
+                    onChange={(e) => handleInstagramChange(e.target.value)}
+                    maxLength={30}
+                    className={`${inputCls} flex-1 ${errors.instagram ? "border-destructive" : ""}`}
                     placeholder="yourhandle"
                     style={{ fontFamily: "var(--font-body)" }}
                   />
-                  {instagramUrl.trim() && (
+                  {instagramUrl.trim() && !errors.instagram && (
                     <button
                       type="button"
                       disabled={verifyingIg}
-                      onClick={async () => {
+                      onClick={() => {
                         setVerifyingIg(true);
-                        try {
-                          const url = `https://www.instagram.com/${instagramUrl.trim()}`;
-                          window.open(url, "_blank", "noopener,noreferrer");
-                          setIgVerified(true);
-                        } catch {
-                          setIgVerified(false);
-                        }
+                        window.open(`https://www.instagram.com/${instagramUrl.trim()}`, "_blank", "noopener,noreferrer");
+                        setIgVerified(true);
                         setVerifyingIg(false);
                       }}
                       className="ml-2 inline-flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase px-3 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-300 whitespace-nowrap"
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
-                      {verifyingIg ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
+                      <ExternalLink className="h-3 w-3" />
                       <T>Verify</T>
                     </button>
                   )}
                 </div>
-                {igVerified === true && (
-                  <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
-                    <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
+                {errors.instagram && (
+                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <AlertCircle className="h-3 w-3" /> {errors.instagram}
                   </span>
                 )}
-                {igVerified === false && (
-                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
-                    <AlertCircle className="h-3 w-3" /> <T>Could not verify — please check the username</T>
+                {!errors.instagram && igVerified === true && (
+                  <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
                   </span>
                 )}
               </div>
@@ -693,13 +740,13 @@ const EditProfile = () => {
                   <input
                     type="text"
                     value={twitterUrl}
-                    onChange={(e) => { setTwitterUrl(e.target.value.replace(/\s/g, "")); setTwVerified(null); }}
-                    maxLength={100}
-                    className={`${inputCls} flex-1`}
+                    onChange={(e) => handleTwitterChange(e.target.value)}
+                    maxLength={15}
+                    className={`${inputCls} flex-1 ${errors.twitter ? "border-destructive" : ""}`}
                     placeholder="yourhandle"
                     style={{ fontFamily: "var(--font-body)" }}
                   />
-                  {twitterUrl.trim() && (
+                  {twitterUrl.trim() && !errors.twitter && (
                     <button
                       type="button"
                       disabled={verifyingTw}
@@ -717,7 +764,12 @@ const EditProfile = () => {
                     </button>
                   )}
                 </div>
-                {twVerified === true && (
+                {errors.twitter && (
+                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <AlertCircle className="h-3 w-3" /> {errors.twitter}
+                  </span>
+                )}
+                {!errors.twitter && twVerified === true && (
                   <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
                     <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
                   </span>
@@ -736,13 +788,13 @@ const EditProfile = () => {
                   <input
                     type="text"
                     value={youtubeUrl}
-                    onChange={(e) => { setYoutubeUrl(e.target.value.replace(/\s/g, "")); setYtVerified(null); }}
+                    onChange={(e) => handleYoutubeChange(e.target.value)}
                     maxLength={100}
-                    className={`${inputCls} flex-1`}
+                    className={`${inputCls} flex-1 ${errors.youtube ? "border-destructive" : ""}`}
                     placeholder="yourchannel"
                     style={{ fontFamily: "var(--font-body)" }}
                   />
-                  {youtubeUrl.trim() && (
+                  {youtubeUrl.trim() && !errors.youtube && (
                     <button
                       type="button"
                       disabled={verifyingYt}
@@ -760,7 +812,12 @@ const EditProfile = () => {
                     </button>
                   )}
                 </div>
-                {ytVerified === true && (
+                {errors.youtube && (
+                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <AlertCircle className="h-3 w-3" /> {errors.youtube}
+                  </span>
+                )}
+                {!errors.youtube && ytVerified === true && (
                   <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
                     <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
                   </span>
