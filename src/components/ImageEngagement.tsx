@@ -26,6 +26,8 @@ interface Comment {
   created_at: string;
   profile_name: string | null;
   avatar_url: string | null;
+  is_pinned?: boolean;
+  is_admin_seed?: boolean;
   replies?: Comment[];
 }
 
@@ -70,9 +72,10 @@ const ImageEngagement = ({ imageType, imageId, compact }: Props) => {
   const fetchComments = useCallback(async () => {
     const { data } = await supabase
       .from("image_comments")
-      .select("id, user_id, content, parent_id, created_at")
+      .select("id, user_id, content, parent_id, created_at, is_pinned, is_admin_seed")
       .eq("image_type", imageType)
       .eq("image_id", imageId)
+      .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: true });
 
     if (!data || data.length === 0) {
@@ -227,7 +230,7 @@ const ImageEngagement = ({ imageType, imageId, compact }: Props) => {
   };
 
   const renderComment = (comment: Comment, isReply = false) => (
-    <div key={comment.id} className={`${isReply ? "ml-6 border-l border-border/50 pl-3" : ""}`}>
+    <div key={comment.id} className={`${isReply ? "ml-6 border-l border-border/50 pl-3" : ""} ${comment.is_pinned ? "bg-primary/5 rounded-sm p-1.5 -mx-1.5" : ""}`}>
       <div className="group flex gap-2 py-2">
         <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0 text-[9px] font-medium text-muted-foreground uppercase">
           {comment.avatar_url ? (
@@ -242,6 +245,8 @@ const ImageEngagement = ({ imageType, imageId, compact }: Props) => {
               {comment.profile_name}
             </span>
             <span className="text-[9px] text-muted-foreground">{timeAgo(comment.created_at)}</span>
+            {comment.is_pinned && <span className="text-[8px] text-primary">📌</span>}
+            {comment.is_admin_seed && <span className="text-[8px] text-primary/70">★</span>}
           </div>
           <p className="text-xs text-foreground/90 mt-0.5 break-words" style={{ fontFamily: "var(--font-body)" }}>
             {comment.content}
