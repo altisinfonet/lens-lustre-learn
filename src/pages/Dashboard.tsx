@@ -349,6 +349,7 @@ const Dashboard = () => {
               <div className="grid sm:grid-cols-3 gap-4">
                 {[
                   { icon: User, label: "My Profile", desc: "View your public profile", to: "/profile" },
+                  { icon: Users, label: "Friends", desc: "Manage your connections", to: "/friends" },
                   { icon: Trophy, label: "Competitions", desc: "Browse & enter contests", to: "/competitions" },
                   { icon: Camera, label: "My Works", desc: "Manage your portfolio", to: "#" },
                   { icon: Edit2, label: "Edit Profile", desc: "Update your info", to: "/edit-profile" },
