@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Send, Globe, Users, Rss, RefreshCw } from "lucide-react";
+import { Heart, MessageCircle, Send, Globe, Users, Rss, RefreshCw, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -11,6 +11,8 @@ import { motion, AnimatePresence } from "framer-motion";
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
 const displayFont = { fontFamily: "var(--font-display)" };
+
+const PAGE_SIZE = 15;
 
 interface FeedPost {
   id: string;
@@ -41,114 +43,179 @@ const Feed = () => {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [relevantUserIds, setRelevantUserIds] = useState<string[]>([]);
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [commentsByPost, setCommentsByPost] = useState<Record<string, PostComment[]>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [commentLoading, setCommentLoading] = useState<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
   }, [user, authLoading, navigate]);
 
-  const fetchFeed = useCallback(async (isRefresh = false) => {
-    if (!user) return;
-    if (isRefresh) setRefreshing(true);
+  // Enrich raw posts with profiles, likes, comments
+  const enrichPosts = useCallback(async (postsData: any[]): Promise<FeedPost[]> => {
+    if (!user || postsData.length === 0) return [];
 
-    // Get followed user IDs and friend IDs
-    const [followsRes, friendsRes] = await Promise.all([
-      supabase.from("follows").select("following_id").eq("follower_id", user.id),
-      supabase.from("friendships").select("requester_id, addressee_id").eq("status", "accepted")
-        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`),
-    ]);
-
-    const followedIds = new Set((followsRes.data || []).map((f) => f.following_id));
-    const friendIds = new Set<string>();
-    (friendsRes.data || []).forEach((f) => {
-      if (f.requester_id === user.id) friendIds.add(f.addressee_id);
-      else friendIds.add(f.requester_id);
-    });
-
-    // Combine: followed + friends + self
-    const relevantUserIds = new Set([...followedIds, ...friendIds, user.id]);
-    const userIdArray = Array.from(relevantUserIds);
-
-    if (userIdArray.length === 0) {
-      setPosts([]);
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-
-    // Fetch posts from these users (RLS will handle privacy filtering via can_view_post)
-    const { data: postsData } = await supabase
-      .from("posts")
-      .select("*")
-      .in("user_id", userIdArray)
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    if (!postsData || postsData.length === 0) {
-      setPosts([]);
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-
-    // Get profiles
     const authorIds = [...new Set(postsData.map((p) => p.user_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name, avatar_url")
-      .in("id", authorIds);
-    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
-
-    // Get counts
     const postIds = postsData.map((p) => p.id);
-    const [reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
+
+    const [profilesRes, reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
+      supabase.from("profiles").select("id, full_name, avatar_url").in("id", authorIds),
       supabase.from("post_reactions").select("post_id").in("post_id", postIds),
       supabase.from("post_reactions").select("post_id").in("post_id", postIds).eq("user_id", user.id),
       supabase.from("post_comments").select("post_id").in("post_id", postIds),
     ]);
 
+    const profileMap = new Map((profilesRes.data || []).map((p) => [p.id, p]));
     const likeCounts: Record<string, number> = {};
     (reactionsRes.data || []).forEach((r) => { likeCounts[r.post_id] = (likeCounts[r.post_id] || 0) + 1; });
     const userLikedSet = new Set((userReactionsRes.data || []).map((r) => r.post_id));
     const commentCounts: Record<string, number> = {};
     (commentsCountRes.data || []).forEach((c) => { commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
 
-    setPosts(postsData.map((p) => ({
+    return postsData.map((p) => ({
       ...p,
       author_name: profileMap.get(p.user_id)?.full_name || null,
       author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
       like_count: likeCounts[p.id] || 0,
       comment_count: commentCounts[p.id] || 0,
       is_liked: userLikedSet.has(p.id),
-    })));
+    }));
+  }, [user]);
+
+  // Fetch relevant user IDs (follows + friends + self)
+  const fetchRelevantUsers = useCallback(async () => {
+    if (!user) return [];
+    const [followsRes, friendsRes] = await Promise.all([
+      supabase.from("follows").select("following_id").eq("follower_id", user.id),
+      supabase.from("friendships").select("requester_id, addressee_id").eq("status", "accepted")
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`),
+    ]);
+    const followedIds = new Set((followsRes.data || []).map((f) => f.following_id));
+    const friendIds = new Set<string>();
+    (friendsRes.data || []).forEach((f) => {
+      if (f.requester_id === user.id) friendIds.add(f.addressee_id);
+      else friendIds.add(f.requester_id);
+    });
+    return Array.from(new Set([...followedIds, ...friendIds, user.id]));
+  }, [user]);
+
+  // Initial load
+  const fetchFeed = useCallback(async (isRefresh = false) => {
+    if (!user) return;
+    if (isRefresh) setRefreshing(true);
+
+    const userIds = await fetchRelevantUsers();
+    setRelevantUserIds(userIds);
+
+    if (userIds.length === 0) {
+      setPosts([]);
+      setLoading(false);
+      setRefreshing(false);
+      setHasMore(false);
+      return;
+    }
+
+    const { data: postsData } = await supabase
+      .from("posts")
+      .select("*")
+      .in("user_id", userIds)
+      .order("created_at", { ascending: false })
+      .limit(PAGE_SIZE);
+
+    if (!postsData || postsData.length === 0) {
+      setPosts([]);
+      setHasMore(false);
+    } else {
+      const enriched = await enrichPosts(postsData);
+      setPosts(enriched);
+      setHasMore(postsData.length === PAGE_SIZE);
+    }
 
     setLoading(false);
     setRefreshing(false);
-  }, [user]);
+  }, [user, fetchRelevantUsers, enrichPosts]);
+
+  // Load more (cursor-based using created_at of last post)
+  const loadMore = useCallback(async () => {
+    if (!user || loadingMore || !hasMore || posts.length === 0) return;
+    setLoadingMore(true);
+
+    const lastPost = posts[posts.length - 1];
+    const { data: postsData } = await supabase
+      .from("posts")
+      .select("*")
+      .in("user_id", relevantUserIds)
+      .lt("created_at", lastPost.created_at)
+      .order("created_at", { ascending: false })
+      .limit(PAGE_SIZE);
+
+    if (!postsData || postsData.length === 0) {
+      setHasMore(false);
+    } else {
+      const enriched = await enrichPosts(postsData);
+      setPosts((prev) => [...prev, ...enriched]);
+      setHasMore(postsData.length === PAGE_SIZE);
+    }
+    setLoadingMore(false);
+  }, [user, loadingMore, hasMore, posts, relevantUserIds, enrichPosts]);
 
   useEffect(() => { fetchFeed(); }, [fetchFeed]);
 
-  // Realtime: listen for new/deleted posts and refresh feed
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          loadMore();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, loadMore]);
+
+  // Realtime: prepend new posts from relevant users
   useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel('feed-realtime')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'posts' },
-        () => {
-          fetchFeed();
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        async (payload) => {
+          const newPost = payload.new as any;
+          if (relevantUserIds.includes(newPost.user_id)) {
+            const enriched = await enrichPosts([newPost]);
+            if (enriched.length > 0) {
+              setPosts((prev) => {
+                if (prev.some((p) => p.id === enriched[0].id)) return prev;
+                return [enriched[0], ...prev];
+              });
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'posts' },
+        (payload) => {
+          const deletedId = (payload.old as any).id;
+          setPosts((prev) => prev.filter((p) => p.id !== deletedId));
         }
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, fetchFeed]);
+    return () => { supabase.removeChannel(channel); };
+  }, [user, relevantUserIds, enrichPosts]);
 
   const toggleLike = async (postId: string) => {
     if (!user) return;
@@ -270,117 +337,134 @@ const Feed = () => {
             </Link>
           </div>
         ) : (
-          <AnimatePresence mode="popLayout">
-            {posts.map((post, i) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: i * 0.03 }}
-                className="border border-border mb-4"
-              >
-                {/* Header */}
-                <div className="flex items-center gap-3 p-4 pb-0">
-                  <Link to={`/profile/${post.user_id}`} className="shrink-0">
-                    {post.author_avatar ? (
-                      <img src={post.author_avatar} alt="" className="w-9 h-9 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-xs text-primary" style={displayFont}>{(post.author_name || "?")[0]?.toUpperCase()}</span>
-                      </div>
-                    )}
-                  </Link>
-                  <div className="flex-1 min-w-0">
-                    <Link to={`/profile/${post.user_id}`} className="text-sm font-light hover:text-primary transition-colors block truncate" style={headingFont}>
-                      {post.author_name || "User"}
-                    </Link>
-                    <div className="flex items-center gap-2 text-[9px] text-muted-foreground" style={headingFont}>
-                      <span>{timeAgo(post.created_at)}</span>
-                      <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="px-4 py-3">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={bodyFont}>{post.content}</p>
-                  {post.image_url && <img src={post.image_url} alt="" className="mt-3 rounded-sm max-h-96 w-full object-cover" />}
-                </div>
-
-                {/* Counts */}
-                {(post.like_count > 0 || post.comment_count > 0) && (
-                  <div className="flex items-center gap-4 px-4 pb-2 text-[10px] text-muted-foreground" style={headingFont}>
-                    {post.like_count > 0 && (
-                      <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3 fill-primary text-primary" />{post.like_count}</span>
-                    )}
-                    {post.comment_count > 0 && (
-                      <button onClick={() => toggleComments(post.id)} className="hover:text-foreground transition-colors">
-                        {post.comment_count} <T>{post.comment_count === 1 ? "comment" : "comments"}</T>
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex border-t border-border divide-x divide-border">
-                  <button onClick={() => toggleLike(post.id)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase transition-all duration-300 ${post.is_liked ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} style={headingFont}>
-                    <Heart className={`h-3.5 w-3.5 ${post.is_liked ? "fill-current" : ""}`} /><T>Like</T>
-                  </button>
-                  <button onClick={() => toggleComments(post.id)} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
-                    <MessageCircle className="h-3.5 w-3.5" /><T>Comment</T>
-                  </button>
-                </div>
-
-                {/* Comments section */}
-                {expandedComments.has(post.id) && (
-                  <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-3">
-                    {(commentsByPost[post.id] || []).map((c) => (
-                      <div key={c.id} className="flex gap-2">
-                        <Link to={`/profile/${c.user_id}`} className="shrink-0">
-                          {c.author_avatar ? (
-                            <img src={c.author_avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-[8px] text-primary">{(c.author_name || "?")[0]?.toUpperCase()}</span>
-                            </div>
-                          )}
-                        </Link>
-                        <div className="flex-1 min-w-0">
-                          <div className="bg-muted/50 px-3 py-2 rounded-sm">
-                            <Link to={`/profile/${c.user_id}`} className="text-[11px] font-medium hover:text-primary transition-colors" style={headingFont}>
-                              {c.author_name || "User"}
-                            </Link>
-                            <p className="text-xs leading-relaxed" style={bodyFont}>{c.content}</p>
-                          </div>
-                          <span className="text-[9px] text-muted-foreground ml-3" style={headingFont}>{timeAgo(c.created_at)}</span>
+          <>
+            <AnimatePresence mode="popLayout">
+              {posts.map((post, i) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: Math.min(i, 5) * 0.03 }}
+                  className="border border-border mb-4"
+                >
+                  {/* Header */}
+                  <div className="flex items-center gap-3 p-4 pb-0">
+                    <Link to={`/profile/${post.user_id}`} className="shrink-0">
+                      {post.author_avatar ? (
+                        <img src={post.author_avatar} alt="" className="w-9 h-9 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-xs text-primary" style={displayFont}>{(post.author_name || "?")[0]?.toUpperCase()}</span>
                         </div>
+                      )}
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <Link to={`/profile/${post.user_id}`} className="text-sm font-light hover:text-primary transition-colors block truncate" style={headingFont}>
+                        {post.author_name || "User"}
+                      </Link>
+                      <div className="flex items-center gap-2 text-[9px] text-muted-foreground" style={headingFont}>
+                        <span>{timeAgo(post.created_at)}</span>
+                        <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
                       </div>
-                    ))}
-                    {/* Comment input */}
-                    <div className="flex gap-2 pt-1">
-                      <input
-                        type="text"
-                        value={commentInputs[post.id] || ""}
-                        onChange={(e) => setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                        placeholder="Write a comment..."
-                        maxLength={1000}
-                        className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-1.5 text-xs transition-colors"
-                        style={bodyFont}
-                        onKeyDown={(e) => e.key === "Enter" && submitComment(post.id)}
-                      />
-                      <button
-                        onClick={() => submitComment(post.id)}
-                        disabled={commentLoading === post.id || !commentInputs[post.id]?.trim()}
-                        className="p-1.5 text-primary hover:opacity-70 transition-opacity disabled:opacity-30"
-                      >
-                        <Send className="h-3.5 w-3.5" />
-                      </button>
                     </div>
                   </div>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+
+                  {/* Content */}
+                  <div className="px-4 py-3">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap" style={bodyFont}>{post.content}</p>
+                    {post.image_url && <img src={post.image_url} alt="" className="mt-3 rounded-sm max-h-96 w-full object-cover" />}
+                  </div>
+
+                  {/* Counts */}
+                  {(post.like_count > 0 || post.comment_count > 0) && (
+                    <div className="flex items-center gap-4 px-4 pb-2 text-[10px] text-muted-foreground" style={headingFont}>
+                      {post.like_count > 0 && (
+                        <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3 fill-primary text-primary" />{post.like_count}</span>
+                      )}
+                      {post.comment_count > 0 && (
+                        <button onClick={() => toggleComments(post.id)} className="hover:text-foreground transition-colors">
+                          {post.comment_count} <T>{post.comment_count === 1 ? "comment" : "comments"}</T>
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex border-t border-border divide-x divide-border">
+                    <button onClick={() => toggleLike(post.id)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase transition-all duration-300 ${post.is_liked ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} style={headingFont}>
+                      <Heart className={`h-3.5 w-3.5 ${post.is_liked ? "fill-current" : ""}`} /><T>Like</T>
+                    </button>
+                    <button onClick={() => toggleComments(post.id)} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
+                      <MessageCircle className="h-3.5 w-3.5" /><T>Comment</T>
+                    </button>
+                  </div>
+
+                  {/* Comments section */}
+                  {expandedComments.has(post.id) && (
+                    <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-3">
+                      {(commentsByPost[post.id] || []).map((c) => (
+                        <div key={c.id} className="flex gap-2">
+                          <Link to={`/profile/${c.user_id}`} className="shrink-0">
+                            {c.author_avatar ? (
+                              <img src={c.author_avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span className="text-[8px] text-primary">{(c.author_name || "?")[0]?.toUpperCase()}</span>
+                              </div>
+                            )}
+                          </Link>
+                          <div className="flex-1 min-w-0">
+                            <div className="bg-muted/50 px-3 py-2 rounded-sm">
+                              <Link to={`/profile/${c.user_id}`} className="text-[11px] font-medium hover:text-primary transition-colors" style={headingFont}>
+                                {c.author_name || "User"}
+                              </Link>
+                              <p className="text-xs leading-relaxed" style={bodyFont}>{c.content}</p>
+                            </div>
+                            <span className="text-[9px] text-muted-foreground ml-3" style={headingFont}>{timeAgo(c.created_at)}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Comment input */}
+                      <div className="flex gap-2 pt-1">
+                        <input
+                          type="text"
+                          value={commentInputs[post.id] || ""}
+                          onChange={(e) => setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                          placeholder="Write a comment..."
+                          maxLength={1000}
+                          className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-1.5 text-xs transition-colors"
+                          style={bodyFont}
+                          onKeyDown={(e) => e.key === "Enter" && submitComment(post.id)}
+                        />
+                        <button
+                          onClick={() => submitComment(post.id)}
+                          disabled={commentLoading === post.id || !commentInputs[post.id]?.trim()}
+                          className="p-1.5 text-primary hover:opacity-70 transition-opacity disabled:opacity-30"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} className="py-6 text-center">
+              {loadingMore && (
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-[10px] tracking-[0.15em] uppercase" style={headingFont}><T>Loading more...</T></span>
+                </div>
+              )}
+              {!hasMore && posts.length > 0 && (
+                <span className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground/50" style={headingFont}>
+                  <T>You've reached the end</T>
+                </span>
+              )}
+            </div>
+          </>
         )}
       </div>
     </main>
