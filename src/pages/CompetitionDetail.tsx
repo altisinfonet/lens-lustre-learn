@@ -264,8 +264,10 @@ const CompetitionDetail = () => {
                           <img
                             src={entry.photos[0]}
                             alt={entry.title}
-                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-[1.5s]"
+                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-[1.5s] select-none"
                             loading="lazy"
+                            onContextMenu={(e) => e.preventDefault()}
+                            draggable={false}
                           />
                           {entry.photos.length > 1 && (
                             <span className="absolute bottom-2 right-2 text-[9px] bg-background/80 backdrop-blur-sm px-2 py-1 text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
