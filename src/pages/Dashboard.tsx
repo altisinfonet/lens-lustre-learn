@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award, GraduationCap, Wallet } from "lucide-react";
+import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award, GraduationCap, Wallet, UserCheck, UserX, Users } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -46,6 +46,14 @@ interface RoleApplication {
   created_at: string;
 }
 
+interface FriendRequest {
+  id: string;
+  requester_id: string;
+  created_at: string;
+  requester_name: string | null;
+  requester_avatar: string | null;
+}
+
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -62,6 +70,10 @@ const Dashboard = () => {
   const [applyExperience, setApplyExperience] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Friend requests state
+  const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/login");
@@ -72,20 +84,60 @@ const Dashboard = () => {
     if (!user) return;
 
     const fetchData = async () => {
-      const [profileRes, rolesRes, appsRes] = await Promise.all([
+      const [profileRes, rolesRes, appsRes, friendReqRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
         supabase.from("user_roles").select("role, created_at").eq("user_id", user.id),
         supabase.from("role_applications").select("id, requested_role, status, reason, admin_message, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("friendships").select("id, requester_id, created_at").eq("addressee_id", user.id).eq("status", "pending").order("created_at", { ascending: false }),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data);
       if (rolesRes.data) setRoles(rolesRes.data);
       if (appsRes.data) setApplications(appsRes.data);
+
+      // Enrich friend requests with profile data
+      if (friendReqRes.data && friendReqRes.data.length > 0) {
+        const requesterIds = friendReqRes.data.map((r) => r.requester_id);
+        const { data: profiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", requesterIds);
+        const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+        setFriendRequests(
+          friendReqRes.data.map((r) => ({
+            ...r,
+            requester_name: profileMap.get(r.requester_id)?.full_name || null,
+            requester_avatar: profileMap.get(r.requester_id)?.avatar_url || null,
+          }))
+        );
+      } else {
+        setFriendRequests([]);
+      }
+
       setLoading(false);
     };
 
     fetchData();
   }, [user]);
+
+  const handleFriendAction = async (friendshipId: string, action: "accept" | "decline") => {
+    setFriendActionLoading(friendshipId);
+    if (action === "accept") {
+      const { error } = await supabase.from("friendships").update({ status: "accepted", updated_at: new Date().toISOString() }).eq("id", friendshipId);
+      if (error) {
+        toast({ title: "Failed to accept", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Friend request accepted!" });
+        setFriendRequests((prev) => prev.filter((r) => r.id !== friendshipId));
+      }
+    } else {
+      const { error } = await supabase.from("friendships").delete().eq("id", friendshipId);
+      if (error) {
+        toast({ title: "Failed to decline", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Friend request declined" });
+        setFriendRequests((prev) => prev.filter((r) => r.id !== friendshipId));
+      }
+    }
+    setFriendActionLoading(null);
+  };
 
   const handleApply = async () => {
     if (!user) return;
@@ -318,6 +370,69 @@ const Dashboard = () => {
                 ))}
               </div>
             </motion.div>
+
+            {/* Friend Requests */}
+            {friendRequests.length > 0 && (
+              <motion.div variants={fadeUp} custom={2.5}>
+                <div className="flex items-center gap-3 mb-4">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                    <T>Friend Requests</T>
+                    <span className="ml-2 inline-flex items-center justify-center h-4 min-w-[1rem] px-1 text-[8px] bg-primary text-primary-foreground rounded-full">
+                      {friendRequests.length}
+                    </span>
+                  </span>
+                </div>
+                <div className="border border-border divide-y divide-border">
+                  {friendRequests.map((req) => {
+                    const name = req.requester_name || "Unknown User";
+                    const initials = name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+                    const timeAgo = new Date(req.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    const isActioning = friendActionLoading === req.id;
+
+                    return (
+                      <div key={req.id} className="flex items-center gap-4 p-4">
+                        <Link to={`/profile/${req.requester_id}`} className="shrink-0">
+                          {req.requester_avatar ? (
+                            <img src={req.requester_avatar} alt={name} className="w-10 h-10 rounded-full object-cover" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                              <span className="text-xs font-light text-primary" style={{ fontFamily: "var(--font-display)" }}>{initials}</span>
+                            </div>
+                          )}
+                        </Link>
+                        <div className="flex-1 min-w-0">
+                          <Link to={`/profile/${req.requester_id}`} className="text-sm font-light hover:text-primary transition-colors" style={{ fontFamily: "var(--font-heading)" }}>
+                            {name}
+                          </Link>
+                          <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{timeAgo}</p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => handleFriendAction(req.id, "accept")}
+                            disabled={isActioning}
+                            className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 border border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 disabled:opacity-50"
+                            style={{ fontFamily: "var(--font-heading)" }}
+                          >
+                            <UserCheck className="h-3 w-3" />
+                            <T>Accept</T>
+                          </button>
+                          <button
+                            onClick={() => handleFriendAction(req.id, "decline")}
+                            disabled={isActioning}
+                            className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] uppercase px-3 py-1.5 border border-border text-muted-foreground hover:border-destructive hover:text-destructive transition-all duration-300 disabled:opacity-50"
+                            style={{ fontFamily: "var(--font-heading)" }}
+                          >
+                            <UserX className="h-3 w-3" />
+                            <T>Decline</T>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
 
             {/* Photographer Upgrade */}
             {!hasRole("registered_photographer") && (
