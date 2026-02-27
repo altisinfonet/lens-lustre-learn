@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award, GraduationCap, Wallet, UserCheck, UserX, Users } from "lucide-react";
+import { User, Camera, Trophy, Calendar, Edit2, Shield, Briefcase, Send, CheckCircle, Clock, XCircle, Award, GraduationCap, Wallet, UserCheck, UserX, Users, MessageSquare, Heart, Globe, Lock } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -46,6 +46,15 @@ interface RoleApplication {
   created_at: string;
 }
 
+interface RecentPost {
+  id: string;
+  content: string;
+  privacy: string;
+  created_at: string;
+  like_count: number;
+  comment_count: number;
+}
+
 interface FriendRequest {
   id: string;
   requester_id: string;
@@ -74,6 +83,9 @@ const Dashboard = () => {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
 
+  // Recent wall posts state
+  const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/login");
@@ -84,11 +96,12 @@ const Dashboard = () => {
     if (!user) return;
 
     const fetchData = async () => {
-      const [profileRes, rolesRes, appsRes, friendReqRes] = await Promise.all([
+      const [profileRes, rolesRes, appsRes, friendReqRes, postsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
         supabase.from("user_roles").select("role, created_at").eq("user_id", user.id),
         supabase.from("role_applications").select("id, requested_role, status, reason, admin_message, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("friendships").select("id, requester_id, created_at").eq("addressee_id", user.id).eq("status", "pending").order("created_at", { ascending: false }),
+        supabase.from("posts").select("id, content, privacy, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(3),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data);
@@ -109,6 +122,23 @@ const Dashboard = () => {
         );
       } else {
         setFriendRequests([]);
+      }
+      // Recent posts with reaction/comment counts
+      if (postsRes.data && postsRes.data.length > 0) {
+        const postIds = postsRes.data.map((p) => p.id);
+        const [reactionsRes, commentsRes] = await Promise.all([
+          supabase.from("post_reactions").select("post_id").in("post_id", postIds),
+          supabase.from("post_comments").select("post_id").in("post_id", postIds),
+        ]);
+        const likeCounts: Record<string, number> = {};
+        (reactionsRes.data || []).forEach((r) => { likeCounts[r.post_id] = (likeCounts[r.post_id] || 0) + 1; });
+        const commentCounts: Record<string, number> = {};
+        (commentsRes.data || []).forEach((c) => { commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
+        setRecentPosts(postsRes.data.map((p) => ({
+          ...p,
+          like_count: likeCounts[p.id] || 0,
+          comment_count: commentCounts[p.id] || 0,
+        })));
       }
 
       setLoading(false);
@@ -574,6 +604,78 @@ const Dashboard = () => {
                     ? <T>No applications yet. Apply for a role above to unlock new features.</T>
                     : <T>You already have all available roles.</T>}
                 </p>
+              )}
+            </motion.div>
+
+            {/* Recent Wall Posts */}
+            <motion.div variants={fadeUp} custom={3.5}>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                  <T>Recent Wall Posts</T>
+                </span>
+                <Link
+                  to={`/profile/${user.id}`}
+                  className="text-[9px] tracking-[0.15em] uppercase text-primary hover:underline"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  <T>View Wall →</T>
+                </Link>
+              </div>
+              {recentPosts.length > 0 ? (
+                <div className="border border-border divide-y divide-border">
+                  {recentPosts.map((post) => {
+                    const privacyIcon = post.privacy === "public" ? <Globe className="h-3 w-3" /> : post.privacy === "friends" ? <Users className="h-3 w-3" /> : <Lock className="h-3 w-3" />;
+                    const timeAgo = (() => {
+                      const diff = Date.now() - new Date(post.created_at).getTime();
+                      const mins = Math.floor(diff / 60000);
+                      if (mins < 1) return "Just now";
+                      if (mins < 60) return `${mins}m`;
+                      const hrs = Math.floor(mins / 60);
+                      if (hrs < 24) return `${hrs}h`;
+                      const days = Math.floor(hrs / 24);
+                      if (days < 7) return `${days}d`;
+                      return new Date(post.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    })();
+                    return (
+                      <div key={post.id} className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-muted-foreground">{privacyIcon}</span>
+                          <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>{timeAgo}</span>
+                        </div>
+                        <p className="text-sm text-foreground line-clamp-2" style={{ fontFamily: "var(--font-body)" }}>
+                          {post.content}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                          {post.like_count > 0 && (
+                            <span className="inline-flex items-center gap-1">
+                              <Heart className="h-3 w-3" /> {post.like_count}
+                            </span>
+                          )}
+                          {post.comment_count > 0 && (
+                            <span className="inline-flex items-center gap-1">
+                              <MessageSquare className="h-3 w-3" /> {post.comment_count}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border border-dashed border-border p-8 text-center">
+                  <MessageSquare className="h-6 w-6 text-muted-foreground/20 mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
+                    <T>No posts yet. Share your first update!</T>
+                  </p>
+                  <Link
+                    to={`/profile/${user.id}`}
+                    className="inline-flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase px-4 py-2 border border-border hover:border-primary hover:text-primary transition-all duration-500"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    <T>Go to My Wall</T>
+                  </Link>
+                </div>
               )}
             </motion.div>
 
