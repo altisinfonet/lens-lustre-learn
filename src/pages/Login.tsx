@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import SimpleCaptcha from "@/components/SimpleCaptcha";
 import { useTrustedDevice } from "@/hooks/useTrustedDevice";
+import T from "@/components/T";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Please enter a valid email").max(255),
@@ -48,7 +49,6 @@ const Login = () => {
 
   useEffect(() => {
     if (user && !showTrustPrompt) {
-      // Check if device is already trusted
       if (isDeviceTrusted(user.id)) {
         navigate("/dashboard");
       } else {
@@ -107,7 +107,6 @@ const Login = () => {
     try {
       let res = await attemptLogin();
 
-      // Auto-retry once on network errors
       if (res.error && isNetworkError(res.error.message)) {
         await new Promise((r) => setTimeout(r, 1500));
         res = await attemptLogin();
@@ -120,7 +119,6 @@ const Login = () => {
         setError(friendlyError(res.error.message));
       }
     } catch (err: any) {
-      // Auto-retry once on thrown network errors
       if (isNetworkError(err?.message || "")) {
         try {
           await new Promise((r) => setTimeout(r, 1500));
@@ -151,10 +149,10 @@ const Login = () => {
         <div className="max-w-sm w-full text-center space-y-8">
           <ShieldCheck className="h-12 w-12 text-primary mx-auto" />
           <h1 className="text-2xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-            Trust This <em className="italic text-primary">Device</em>?
+            <T>Trust This</T> <em className="italic text-primary"><T>Device</T></em>?
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
-            Would you like to remember this device? You won't be asked again on future logins from this browser.
+            <T>Would you like to remember this device? You won't be asked again on future logins from this browser.</T>
           </p>
           <div className="space-y-3">
             <button
@@ -162,18 +160,18 @@ const Login = () => {
               className="w-full py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity duration-500 flex items-center justify-center gap-2"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              <ShieldCheck className="h-4 w-4" /> Yes, Trust This Device
+              <ShieldCheck className="h-4 w-4" /> <T>Yes, Trust This Device</T>
             </button>
             <button
               onClick={() => handleTrustDecision(false)}
               className="w-full py-3.5 border border-border text-foreground text-xs tracking-[0.15em] uppercase hover:bg-muted transition-colors duration-500 flex items-center justify-center gap-2"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              <ShieldX className="h-4 w-4" /> No, Don't Trust
+              <ShieldX className="h-4 w-4" /> <T>No, Don't Trust</T>
             </button>
           </div>
           <p className="text-[10px] text-muted-foreground/60" style={{ fontFamily: "var(--font-body)" }}>
-            You can manage trusted devices from your profile settings.
+            <T>You can manage trusted devices from your profile settings.</T>
           </p>
         </div>
       </main>
@@ -191,7 +189,7 @@ const Login = () => {
       {/* Right — Content */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12">
         <Link to="/" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12" style={{ fontFamily: "var(--font-heading)" }}>
-          <ArrowLeft className="h-3 w-3" /> Back
+          <ArrowLeft className="h-3 w-3" /> <T>Back</T>
         </Link>
 
         <div className="flex items-center gap-3 mb-12">
@@ -200,9 +198,9 @@ const Login = () => {
         </div>
 
         <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-          Welcome <em className="italic text-primary">Back</em>
+          <T>Welcome</T> <em className="italic text-primary"><T>Back</T></em>
         </h1>
-        <p className="text-sm text-muted-foreground mb-10" style={{ fontFamily: "var(--font-body)" }}>Sign in to continue your journey.</p>
+        <p className="text-sm text-muted-foreground mb-10" style={{ fontFamily: "var(--font-body)" }}><T>Sign in to continue your journey.</T></p>
 
         {error && (
           <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
@@ -212,7 +210,7 @@ const Login = () => {
 
         {failedAttempts > 0 && failedAttempts < 3 && (
           <div className="mb-4 text-[10px] tracking-[0.15em] uppercase text-muted-foreground max-w-sm" style={{ fontFamily: "var(--font-heading)" }}>
-            {3 - failedAttempts} attempt{3 - failedAttempts > 1 ? "s" : ""} remaining before security check
+            {3 - failedAttempts} <T>{`attempt${3 - failedAttempts > 1 ? "s" : ""} remaining before security check`}</T>
           </div>
         )}
 
@@ -234,7 +232,7 @@ const Login = () => {
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
             )}
-            Continue with Google
+            <T>Continue with Google</T>
           </button>
 
           <button
@@ -250,14 +248,14 @@ const Login = () => {
                 <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
               </svg>
             )}
-            Continue with Apple
+            <T>Continue with Apple</T>
           </button>
 
           {/* Divider */}
           <div className="flex items-center gap-4 py-2">
             <div className="flex-1 h-px bg-border" />
             <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-              Or sign in with email
+              <T>Or sign in with email</T>
             </span>
             <div className="flex-1 h-px bg-border" />
           </div>
@@ -266,7 +264,7 @@ const Login = () => {
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
               <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-                Email
+                <T>Email</T>
               </label>
               <input
                 type="email"
@@ -282,10 +280,10 @@ const Login = () => {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                  Password
+                  <T>Password</T>
                 </label>
                 <Link to="/forgot-password" className="text-[10px] tracking-[0.15em] uppercase text-primary hover:underline" style={{ fontFamily: "var(--font-heading)" }}>
-                  Forgot Password?
+                  <T>Forgot Password?</T>
                 </Link>
               </div>
               <div className="relative">
@@ -321,18 +319,18 @@ const Login = () => {
               style={{ fontFamily: "var(--font-heading)" }}
             >
               {loading === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-              Sign In
+              <T>Sign In</T>
             </button>
           </form>
         </div>
 
         <p className="text-xs text-muted-foreground mt-10" style={{ fontFamily: "var(--font-body)" }}>
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-primary hover:underline">Create one</Link>
+          <T>Don't have an account?</T>{" "}
+          <Link to="/signup" className="text-primary hover:underline"><T>Create one</T></Link>
         </p>
 
         <p className="text-[10px] text-muted-foreground/60 mt-4" style={{ fontFamily: "var(--font-body)" }}>
-          By continuing, you agree to our terms of service and privacy policy.
+          <T>By continuing, you agree to our terms of service and privacy policy.</T>
         </p>
       </div>
     </main>

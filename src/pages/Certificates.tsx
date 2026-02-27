@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Award, Download, Calendar, Share2 } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -55,7 +56,7 @@ const Certificates = () => {
   if (authLoading || loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground text-sm">Loading…</div>
+        <div className="animate-pulse text-muted-foreground text-sm"><T>Loading…</T></div>
       </main>
     );
   }
@@ -74,11 +75,11 @@ const Certificates = () => {
             <div className="flex items-center gap-4 mb-2">
               <div className="w-12 h-px bg-primary" />
               <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                Achievements
+                <T>Achievements</T>
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-              My <em className="italic text-primary">Certificates</em>
+              <T>My</T> <em className="italic text-primary"><T>Certificates</T></em>
             </h1>
           </motion.div>
 
@@ -86,17 +87,17 @@ const Certificates = () => {
             <motion.div variants={fadeUp} custom={1} className="border border-border p-12 text-center">
               <Award className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
               <p className="text-sm text-muted-foreground mb-2" style={{ fontFamily: "var(--font-body)" }}>
-                No certificates yet.
+                <T>No certificates yet.</T>
               </p>
               <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                Complete a course to earn your first certificate!
+                <T>Complete a course to earn your first certificate!</T>
               </p>
               <Link
                 to="/courses"
                 className="inline-block mt-6 text-xs tracking-[0.15em] uppercase px-5 py-3 border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Browse Courses
+                <T>Browse Courses</T>
               </Link>
             </motion.div>
           ) : (
@@ -170,7 +171,7 @@ const Certificates = () => {
                         style={{ fontFamily: "var(--font-heading)" }}
                       >
                         <Share2 className="h-3 w-3" />
-                        Share
+                        <T>Share</T>
                       </button>
                       {cert.reference_id && (
                         <Link
@@ -178,7 +179,7 @@ const Certificates = () => {
                           className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-primary transition-colors"
                           style={{ fontFamily: "var(--font-heading)" }}
                         >
-                          {cert.type === "competition_winner" ? "View Competition" : "View Course"}
+                          <T>{cert.type === "competition_winner" ? "View Competition" : "View Course"}</T>
                         </Link>
                       )}
                     </div>

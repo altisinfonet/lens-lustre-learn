@@ -6,6 +6,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import SimpleCaptcha from "@/components/SimpleCaptcha";
+import T from "@/components/T";
 
 const signupSchema = z.object({
   fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -102,13 +103,13 @@ const Signup = () => {
         <div className="max-w-md text-center">
           <Mail className="h-10 w-10 text-primary mx-auto mb-6" />
           <h1 className="text-3xl font-light tracking-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
-            Check Your <em className="italic text-primary">Email</em>
+            <T>Check Your</T> <em className="italic text-primary"><T>Email</T></em>
           </h1>
           <p className="text-sm text-muted-foreground mb-8" style={{ fontFamily: "var(--font-body)" }}>
-            We've sent a verification link to <strong className="text-foreground">{email}</strong>. Click the link to activate your account.
+            <T>We've sent a verification link to</T> <strong className="text-foreground">{email}</strong>. <T>Click the link to activate your account.</T>
           </p>
           <Link to="/login" className="text-xs tracking-[0.15em] uppercase text-primary hover:underline" style={{ fontFamily: "var(--font-heading)" }}>
-            Back to Login
+            <T>Back to Login</T>
           </Link>
         </div>
       </main>
@@ -126,7 +127,7 @@ const Signup = () => {
       {/* Right — Content */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12">
         <Link to="/" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12" style={{ fontFamily: "var(--font-heading)" }}>
-          <ArrowLeft className="h-3 w-3" /> Back
+          <ArrowLeft className="h-3 w-3" /> <T>Back</T>
         </Link>
 
         <div className="flex items-center gap-3 mb-12">
@@ -135,9 +136,9 @@ const Signup = () => {
         </div>
 
         <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-          Join the <em className="italic text-primary">Community</em>
+          <T>Join the</T> <em className="italic text-primary"><T>Community</T></em>
         </h1>
-        <p className="text-sm text-muted-foreground mb-10" style={{ fontFamily: "var(--font-body)" }}>Create your account and start sharing your vision.</p>
+        <p className="text-sm text-muted-foreground mb-10" style={{ fontFamily: "var(--font-body)" }}><T>Create your account and start sharing your vision.</T></p>
 
         {error && (
           <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
@@ -163,7 +164,7 @@ const Signup = () => {
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
             )}
-            Continue with Google
+            <T>Continue with Google</T>
           </button>
 
           <button
@@ -179,14 +180,14 @@ const Signup = () => {
                 <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
               </svg>
             )}
-            Continue with Apple
+            <T>Continue with Apple</T>
           </button>
 
           {/* Divider */}
           <div className="flex items-center gap-4 py-2">
             <div className="flex-1 h-px bg-border" />
             <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-              Or sign up with email
+              <T>Or sign up with email</T>
             </span>
             <div className="flex-1 h-px bg-border" />
           </div>
@@ -195,7 +196,7 @@ const Signup = () => {
           <form onSubmit={handleEmailSignup} className="space-y-4">
             <div>
               <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-                Full Name
+                <T>Full Name</T>
               </label>
               <input
                 type="text"
@@ -210,7 +211,7 @@ const Signup = () => {
             </div>
             <div>
               <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-                Email
+                <T>Email</T>
               </label>
               <input
                 type="email"
@@ -225,7 +226,7 @@ const Signup = () => {
             </div>
             <div>
               <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-                Password
+                <T>Password</T>
               </label>
               <div className="relative">
                 <input
@@ -271,7 +272,7 @@ const Signup = () => {
                       ))}
                     </div>
                     <span className={`text-[9px] tracking-[0.15em] uppercase ${textColors[score - 1] || "text-muted-foreground"}`} style={{ fontFamily: "var(--font-heading)" }}>
-                      {label}
+                      <T>{label}</T>
                     </span>
                   </div>
                 );
@@ -287,18 +288,18 @@ const Signup = () => {
               style={{ fontFamily: "var(--font-heading)" }}
             >
               {loading === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-              Create Account
+              <T>Create Account</T>
             </button>
           </form>
         </div>
 
         <p className="text-xs text-muted-foreground mt-10" style={{ fontFamily: "var(--font-body)" }}>
-          Already have an account?{" "}
-          <Link to="/login" className="text-primary hover:underline">Sign in</Link>
+          <T>Already have an account?</T>{" "}
+          <Link to="/login" className="text-primary hover:underline"><T>Sign in</T></Link>
         </p>
 
         <p className="text-[10px] text-muted-foreground/60 mt-4" style={{ fontFamily: "var(--font-body)" }}>
-          By continuing, you agree to our terms of service and privacy policy.
+          <T>By continuing, you agree to our terms of service and privacy policy.</T>
         </p>
       </div>
     </main>

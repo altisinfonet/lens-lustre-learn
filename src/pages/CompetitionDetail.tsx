@@ -4,6 +4,7 @@ import ImageEngagement from "@/components/ImageEngagement";
 import PhaseBanner from "@/components/PhaseBanner";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
+import T from "@/components/T";
 import { motion } from "framer-motion";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,7 +61,6 @@ const CompetitionDetail = () => {
   useEffect(() => {
     if (!id) return;
     const fetchAll = async () => {
-      // Fetch competition
       const { data: comp } = await supabase
         .from("competitions")
         .select("*")
@@ -68,7 +68,6 @@ const CompetitionDetail = () => {
         .single();
       setCompetition(comp);
 
-      // Fetch approved entries with vote counts
       const { data: rawEntries } = await supabase
         .from("competition_entries")
         .select("id, title, description, photos, user_id, status, created_at")
@@ -76,7 +75,6 @@ const CompetitionDetail = () => {
         .in("status", ["approved", "winner"])
         .order("created_at", { ascending: false });
 
-      // Get vote counts and user votes
       if (rawEntries && rawEntries.length > 0) {
         const entryIds = rawEntries.map((e) => e.id);
         const { data: votes } = await supabase
@@ -84,7 +82,6 @@ const CompetitionDetail = () => {
           .select("entry_id, user_id")
           .in("entry_id", entryIds);
 
-        // Get profile names
         const userIds = [...new Set(rawEntries.map((e) => e.user_id))];
         const { data: profiles } = await supabase
           .from("profiles")
@@ -105,7 +102,6 @@ const CompetitionDetail = () => {
         setEntries(enriched.sort((a, b) => b.vote_count - a.vote_count));
       }
 
-      // Check user's entry count
       if (user && id) {
         const { count } = await supabase
           .from("competition_entries")
@@ -130,7 +126,6 @@ const CompetitionDetail = () => {
     } else {
       await supabase.from("competition_votes").insert({ entry_id: entryId, user_id: user.id });
 
-      // Award vote rewards if configured
       try {
         const { data: rewardSetting } = await supabase
           .from("site_settings")
@@ -140,7 +135,6 @@ const CompetitionDetail = () => {
         const cfg = rewardSetting?.value as any;
         if (cfg?.active) {
           const entry = entries.find(e => e.id === entryId);
-          // Reward voter
           if (cfg.voter_reward > 0) {
             await supabase.rpc("wallet_transaction", {
               _user_id: user.id,
@@ -149,7 +143,6 @@ const CompetitionDetail = () => {
               _description: "Vote reward — thank you for voting!",
             });
           }
-          // Reward entry owner
           if (cfg.entry_owner_reward > 0 && entry && entry.user_id !== user.id) {
             await supabase.rpc("wallet_transaction", {
               _user_id: entry.user_id,
@@ -160,11 +153,9 @@ const CompetitionDetail = () => {
           }
         }
       } catch (err) {
-        // Non-blocking: rewards are best-effort
         console.error("Vote reward error:", err);
       }
     }
-    // Optimistic update
     setEntries((prev) =>
       prev.map((e) =>
         e.id === entryId
@@ -177,7 +168,7 @@ const CompetitionDetail = () => {
   if (loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}>Loading...</div>
+        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}><T>Loading...</T></div>
       </main>
     );
   }
@@ -186,8 +177,8 @@ const CompetitionDetail = () => {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-light mb-4" style={{ fontFamily: "var(--font-display)" }}>Competition not found</h1>
-          <Link to="/competitions" className="text-xs text-primary tracking-[0.15em] uppercase hover:underline" style={{ fontFamily: "var(--font-heading)" }}>Browse competitions</Link>
+          <h1 className="text-2xl font-light mb-4" style={{ fontFamily: "var(--font-display)" }}><T>Competition not found</T></h1>
+          <Link to="/competitions" className="text-xs text-primary tracking-[0.15em] uppercase hover:underline" style={{ fontFamily: "var(--font-heading)" }}><T>Browse competitions</T></Link>
         </div>
       </main>
     );
@@ -210,7 +201,7 @@ const CompetitionDetail = () => {
           <div className="flex items-center gap-3 mb-3">
             <span className="text-[9px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>{competition.category}</span>
             <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 border ${statusColors[competition.status]}`} style={{ fontFamily: "var(--font-heading)" }}>
-              {competition.status}
+              <T>{competition.status}</T>
             </span>
           </div>
           <h1 className="text-3xl md:text-5xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
@@ -228,7 +219,7 @@ const CompetitionDetail = () => {
           <div className="lg:col-span-2">
             {competition.description && (
               <div className="mb-12">
-                <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>About</span>
+                <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}><T>About</T></span>
                 <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line" style={{ fontFamily: "var(--font-body)" }}>
                   {competition.description}
                 </p>
@@ -239,7 +230,7 @@ const CompetitionDetail = () => {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                  Submissions ({entries.length})
+                  <T>Submissions</T> ({entries.length})
                 </span>
                 {canSubmit && (
                   <Link
@@ -247,7 +238,7 @@ const CompetitionDetail = () => {
                     className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity duration-500"
                     style={{ fontFamily: "var(--font-heading)" }}
                   >
-                    <Upload className="h-3 w-3" /> Submit Entry
+                    <Upload className="h-3 w-3" /> <T>Submit Entry</T>
                   </Link>
                 )}
               </div>
@@ -256,7 +247,7 @@ const CompetitionDetail = () => {
                 <div className="text-center py-16 border border-border">
                   <Trophy className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                    No submissions yet. Be the first!
+                    <T>No submissions yet. Be the first!</T>
                   </p>
                 </div>
               ) : (
@@ -268,7 +259,6 @@ const CompetitionDetail = () => {
                       animate={{ opacity: 1 }}
                       className="border border-border overflow-hidden group"
                     >
-                      {/* Photo grid */}
                       {entry.photos.length > 0 && (
                         <div className="relative h-52 overflow-hidden bg-muted">
                           <img
@@ -279,37 +269,36 @@ const CompetitionDetail = () => {
                           />
                           {entry.photos.length > 1 && (
                             <span className="absolute bottom-2 right-2 text-[9px] bg-background/80 backdrop-blur-sm px-2 py-1 text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                              +{entry.photos.length - 1} more
+                              +{entry.photos.length - 1} <T>more</T>
                             </span>
                           )}
                           {entry.status === "winner" && (
                             <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-yellow-500/90 text-background" style={{ fontFamily: "var(--font-heading)" }}>
-                              🏆 Winner
+                              🏆 <T>Winner</T>
                             </span>
                           )}
                           {(entry as any).placement === "1st_runner_up" && (
                             <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-muted-foreground/90 text-background" style={{ fontFamily: "var(--font-heading)" }}>
-                              🥈 1st Runner Up
+                              🥈 <T>1st Runner Up</T>
                             </span>
                           )}
                           {(entry as any).placement === "2nd_runner_up" && (
                             <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-amber-700/90 text-background" style={{ fontFamily: "var(--font-heading)" }}>
-                              🥉 2nd Runner Up
+                              🥉 <T>2nd Runner Up</T>
                             </span>
                           )}
                           {(entry as any).placement === "most_viewed" && (
                             <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-primary/90 text-primary-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                              👁 Most Viewed
+                              👁 <T>Most Viewed</T>
                             </span>
                           )}
                         </div>
                       )}
                     <div className="p-4">
                         <h4 className="text-sm font-light tracking-tight mb-1" style={{ fontFamily: "var(--font-display)" }}>{entry.title}</h4>
-                        {/* During judging: anonymous — hide participant name & description */}
                         {competition.status !== "judging" && (
                           <p className="text-[10px] text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
-                            by {entry.profiles?.full_name || "Anonymous"}
+                            <T>by</T> {entry.profiles?.full_name || <T>Anonymous</T>}
                           </p>
                         )}
                         {competition.status !== "judging" && entry.description && (
@@ -319,11 +308,10 @@ const CompetitionDetail = () => {
                         )}
                         {competition.status === "judging" && (
                           <p className="text-[9px] text-muted-foreground/60 italic mb-3" style={{ fontFamily: "var(--font-body)" }}>
-                            Participant details hidden during judging
+                            <T>Participant details hidden during judging</T>
                           </p>
                         )}
                         <div className="flex items-center justify-between">
-                          {/* Voting only allowed during judging phase */}
                           {competition.status === "judging" ? (
                             <button
                               onClick={() => handleVote(entry.id, entry.user_voted)}
@@ -343,7 +331,7 @@ const CompetitionDetail = () => {
                               style={{ fontFamily: "var(--font-heading)" }}
                             >
                               <Heart className="h-3 w-3" />
-                              {entry.vote_count} votes
+                              {entry.vote_count} <T>votes</T>
                             </span>
                           ) : (
                             <button
@@ -363,7 +351,6 @@ const CompetitionDetail = () => {
                             {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </span>
                         </div>
-                        {/* Admin: Mark as Photo of the Day — only on closed competitions */}
                         {competition.status === "closed" && isAdmin && entry.photos.length > 0 && (
                           <button
                             onClick={async () => {
@@ -387,10 +374,9 @@ const CompetitionDetail = () => {
                             className="mt-2 w-full inline-flex items-center justify-center gap-1.5 text-[9px] tracking-[0.15em] uppercase px-3 py-2 border border-yellow-500/30 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/10 transition-all duration-300"
                             style={{ fontFamily: "var(--font-heading)" }}
                           >
-                            <Star className="h-3 w-3" /> Photo of the Day
+                            <Star className="h-3 w-3" /> <T>Photo of the Day</T>
                           </button>
                         )}
-                        {/* Like/Love/Comment engagement — hidden during judging & closed phases */}
                         {competition.status !== "judging" && competition.status !== "closed" && (
                           <div className="mt-3 border-t border-border/50 pt-3">
                             <ImageEngagement imageType="competition_entry" imageId={entry.id} />
@@ -403,11 +389,10 @@ const CompetitionDetail = () => {
               )}
             </div>
 
-            {/* Comments on entries — hidden during judging & closed */}
             {competition.status !== "judging" && competition.status !== "closed" && entries.map((entry) => (
               <div key={`comments-${entry.id}`} className="mt-4 border border-border p-4">
                 <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-2 block" style={{ fontFamily: "var(--font-heading)" }}>
-                  Comments on "{entry.title}"
+                  <T>Comments on</T> "{entry.title}"
                 </span>
                 <CommentsSection entryId={entry.id} />
               </div>
@@ -417,20 +402,20 @@ const CompetitionDetail = () => {
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
             <div className="border border-border p-6 space-y-5">
-              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block" style={{ fontFamily: "var(--font-heading)" }}>Details</span>
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block" style={{ fontFamily: "var(--font-heading)" }}><T>Details</T></span>
 
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5 text-primary" />
                 <div style={{ fontFamily: "var(--font-body)" }}>
-                  <div>Opens: {new Date(competition.starts_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
-                  <div>Closes: {new Date(competition.ends_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+                  <div><T>Opens:</T> {new Date(competition.starts_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+                  <div><T>Closes:</T> {new Date(competition.ends_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
                 </div>
               </div>
 
               {competition.entry_fee > 0 && (
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5 text-primary" />
-                  <span style={{ fontFamily: "var(--font-body)" }}>Entry fee: ${competition.entry_fee}</span>
+                  <span style={{ fontFamily: "var(--font-body)" }}><T>Entry fee:</T> ${competition.entry_fee}</span>
                 </div>
               )}
 
@@ -443,7 +428,7 @@ const CompetitionDetail = () => {
 
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <Users className="h-3.5 w-3.5 text-primary" />
-                <span style={{ fontFamily: "var(--font-body)" }}>Max {competition.max_photos_per_entry} photos per entry</span>
+                <span style={{ fontFamily: "var(--font-body)" }}><T>Max</T> {competition.max_photos_per_entry} <T>photos per entry</T></span>
               </div>
             </div>
 
@@ -453,7 +438,7 @@ const CompetitionDetail = () => {
                 className="block w-full text-center py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Submit Your Entry
+                <T>Submit Your Entry</T>
               </Link>
             )}
 
@@ -463,7 +448,7 @@ const CompetitionDetail = () => {
                 className="block w-full text-center py-3.5 border border-primary text-primary text-xs tracking-[0.2em] uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                Login to Submit
+                <T>Login to Submit</T>
               </Link>
             )}
           </div>

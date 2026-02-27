@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Trophy, Award, User } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,7 +82,7 @@ const Winners = () => {
           <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-2">
             <div className="w-12 h-px bg-primary" />
             <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-              Hall of Fame
+              <T>Hall of Fame</T>
             </span>
           </motion.div>
           <motion.h1
@@ -90,7 +91,7 @@ const Winners = () => {
             className="text-4xl md:text-6xl font-light tracking-tight mb-4"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Competition <em className="italic text-primary">Winners</em>
+            <T>Competition</T> <em className="italic text-primary"><T>Winners</T></em>
           </motion.h1>
           <motion.p
             variants={fadeUp}
@@ -98,7 +99,7 @@ const Winners = () => {
             className="text-sm text-muted-foreground max-w-lg mb-16"
             style={{ fontFamily: "var(--font-body)" }}
           >
-            Celebrating the photographers whose vision and craft stood above the rest.
+            <T>Celebrating the photographers whose vision and craft stood above the rest.</T>
           </motion.p>
         </motion.div>
 
@@ -107,13 +108,13 @@ const Winners = () => {
             className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse py-20 text-center"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Loading winners...
+            <T>Loading winners...</T>
           </div>
         ) : winners.length === 0 ? (
           <div className="text-center py-20">
             <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-              No winners announced yet. Stay tuned!
+              <T>No winners announced yet. Stay tuned!</T>
             </p>
           </div>
         ) : (
@@ -204,7 +205,7 @@ const Winners = () => {
                       className="text-xs tracking-[0.1em] uppercase text-muted-foreground"
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
-                      {winner.profile?.full_name || "Photographer"}
+                      {winner.profile?.full_name || <T>Photographer</T>}
                     </span>
                   </div>
                 </div>
