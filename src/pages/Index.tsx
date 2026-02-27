@@ -91,6 +91,9 @@ interface PortfolioImage {
   src: string;
   title: string;
   category: string;
+  is_pinned?: boolean;
+  is_trending?: boolean;
+  view_count?: number;
 }
 
 interface WinnerShowcase {
@@ -289,8 +292,9 @@ const Index = () => {
           .limit(4),
         supabase
           .from("portfolio_images")
-          .select("id, title, category, image_url, sort_order")
+          .select("id, title, category, image_url, sort_order, is_pinned, is_trending, view_count")
           .eq("is_visible", true)
+          .order("is_pinned", { ascending: false })
           .order("sort_order", { ascending: true }),
         supabase
           .from("hero_banners")
@@ -439,11 +443,14 @@ const Index = () => {
       // Set portfolio images from database (fallback to hardcoded if empty)
       const portfolioData = portfolioRes.data || [];
       if (portfolioData.length > 0) {
-        setGalleryWorks(portfolioData.map((p) => ({
+        setGalleryWorks(portfolioData.map((p: any) => ({
           id: p.id,
           src: p.image_url,
           title: p.title,
           category: p.category,
+          is_pinned: p.is_pinned,
+          is_trending: p.is_trending,
+          view_count: p.view_count,
         })));
       }
 
@@ -900,6 +907,30 @@ const Index = () => {
                             className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-75"
                             loading={isHero ? "eager" : "lazy"}
                           />
+                          {/* Trending badge */}
+                          {work.is_trending && (
+                            <div className="absolute top-1.5 left-1.5 z-10">
+                              <span className="inline-flex items-center gap-1 text-[7px] tracking-[0.15em] uppercase px-1.5 py-0.5 bg-primary text-primary-foreground rounded-sm" style={{ fontFamily: "var(--font-heading)" }}>
+                                🔥 Trending
+                              </span>
+                            </div>
+                          )}
+                          {/* Pinned badge */}
+                          {work.is_pinned && (
+                            <div className={`absolute ${work.is_trending ? "top-6" : "top-1.5"} left-1.5 z-10`}>
+                              <span className="inline-flex items-center gap-0.5 text-[7px] tracking-[0.15em] uppercase px-1.5 py-0.5 bg-background/80 backdrop-blur-sm text-primary border border-primary/30 rounded-sm" style={{ fontFamily: "var(--font-heading)" }}>
+                                📌 Pinned
+                              </span>
+                            </div>
+                          )}
+                          {/* View count */}
+                          {(work.view_count || 0) > 0 && (
+                            <div className="absolute bottom-1.5 right-1.5 z-10 opacity-80">
+                              <span className="inline-flex items-center gap-0.5 text-[7px] px-1.5 py-0.5 bg-background/70 backdrop-blur-sm text-foreground/80 rounded-sm">
+                                <Eye className="h-2.5 w-2.5" /> {(work.view_count || 0).toLocaleString()}
+                              </span>
+                            </div>
+                          )}
                           <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/60 ${
                             isHero ? "flex-col gap-2" : ""
                           }`}>

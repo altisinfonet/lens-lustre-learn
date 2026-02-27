@@ -208,36 +208,45 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_pinned: boolean
+          is_trending: boolean
           photos: string[]
           placement: string | null
           status: string
           title: string
           updated_at: string
           user_id: string
+          view_count: number
         }
         Insert: {
           competition_id: string
           created_at?: string
           description?: string | null
           id?: string
+          is_pinned?: boolean
+          is_trending?: boolean
           photos?: string[]
           placement?: string | null
           status?: string
           title: string
           updated_at?: string
           user_id: string
+          view_count?: number
         }
         Update: {
           competition_id?: string
           created_at?: string
           description?: string | null
           id?: string
+          is_pinned?: boolean
+          is_trending?: boolean
           photos?: string[]
           placement?: string | null
           status?: string
           title?: string
           updated_at?: string
           user_id?: string
+          view_count?: number
         }
         Relationships: [
           {
@@ -605,7 +614,9 @@ export type Database = {
           id: string
           image_id: string
           image_type: string
+          is_admin_seed: boolean
           is_flagged: boolean
+          is_pinned: boolean
           parent_id: string | null
           updated_at: string
           user_id: string
@@ -617,7 +628,9 @@ export type Database = {
           id?: string
           image_id: string
           image_type: string
+          is_admin_seed?: boolean
           is_flagged?: boolean
+          is_pinned?: boolean
           parent_id?: string | null
           updated_at?: string
           user_id: string
@@ -629,7 +642,9 @@ export type Database = {
           id?: string
           image_id?: string
           image_type?: string
+          is_admin_seed?: boolean
           is_flagged?: boolean
+          is_pinned?: boolean
           parent_id?: string | null
           updated_at?: string
           user_id?: string
@@ -887,30 +902,39 @@ export type Database = {
           created_at: string
           id: string
           image_url: string
+          is_pinned: boolean
+          is_trending: boolean
           is_visible: boolean
           sort_order: number
           title: string
           uploaded_by: string
+          view_count: number
         }
         Insert: {
           category?: string
           created_at?: string
           id?: string
           image_url: string
+          is_pinned?: boolean
+          is_trending?: boolean
           is_visible?: boolean
           sort_order?: number
           title: string
           uploaded_by: string
+          view_count?: number
         }
         Update: {
           category?: string
           created_at?: string
           id?: string
           image_url?: string
+          is_pinned?: boolean
+          is_trending?: boolean
           is_visible?: boolean
           sort_order?: number
           title?: string
           uploaded_by?: string
+          view_count?: number
         }
         Relationships: []
       }
@@ -1046,6 +1070,54 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      scheduled_boosts: {
+        Row: {
+          applied_amount: number
+          created_at: string
+          created_by: string
+          ends_at: string | null
+          id: string
+          image_id: string
+          image_type: string
+          increment_per_hour: number
+          reaction_type: string
+          starts_at: string
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          applied_amount?: number
+          created_at?: string
+          created_by: string
+          ends_at?: string | null
+          id?: string
+          image_id: string
+          image_type: string
+          increment_per_hour?: number
+          reaction_type?: string
+          starts_at?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          applied_amount?: number
+          created_at?: string
+          created_by?: string
+          ends_at?: string | null
+          id?: string
+          image_id?: string
+          image_type?: string
+          increment_per_hour?: number
+          reaction_type?: string
+          starts_at?: string
+          status?: string
+          total_amount?: number
+          updated_at?: string
         }
         Relationships: []
       }
