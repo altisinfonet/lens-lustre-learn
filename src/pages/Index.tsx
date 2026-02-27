@@ -494,7 +494,7 @@ const Index = () => {
   return (
     <main className="min-h-screen text-foreground overflow-hidden">
       {/* Hero — Slow crossfade slideshow */}
-      <section className="relative h-screen flex items-end pb-20 md:pb-28 overflow-hidden" aria-label="Featured photography">
+      <section className="relative h-screen-safe flex items-end pb-20 md:pb-28 overflow-hidden" aria-label="Featured photography">
         <AnimatePresence mode="sync">
           {heroSlides.map((slide, i) => i === currentSlide && (
             <motion.div
@@ -881,7 +881,7 @@ const Index = () => {
 
                 <motion.div
                   layout
-                  className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 auto-rows-[1fr] gap-1 sm:gap-1.5"
+                  className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 auto-rows-fr gap-1 sm:gap-1.5"
                 >
                   <AnimatePresence mode="popLayout">
                     {paged.map((work, i) => {
@@ -896,7 +896,7 @@ const Index = () => {
                           transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(i * 0.015, 0.6) }}
                           className={`group relative overflow-hidden rounded-sm cursor-pointer bg-muted ${
                             isHero
-                              ? "col-span-3 row-span-3 sm:col-span-4 sm:row-span-4 md:col-span-4 md:row-span-5 lg:col-span-5 lg:row-span-6 aspect-auto"
+                              ? "col-span-2 row-span-2 sm:col-span-3 sm:row-span-3 md:col-span-3 md:row-span-4 lg:col-span-4 lg:row-span-5 aspect-auto"
                               : "aspect-square"
                           }`}
                           onClick={() => openLightbox(filteredIndexMap[i])}
