@@ -313,7 +313,7 @@ const AdminPanel = () => {
   const openEdit = (comp: Competition) => {
     setEditingId(comp.id);
     // Need to fetch full data
-    supabase.from("competitions").select("*").eq("id", comp.id).single().then(({ data }) => {
+    supabase.from("competitions").select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at, payment_details").eq("id", comp.id).single().then(({ data }) => {
       if (data) {
         setForm({
           title: data.title || "",

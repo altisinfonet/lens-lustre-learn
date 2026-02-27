@@ -63,7 +63,7 @@ const CompetitionDetail = () => {
     const fetchAll = async () => {
       const { data: comp } = await supabase
         .from("competitions")
-        .select("*")
+        .select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at")
         .eq("id", id)
         .single();
       setCompetition(comp);
