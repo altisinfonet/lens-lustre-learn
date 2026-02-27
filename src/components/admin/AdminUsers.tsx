@@ -102,8 +102,25 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
     setBulkLoading(false);
   };
 
-  const fetchUsers = async (query = "", by = searchBy) => {
+  const fetchUsers = async (query = "", by = searchBy, badge = badgeFilter) => {
     setLoading(true);
+
+    // If badge filter is set, first get user IDs with that badge
+    let badgeUserIds: string[] | null = null;
+    if (badge) {
+      const { data: badgeData } = await supabase
+        .from("user_badges")
+        .select("user_id")
+        .eq("badge_type", badge);
+      badgeUserIds = (badgeData as any[])?.map((b: any) => b.user_id) || [];
+      if (badgeUserIds.length === 0) {
+        setUsers([]);
+        toast({ title: `No users found with ${BADGES[badge as BadgeType]?.label || badge} badge` });
+        setLoading(false);
+        return;
+      }
+    }
+
     const { data, error } = await supabase.rpc("admin_search_users", {
       search_query: query,
       search_by: by,
@@ -116,7 +133,21 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
     }
 
     if (data && data.length > 0) {
-      const userIds = data.map((u: any) => u.id);
+      // Filter by badge user IDs if applicable
+      let filtered = data as any[];
+      if (badgeUserIds) {
+        const idSet = new Set(badgeUserIds);
+        filtered = filtered.filter((u: any) => idSet.has(u.id));
+      }
+
+      if (filtered.length === 0) {
+        setUsers([]);
+        toast({ title: `No users found${badge ? ` with ${BADGES[badge as BadgeType]?.label} badge` : ""}` });
+        setLoading(false);
+        return;
+      }
+
+      const userIds = filtered.map((u: any) => u.id);
       const [rolesRes, badgesRes] = await Promise.all([
         supabase.from("user_roles").select("user_id, role").in("user_id", userIds),
         supabase.from("user_badges").select("user_id, badge_type").in("user_id", userIds),
@@ -133,7 +164,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
         existing.push(b.badge_type);
         badgeMap.set(b.user_id, existing);
       });
-      setUsers(data.map((u: any) => ({ ...u, roles: roleMap.get(u.id) || [], badges: badgeMap.get(u.id) || [] })));
+      setUsers(filtered.map((u: any) => ({ ...u, roles: roleMap.get(u.id) || [], badges: badgeMap.get(u.id) || [] })));
     } else {
       setUsers([]);
       if (query) toast({ title: "No users found" });
@@ -320,7 +351,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
           <Award className="h-3 w-3 inline mr-1" />Filter by badge:
         </span>
         <button
-          onClick={() => setBadgeFilter("")}
+          onClick={() => { setBadgeFilter(""); fetchUsers(searchQuery.trim(), searchBy, ""); }}
           className={`px-2.5 py-1 text-[9px] tracking-wider uppercase border rounded-sm transition-all ${
             !badgeFilter ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary"
           }`}
@@ -330,17 +361,20 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
         </button>
         {BADGE_TYPES.map((b) => {
           const cfg = BADGES[b];
-          const count = users.filter((u) => u.badges.includes(b)).length;
           return (
             <button
               key={b}
-              onClick={() => setBadgeFilter(badgeFilter === b ? "" : b)}
+              onClick={() => {
+                const newFilter = badgeFilter === b ? "" : b;
+                setBadgeFilter(newFilter);
+                fetchUsers(searchQuery.trim(), searchBy, newFilter);
+              }}
               className={`px-2.5 py-1 text-[9px] tracking-wider uppercase border rounded-sm transition-all ${
                 badgeFilter === b ? `${cfg.badgeClass} font-medium` : "border-border text-muted-foreground hover:border-primary hover:text-primary"
               }`}
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              {cfg.icon} {cfg.label} {count > 0 && <span className="ml-1 opacity-70">({count})</span>}
+              {cfg.icon} {cfg.label}
             </button>
           );
         })}
@@ -526,18 +560,14 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
       )}
       {users.length > 0 && (
         <div className="space-y-1">
-          {(() => {
-            const filteredUsers = badgeFilter ? users.filter((u) => u.badges.includes(badgeFilter)) : users;
-            return (
-              <>
                 <div className="flex items-center gap-2 text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
                   <button onClick={selectAll} className="hover:text-primary transition-colors" title="Select all">
                     {selectedIds.size === users.length && users.length > 0 ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
                   </button>
-                  {filteredUsers.length} user{filteredUsers.length !== 1 ? "s" : ""} {badgeFilter ? `with ${BADGES[badgeFilter as BadgeType]?.label} badge` : "found"}
+                  {users.length} user{users.length !== 1 ? "s" : ""} {badgeFilter ? `with ${BADGES[badgeFilter as BadgeType]?.label} badge` : "found"}
                 </div>
                 <div className="border border-border rounded-sm overflow-hidden divide-y divide-border">
-                  {filteredUsers.map((u) => (
+                  {users.map((u) => (
               <div key={u.id} className={`flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors group ${u.is_suspended ? "opacity-60 bg-destructive/5" : ""} ${selectedIds.has(u.id) ? "bg-primary/5" : ""}`}>
                 {/* Checkbox */}
                 <button onClick={() => toggleSelect(u.id)} className="shrink-0 hover:text-primary transition-colors">
@@ -626,9 +656,6 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
               </div>
             ))}
           </div>
-              </>
-            );
-          })()}
         </div>
       )}
 
