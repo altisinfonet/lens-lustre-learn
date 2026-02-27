@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MessageSquare, Reply, Trash2, Send } from "lucide-react";
+import { MessageCircle, Reply, Trash2, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,18 @@ interface Props {
   articleId?: string;
   entryId?: string;
 }
+
+const Avatar = ({ src, name, size = "sm" }: { src: string | null | undefined; name: string | null | undefined; size?: "xs" | "sm" | "md" }) => {
+  const sizeClasses = { xs: "w-6 h-6 text-[10px]", sm: "w-8 h-8 text-xs", md: "w-10 h-10 text-sm" };
+  if (src) {
+    return <img src={src} alt="" className={`${sizeClasses[size]} rounded-full object-cover`} />;
+  }
+  return (
+    <div className={`${sizeClasses[size]} rounded-full bg-muted flex items-center justify-center font-semibold text-muted-foreground`}>
+      {(name || "?")[0]?.toUpperCase()}
+    </div>
+  );
+};
 
 const CommentsSection = ({ articleId, entryId }: Props) => {
   const { user } = useAuth();
@@ -42,7 +54,6 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
     const { data } = await query;
     if (!data) { setLoading(false); return; }
 
-    // Fetch profiles
     const userIds = [...new Set(data.map((c) => c.user_id))];
     const { data: profiles } = await profilesPublic()
       .select("id, full_name, avatar_url")
@@ -50,7 +61,6 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
 
     const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
 
-    // Build tree
     const allComments = data.map((c) => ({
       ...c,
       profile: profileMap.get(c.user_id) || null,
@@ -116,84 +126,86 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
   const timeAgo = (date: string) => {
     const diff = Date.now() - new Date(date).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "just now";
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m`;
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
+    if (hrs < 24) return `${hrs}h`;
     const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
+    if (days < 7) return `${days}d`;
+    return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
+  const totalCount = comments.reduce((acc, c) => acc + 1 + c.replies.length, 0);
+
   const CommentItem = ({ comment, depth = 0 }: { comment: Comment; depth?: number }) => (
-    <div className={`${depth > 0 ? "ml-6 md:ml-10 border-l border-border pl-4 md:pl-6" : ""}`}>
-      <div className="py-4">
-        <div className="flex items-center gap-3 mb-2">
-          {comment.profile?.avatar_url ? (
-            <img src={comment.profile.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
-          ) : (
-            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[9px] text-muted-foreground">
-              {(comment.profile?.full_name || "?")[0].toUpperCase()}
+    <div className={`${depth > 0 ? "ml-10" : ""}`}>
+      <div className="flex gap-2 group py-1">
+        <Link to={`/profile/${comment.user_id}`} className="shrink-0 mt-0.5">
+          <Avatar src={comment.profile?.avatar_url} name={comment.profile?.full_name} size={depth > 0 ? "xs" : "sm"} />
+        </Link>
+        <div className="flex-1 min-w-0">
+          {/* Bubble */}
+          <div className="bg-muted rounded-2xl px-3 py-2 inline-block max-w-full">
+            <Link
+              to={`/profile/${comment.user_id}`}
+              className="text-[13px] font-semibold text-foreground hover:underline block leading-tight"
+            >
+              {comment.profile?.full_name || "Anonymous"}
+            </Link>
+            <p className="text-[15px] text-foreground leading-[1.33] break-words">
+              {comment.content}
+            </p>
+          </div>
+
+          {/* Action row */}
+          <div className="flex items-center gap-3 mt-0.5 px-1">
+            <span className="text-xs text-muted-foreground font-medium">{timeAgo(comment.created_at)}</span>
+            {user && (
+              <button
+                onClick={() => { setReplyTo(replyTo === comment.id ? null : comment.id); setReplyText(""); }}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground hover:underline transition-colors"
+              >
+                Reply
+              </button>
+            )}
+            {user?.id === comment.user_id && (
+              <button
+                onClick={() => handleDelete(comment.id)}
+                className="text-xs font-semibold text-muted-foreground hover:text-destructive hover:underline transition-colors opacity-0 group-hover:opacity-100"
+              >
+                Delete
+              </button>
+            )}
+          </div>
+
+          {/* Reply input */}
+          {replyTo === comment.id && (
+            <div className="flex gap-2 mt-2">
+              <Avatar src={null} name={user?.email} size="xs" />
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Write a reply..."
+                  maxLength={2000}
+                  className="w-full bg-muted rounded-full px-3 py-1.5 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all placeholder:text-muted-foreground/50"
+                  onKeyDown={(e) => e.key === "Enter" && handlePost(comment.id)}
+                  autoFocus
+                />
+                {replyText.trim() && (
+                  <button
+                    onClick={() => handlePost(comment.id)}
+                    disabled={submitting}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-primary hover:text-primary/80 disabled:opacity-40"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           )}
-          <Link
-            to={`/profile/${comment.user_id}`}
-            className="text-xs font-medium hover:text-primary transition-colors"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            {comment.profile?.full_name || "Anonymous"}
-          </Link>
-          <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-            {timeAgo(comment.created_at)}
-          </span>
         </div>
-
-        <p className="text-sm text-foreground/85 leading-relaxed mb-2" style={{ fontFamily: "var(--font-body)" }}>
-          {comment.content}
-        </p>
-
-        <div className="flex items-center gap-3">
-          {user && (
-            <button
-              onClick={() => { setReplyTo(replyTo === comment.id ? null : comment.id); setReplyText(""); }}
-              className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              <Reply className="h-3 w-3" /> Reply
-            </button>
-          )}
-          {user?.id === comment.user_id && (
-            <button
-              onClick={() => handleDelete(comment.id)}
-              className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-destructive transition-colors inline-flex items-center gap-1"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              <Trash2 className="h-3 w-3" /> Delete
-            </button>
-          )}
-        </div>
-
-        {/* Reply form */}
-        {replyTo === comment.id && (
-          <div className="mt-3 flex gap-2">
-            <input
-              type="text"
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              placeholder="Write a reply..."
-              maxLength={2000}
-              className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm transition-colors duration-500"
-              style={{ fontFamily: "var(--font-body)" }}
-              onKeyDown={(e) => e.key === "Enter" && handlePost(comment.id)}
-            />
-            <button
-              onClick={() => handlePost(comment.id)}
-              disabled={submitting || !replyText.trim()}
-              className="p-2 text-primary hover:opacity-70 transition-opacity disabled:opacity-30"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Nested replies */}
@@ -204,73 +216,77 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
   );
 
   return (
-    <div className="mt-16 border-t border-border pt-10">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-px bg-primary" />
-        <span className="text-[10px] tracking-[0.3em] uppercase text-primary inline-flex items-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
-          <MessageSquare className="h-3.5 w-3.5" />
-          Comments ({comments.reduce((acc, c) => acc + 1 + c.replies.length, 0)})
-        </span>
+    <div className="mt-8 bg-card rounded-lg shadow-sm border border-border">
+      {/* Header */}
+      <div className="px-4 pt-4 pb-2 border-b border-border">
+        <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-muted-foreground" />
+          Comments
+          {totalCount > 0 && (
+            <span className="text-sm font-normal text-muted-foreground">({totalCount})</span>
+          )}
+        </h3>
       </div>
 
-      {/* New comment form */}
-      {user ? (
-        <div className="flex gap-3 mb-8">
-          <div className="flex-1">
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Share your thoughts..."
-              maxLength={2000}
-              rows={3}
-              className="w-full bg-transparent border border-border focus:border-primary outline-none p-4 text-sm transition-colors duration-500 resize-none"
-              style={{ fontFamily: "var(--font-body)" }}
-            />
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-[10px] text-muted-foreground">{newComment.length}/2000</span>
-              <button
-                onClick={() => handlePost()}
-                disabled={submitting || !newComment.trim()}
-                className="inline-flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground text-[10px] tracking-[0.2em] uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                <Send className="h-3 w-3" />
-                {submitting ? "Posting…" : "Post Comment"}
-              </button>
+      <div className="p-4">
+        {/* New comment input */}
+        {user ? (
+          <div className="flex gap-2 mb-4">
+            <Avatar src={null} name={user.email} size="sm" />
+            <div className="flex-1 relative">
+              <input
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+                maxLength={2000}
+                className="w-full bg-muted rounded-full px-4 py-2.5 pr-10 text-[15px] focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all placeholder:text-muted-foreground/50"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handlePost();
+                  }
+                }}
+              />
+              {newComment.trim() && (
+                <button
+                  onClick={() => handlePost()}
+                  disabled={submitting}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-primary hover:text-primary/80 disabled:opacity-40 transition-colors"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="border border-border p-6 text-center mb-8">
-          <p className="text-sm text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
-            Log in to join the conversation
-          </p>
-          <Link
-            to="/login"
-            className="text-xs tracking-[0.15em] uppercase text-primary hover:underline"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Login
-          </Link>
-        </div>
-      )}
+        ) : (
+          <div className="bg-muted rounded-lg p-4 text-center mb-4">
+            <p className="text-sm text-muted-foreground mb-2">Log in to join the conversation</p>
+            <Link to="/login" className="text-sm font-semibold text-primary hover:underline">
+              Login
+            </Link>
+          </div>
+        )}
 
-      {loading ? (
-        <div className="text-sm text-muted-foreground animate-pulse py-8 text-center">Loading comments…</div>
-      ) : comments.length === 0 ? (
-        <div className="text-center py-10 border border-border">
-          <MessageSquare className="h-6 w-6 text-muted-foreground/20 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-            No comments yet. Be the first to share your thoughts!
-          </p>
-        </div>
-      ) : (
-        <div className="divide-y divide-border">
-          {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
-          ))}
-        </div>
-      )}
+        {/* Comments list */}
+        {loading ? (
+          <div className="text-sm text-muted-foreground animate-pulse py-6 text-center">Loading comments…</div>
+        ) : comments.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+              <MessageCircle className="h-6 w-6 text-muted-foreground/30" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              No comments yet. Be the first to share your thoughts!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {comments.map((comment) => (
+              <CommentItem key={comment.id} comment={comment} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
