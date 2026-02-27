@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Copy, Check, Edit2, ExternalLink, Globe, KeyRound, Lock, Mail, MapPin, Phone, Share2, User } from "lucide-react";
+import { Camera, Copy, Check, Edit2, ExternalLink, Globe, KeyRound, Lock, Mail, MapPin, MessageSquare, Phone, Share2, User, Users } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
@@ -184,13 +184,29 @@ const Profile = () => {
               </div>
             </div>
 
-            <Link
-              to="/edit-profile"
-              className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 flex-shrink-0"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              <Edit2 className="h-3 w-3" /> <T>Edit Profile</T>
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/edit-profile"
+                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 flex-shrink-0"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                <Edit2 className="h-3 w-3" /> <T>Edit Profile</T>
+              </Link>
+              <Link
+                to={`/profile/${user?.id}`}
+                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 flex-shrink-0"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                <MessageSquare className="h-3 w-3" /> <T>My Wall</T>
+              </Link>
+              <Link
+                to="/friends"
+                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 flex-shrink-0"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                <Users className="h-3 w-3" /> <T>Friends</T>
+              </Link>
+            </div>
           </div>
 
           {/* Profile Completion */}
