@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, EyeOff, XCircle, Loader2, Upload, Image, GripVertical, Globe } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, XCircle, Loader2, Upload, Image, GripVertical, Globe, Type, Save } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
 interface Banner {
@@ -12,6 +12,24 @@ interface Banner {
   sort_order: number;
   is_active: boolean;
 }
+
+interface HeroContent {
+  label: string;
+  heading: string;
+  heading_accent: string;
+  subtitle: string;
+  cta_text: string;
+  cta_link: string;
+}
+
+const DEFAULT_HERO: HeroContent = {
+  label: "Photography Platform",
+  heading: "Every Frame",
+  heading_accent: "Tells",
+  subtitle: "A curated space for photographers who see the world differently. Compete globally. Learn from masters. Share your stories.",
+  cta_text: "Begin Your Journey",
+  cta_link: "/signup",
+};
 
 const MAX_BANNERS = 20;
 
@@ -24,12 +42,22 @@ const AdminBanners = ({ user }: { user: User | null }) => {
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({ title: "", category: "General", image_url: "" });
 
+  // Hero content state
+  const [heroContent, setHeroContent] = useState<HeroContent>(DEFAULT_HERO);
+  const [heroSaving, setHeroSaving] = useState(false);
+
   const activeBanners = banners.filter((b) => b.is_active);
   const inactiveBanners = banners.filter((b) => !b.is_active);
 
   const fetchBanners = async () => {
-    const { data } = await supabase.from("hero_banners").select("*").order("sort_order", { ascending: true });
-    setBanners(data || []);
+    const [bannersRes, heroRes] = await Promise.all([
+      supabase.from("hero_banners").select("*").order("sort_order", { ascending: true }),
+      supabase.from("site_settings").select("value").eq("key", "hero_content").maybeSingle(),
+    ]);
+    setBanners(bannersRes.data || []);
+    if (heroRes.data?.value) {
+      setHeroContent(heroRes.data.value as unknown as HeroContent);
+    }
     setLoading(false);
   };
 
@@ -93,8 +121,76 @@ const AdminBanners = ({ user }: { user: User | null }) => {
     );
   }
 
+  const handleHeroSave = async () => {
+    setHeroSaving(true);
+    const { error } = await supabase.from("site_settings").upsert({
+      key: "hero_content",
+      value: heroContent as any,
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id || null,
+    });
+    if (error) toast({ title: "Failed to save hero content", variant: "destructive" });
+    else toast({ title: "Hero content updated" });
+    setHeroSaving(false);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Hero Content Editor */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Type className="h-3.5 w-3.5 text-primary" />
+          <span className="text-[10px] tracking-[0.3em] uppercase text-primary font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+            Hero Text & CTA
+          </span>
+          <div className="flex-1 h-px bg-primary/20" />
+        </div>
+        <div className="border border-border p-4 rounded-sm space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground mb-1 block">Top Label</label>
+              <input value={heroContent.label} onChange={(e) => setHeroContent(h => ({ ...h, label: e.target.value }))}
+                className="w-full bg-transparent border border-border rounded-sm px-3 py-1.5 text-xs outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground mb-1 block">Heading (main)</label>
+              <input value={heroContent.heading} onChange={(e) => setHeroContent(h => ({ ...h, heading: e.target.value }))}
+                className="w-full bg-transparent border border-border rounded-sm px-3 py-1.5 text-xs outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground mb-1 block">Heading Accent (italic)</label>
+              <input value={heroContent.heading_accent} onChange={(e) => setHeroContent(h => ({ ...h, heading_accent: e.target.value }))}
+                className="w-full bg-transparent border border-border rounded-sm px-3 py-1.5 text-xs outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground mb-1 block">CTA Button Text</label>
+              <input value={heroContent.cta_text} onChange={(e) => setHeroContent(h => ({ ...h, cta_text: e.target.value }))}
+                className="w-full bg-transparent border border-border rounded-sm px-3 py-1.5 text-xs outline-none focus:border-primary" />
+            </div>
+            <div>
+              <label className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground mb-1 block">CTA Link</label>
+              <input value={heroContent.cta_link} onChange={(e) => setHeroContent(h => ({ ...h, cta_link: e.target.value }))}
+                className="w-full bg-transparent border border-border rounded-sm px-3 py-1.5 text-xs outline-none focus:border-primary" />
+            </div>
+          </div>
+          <div>
+            <label className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground mb-1 block">Subtitle</label>
+            <textarea value={heroContent.subtitle} onChange={(e) => setHeroContent(h => ({ ...h, subtitle: e.target.value }))} rows={2}
+              className="w-full bg-transparent border border-border rounded-sm px-3 py-1.5 text-xs outline-none focus:border-primary resize-none" />
+          </div>
+          <div className="flex justify-end">
+            <button onClick={handleHeroSave} disabled={heroSaving}
+              className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-sm disabled:opacity-50"
+              style={{ fontFamily: "var(--font-heading)" }}>
+              {heroSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              Save Hero Content
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Banner Images Section */}
+      <div className="space-y-6">
       {/* Header with stats */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -241,6 +337,7 @@ const AdminBanners = ({ user }: { user: User | null }) => {
           <p className="text-[9px] text-muted-foreground/60">Upload up to {MAX_BANNERS} banners and toggle which ones appear on the homepage</p>
         </div>
       )}
+    </div>
     </div>
   );
 };
