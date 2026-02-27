@@ -1148,6 +1148,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_badges: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          badge_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          badge_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          badge_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

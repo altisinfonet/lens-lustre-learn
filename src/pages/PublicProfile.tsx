@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { BADGES, type BadgeType } from "@/lib/badgeConfig";
 
 /* ── Mini Carousel on hover ── */
 const MiniCarousel = ({
@@ -147,15 +148,17 @@ const PublicProfile = () => {
   const [lightboxPhoto, setLightboxPhoto] = useState<{ src: string; title: string; desc?: string } | null>(null);
   const [isVerifiedPhotographer, setIsVerifiedPhotographer] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
+  const [userBadges, setUserBadges] = useState<string[]>([]);
 
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
-      const [profileRes, entriesRes, certsRes, rolesRes] = await Promise.all([
+      const [profileRes, entriesRes, certsRes, rolesRes, badgesRes] = await Promise.all([
         supabase.from("profiles").select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url").eq("id", userId).maybeSingle(),
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
         supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["registered_photographer", "student"] as any),
+        supabase.from("user_badges").select("badge_type").eq("user_id", userId),
       ]);
 
       if (!profileRes.data) {
@@ -170,6 +173,7 @@ const PublicProfile = () => {
       const userRoles = rolesRes.data?.map((r: any) => r.role) || [];
       setIsVerifiedPhotographer(userRoles.includes("registered_photographer"));
       setIsStudent(userRoles.includes("student"));
+      setUserBadges((badgesRes.data as any[])?.map((b: any) => b.badge_type) || []);
       setLoading(false);
     };
     load();
@@ -240,6 +244,26 @@ const PublicProfile = () => {
               >
                 {displayName}
               </h1>
+              {/* Badges Ribbons */}
+              {userBadges.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {userBadges.map((b) => {
+                    const cfg = BADGES[b as BadgeType];
+                    if (!cfg) return null;
+                    return (
+                      <span
+                        key={b}
+                        className={`inline-flex items-center gap-2 text-[9px] tracking-[0.25em] uppercase px-5 py-2 rounded-full shadow-lg ${cfg.ribbonClass}`}
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        <span className="text-sm">{cfg.icon}</span>
+                        {cfg.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2 mb-4">
                 {isVerifiedPhotographer && (
                   <span className="inline-flex items-center gap-2 text-[9px] tracking-[0.25em] uppercase px-4 py-1.5 bg-primary/15 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
