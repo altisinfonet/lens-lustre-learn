@@ -131,6 +131,25 @@ const Feed = () => {
 
   useEffect(() => { fetchFeed(); }, [fetchFeed]);
 
+  // Realtime: listen for new/deleted posts and refresh feed
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('feed-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'posts' },
+        () => {
+          fetchFeed();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchFeed]);
+
   const toggleLike = async (postId: string) => {
     if (!user) return;
     const post = posts.find((p) => p.id === postId);
