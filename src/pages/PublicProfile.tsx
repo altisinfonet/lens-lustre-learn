@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Camera, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap } from "lucide-react";
+import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 /* ── Mini Carousel on hover ── */
@@ -110,6 +110,8 @@ interface ProfileData {
   created_at: string;
   facebook_url: string | null;
   instagram_url: string | null;
+  twitter_url: string | null;
+  youtube_url: string | null;
   website_url: string | null;
 }
 
@@ -150,7 +152,7 @@ const PublicProfile = () => {
     if (!userId) return;
     const load = async () => {
       const [profileRes, entriesRes, certsRes, rolesRes] = await Promise.all([
-        supabase.from("profiles").select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, website_url").eq("id", userId).maybeSingle(),
+        supabase.from("profiles").select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url").eq("id", userId).maybeSingle(),
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
         supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["registered_photographer", "student"] as any),
@@ -292,6 +294,7 @@ const PublicProfile = () => {
                   >
                     <Facebook className="h-3.5 w-3.5" />
                     Facebook
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
                   </a>
                 )}
                 {profile.instagram_url && (
@@ -304,6 +307,33 @@ const PublicProfile = () => {
                   >
                     <Instagram className="h-3.5 w-3.5" />
                     Instagram
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  </a>
+                )}
+                {(profile as any).twitter_url && (
+                  <a
+                    href={(profile as any).twitter_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase px-4 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <Twitter className="h-3.5 w-3.5" />
+                    Twitter / X
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  </a>
+                )}
+                {(profile as any).youtube_url && (
+                  <a
+                    href={(profile as any).youtube_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs tracking-[0.1em] uppercase px-4 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <Youtube className="h-3.5 w-3.5" />
+                    YouTube
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
                   </a>
                 )}
                 {profile.website_url && !profile.portfolio_url && (
