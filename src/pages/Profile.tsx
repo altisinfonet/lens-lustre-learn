@@ -90,121 +90,125 @@ const Profile = () => {
           transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
         >
           {/* Avatar + Name header */}
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-8 mb-16">
-            <div className="relative">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={displayName} className="h-32 w-32 md:h-40 md:w-40 rounded-full object-cover border-2 border-border" />
-              ) : (
-                <div className="h-32 w-32 md:h-40 md:w-40 rounded-full bg-muted border-2 border-border flex items-center justify-center">
-                  <User className="h-12 w-12 text-muted-foreground/40" />
-                </div>
-              )}
-              <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                <Camera className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
-            </div>
-
-            <div className="text-center md:text-left flex-1 min-w-0">
-              <div className="flex items-center gap-4 mb-2 justify-center md:justify-start">
-                <div className="w-12 h-px bg-primary hidden md:block" />
-                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  <T>Profile</T>
-                </span>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-                {displayName}
-              </h1>
-              {/* Badge Ribbons */}
-              {userBadges.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3 justify-center md:justify-start">
-                  {userBadges.map((b) => {
-                    const cfg = BADGES[b as BadgeType];
-                    if (!cfg) return null;
-                    return (
-                      <span
-                        key={b}
-                        className={`inline-flex items-center gap-1.5 text-[9px] tracking-[0.2em] uppercase px-4 py-1.5 rounded-full shadow-lg ${cfg.ribbonClass}`}
-                        style={{ fontFamily: "var(--font-heading)" }}
-                      >
-                        <span className="text-xs">{cfg.icon}</span>
-                        {cfg.label}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Member Since & Email (private) */}
-              <div className="space-y-2 mb-5">
-                {memberSince && (
-                  <div className="flex items-center gap-2 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                    <span><T>Member since</T> {memberSince}</span>
+          <div className="flex flex-col items-center gap-8 mb-16">
+            {/* Avatar + Name row */}
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-8 w-full">
+              <div className="relative flex-shrink-0">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="h-32 w-32 md:h-40 md:w-40 rounded-full object-cover border-2 border-border" />
+                ) : (
+                  <div className="h-32 w-32 md:h-40 md:w-40 rounded-full bg-muted border-2 border-border flex items-center justify-center">
+                    <User className="h-12 w-12 text-muted-foreground/40" />
                   </div>
                 )}
-                {user?.email && (
-                  <div className="flex items-center gap-2 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                    <Mail className="h-3 w-3" />
-                    <span>{user.email}</span>
-                    <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 border border-border text-muted-foreground/50 rounded-sm">
-                      <Lock className="h-2.5 w-2.5" />
-                      <T>Private</T>
-                    </span>
-                  </div>
-                )}
+                <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                  <Camera className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
               </div>
 
-              {/* Public Profile URL */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/50 border border-border rounded-sm max-w-full overflow-hidden">
-                  <Share2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                  <span className="text-[10px] tracking-[0.1em] text-muted-foreground truncate" style={{ fontFamily: "var(--font-heading)" }}>
-                    {window.location.origin}/profile/{user?.id}
+              <div className="text-center md:text-left flex-1 min-w-0">
+                <div className="flex items-center gap-4 mb-2 justify-center md:justify-start">
+                  <div className="w-12 h-px bg-primary hidden md:block" />
+                  <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                    <T>Profile</T>
                   </span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/profile/${user?.id}`);
-                      setCopied(true);
-                      toast({ title: "Profile URL copied!" });
-                      setTimeout(() => setCopied(false), 2000);
-                    }}
-                    className="flex-shrink-0 p-1 hover:text-primary transition-colors duration-300"
-                    title="Copy profile URL"
-                  >
-                    {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
-                  </button>
                 </div>
-                <Link
-                  to={`/profile/${user?.id}`}
-                  className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase text-primary hover:underline transition-all duration-300"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  <T>View Public Profile</T>
-                </Link>
+                <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
+                  {displayName}
+                </h1>
+                {/* Badge Ribbons */}
+                {userBadges.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3 justify-center md:justify-start">
+                    {userBadges.map((b) => {
+                      const cfg = BADGES[b as BadgeType];
+                      if (!cfg) return null;
+                      return (
+                        <span
+                          key={b}
+                          className={`inline-flex items-center gap-1.5 text-[9px] tracking-[0.2em] uppercase px-4 py-1.5 rounded-full shadow-lg ${cfg.ribbonClass}`}
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
+                          <span className="text-xs">{cfg.icon}</span>
+                          {cfg.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Member Since & Email (private) */}
+                <div className="space-y-2">
+                  {memberSince && (
+                    <div className="flex items-center gap-2 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                      <span><T>Member since</T> {memberSince}</span>
+                    </div>
+                  )}
+                  {user?.email && (
+                    <div className="flex items-center gap-2 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                      <Mail className="h-3 w-3" />
+                      <span>{user.email}</span>
+                      <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 border border-border text-muted-foreground/50 rounded-sm">
+                        <Lock className="h-2.5 w-2.5" />
+                        <T>Private</T>
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            {/* Action buttons - separate row to prevent overlap */}
+            <div className="flex flex-wrap gap-3 justify-center md:justify-start w-full">
               <Link
                 to="/edit-profile"
-                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 flex-shrink-0"
+                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 <Edit2 className="h-3 w-3" /> <T>Edit Profile</T>
               </Link>
               <Link
                 to={`/profile/${user?.id}`}
-                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 flex-shrink-0"
+                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 <MessageSquare className="h-3 w-3" /> <T>My Wall</T>
               </Link>
               <Link
                 to="/friends"
-                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 flex-shrink-0"
+                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 <Users className="h-3 w-3" /> <T>Friends</T>
+              </Link>
+            </div>
+
+            {/* Public Profile URL */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center md:justify-start">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/50 border border-border rounded-sm max-w-full overflow-hidden">
+                <Share2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <span className="text-[10px] tracking-[0.1em] text-muted-foreground truncate" style={{ fontFamily: "var(--font-heading)" }}>
+                  {window.location.origin}/profile/{user?.id}
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/profile/${user?.id}`);
+                    setCopied(true);
+                    toast({ title: "Profile URL copied!" });
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="flex-shrink-0 p-1 hover:text-primary transition-colors duration-300"
+                  title="Copy profile URL"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+                </button>
+              </div>
+              <Link
+                to={`/profile/${user?.id}`}
+                className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase text-primary hover:underline transition-all duration-300"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                <ExternalLink className="h-3 w-3" />
+                <T>View Public Profile</T>
               </Link>
             </div>
           </div>
