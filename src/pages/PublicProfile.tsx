@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, Newspaper, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube } from "lucide-react";
 import FriendFollowActions from "@/components/FriendFollowActions";
+import WallPosts from "@/components/WallPosts";
+import { useAuth } from "@/hooks/useAuth";
 import { AnimatePresence, motion } from "framer-motion";
 import { BADGES, type BadgeType } from "@/lib/badgeConfig";
 
@@ -141,6 +143,7 @@ const fadeUp = (delay = 0) => ({
 
 const PublicProfile = () => {
   const { userId } = useParams<{ userId: string }>();
+  const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [entries, setEntries] = useState<CompEntry[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
@@ -676,6 +679,21 @@ const PublicProfile = () => {
             </p>
           </motion.section>
         )}
+
+        {/* Wall Posts */}
+        <motion.section {...fadeUp(0.5)} className="py-12 md:py-16 border-t border-border">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                Wall
+              </span>
+              <h2 className="text-2xl md:text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                Posts & <em className="italic text-primary">Updates</em>
+              </h2>
+            </div>
+          </div>
+          <WallPosts targetUserId={userId!} isOwnWall={currentUser?.id === userId} />
+        </motion.section>
 
         {/* Footer */}
         <div className="py-12 border-t border-border text-center">
