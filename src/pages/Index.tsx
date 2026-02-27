@@ -591,8 +591,8 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Slide counter */}
-        <div className="absolute right-6 md:right-12 bottom-24 z-10 flex flex-col items-end gap-3" aria-label="Slide navigation">
+        {/* Slide counter — hidden on small mobile to prevent overlap */}
+        <div className="absolute right-6 md:right-12 bottom-24 z-10 hidden sm:flex flex-col items-end gap-3" aria-label="Slide navigation">
           {heroSlides.map((slide, i) => (
             <button
               key={i}
@@ -652,7 +652,7 @@ const Index = () => {
                   <T>Competitions</T>
                 </span>
               </motion.div>
-              <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
                 <T>All</T> <em className="italic"><T>Competitions</T></em>
               </motion.h2>
             </div>
@@ -795,7 +795,7 @@ const Index = () => {
             <motion.h2
               variants={fadeUp}
               custom={1}
-              className="text-5xl md:text-7xl lg:text-8xl font-light tracking-tight"
+              className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-light tracking-tight"
               style={{ fontFamily: "var(--font-display)" }}
             >
               <T>Selected</T> <em className="italic text-primary"><T>Works</T></em>
@@ -962,8 +962,8 @@ const Index = () => {
                   className="w-full h-[500px] object-cover"
                   loading="lazy"
                 />
-                <div className="absolute -bottom-6 -right-6 w-48 h-48 border border-primary/20 transition-all duration-[2s]" />
-                <div className="absolute -top-4 -left-4 w-24 h-24 bg-primary/10" />
+                <div className="absolute -bottom-6 -right-6 w-48 h-48 border border-primary/20 transition-all duration-[2s] hidden md:block" />
+                <div className="absolute -top-4 -left-4 w-24 h-24 bg-primary/10 hidden md:block" />
               </figure>
             </motion.div>
             <motion.div
@@ -1040,7 +1040,7 @@ const Index = () => {
               </span>
               <div className="w-12 h-px bg-primary" />
             </motion.div>
-            <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+            <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
               <T>Three</T> <em className="italic"><T>Worlds</T></em>
             </motion.h2>
           </motion.header>
@@ -1134,7 +1134,7 @@ const Index = () => {
                   <T>Learn</T>
                 </span>
               </motion.div>
-              <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
                 <T>Featured</T> <em className="italic"><T>Courses</T></em>
               </motion.h2>
             </div>
@@ -1237,8 +1237,8 @@ const Index = () => {
                     <T>Hall of Fame</T>
                   </span>
                 </motion.div>
-                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                  <T>Competition</T> <em className="italic"><T>Winners</T></em>
+                <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                   <T>Competition</T> <em className="italic"><T>Winners</T></em>
                 </motion.h2>
               </div>
               <motion.div variants={fadeIn} custom={2}>
@@ -1336,8 +1336,8 @@ const Index = () => {
                     <T>Recognition</T>
                   </span>
                 </motion.div>
-                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                  <T>Certified</T> <em className="italic"><T>Excellence</T></em>
+                <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                   <T>Certified</T> <em className="italic"><T>Excellence</T></em>
                 </motion.h2>
               </div>
               <motion.div variants={fadeIn} custom={2}>
@@ -1550,8 +1550,8 @@ const Index = () => {
                     <T>From the Journal</T>
                   </span>
                 </motion.div>
-                <motion.h2 variants={fadeUp} custom={1} className="text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-                  <T>Stories &</T> <em className="italic"><T>Insights</T></em>
+                <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                   <T>Stories &</T> <em className="italic"><T>Insights</T></em>
                 </motion.h2>
               </div>
               <motion.div variants={fadeIn} custom={2}>
@@ -1731,7 +1731,7 @@ const Index = () => {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <motion.h2 variants={fadeUp} custom={0} className="text-5xl md:text-7xl lg:text-8xl font-light tracking-tight mb-8" style={{ fontFamily: "var(--font-display)" }}>
+            <motion.h2 variants={fadeUp} custom={0} className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-light tracking-tight mb-8" style={{ fontFamily: "var(--font-display)" }}>
               <T>Start</T> <em className="italic text-primary"><T>Creating</T></em>
             </motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-sm text-muted-foreground max-w-md mx-auto mb-12 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
