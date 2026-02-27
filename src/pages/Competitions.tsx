@@ -192,7 +192,7 @@ const Competitions = () => {
                           🏆 Grand Prize
                         </span>
                         <div className="flex-1 h-px bg-gradient-to-r from-primary/20 to-transparent" />
-                        <span className="text-sm font-light text-primary tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                        <span className="text-sm font-bold text-primary tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
                           {comp.prize_info}
                         </span>
                       </div>
