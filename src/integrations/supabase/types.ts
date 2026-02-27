@@ -291,6 +291,36 @@ export type Database = {
           },
         ]
       }
+      competition_payment_details: {
+        Row: {
+          bank_details: string | null
+          competition_id: string
+          created_at: string
+          id: string
+          paypal_email: string | null
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          bank_details?: string | null
+          competition_id: string
+          created_at?: string
+          id?: string
+          paypal_email?: string | null
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          bank_details?: string | null
+          competition_id?: string
+          created_at?: string
+          id?: string
+          paypal_email?: string | null
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: []
+      }
       competition_votes: {
         Row: {
           created_at: string
@@ -332,7 +362,6 @@ export type Database = {
           id: string
           max_entries_per_user: number | null
           max_photos_per_entry: number | null
-          payment_details: Json | null
           prize_info: string | null
           starts_at: string
           status: string
@@ -350,7 +379,6 @@ export type Database = {
           id?: string
           max_entries_per_user?: number | null
           max_photos_per_entry?: number | null
-          payment_details?: Json | null
           prize_info?: string | null
           starts_at: string
           status?: string
@@ -368,7 +396,6 @@ export type Database = {
           id?: string
           max_entries_per_user?: number | null
           max_photos_per_entry?: number | null
-          payment_details?: Json | null
           prize_info?: string | null
           starts_at?: string
           status?: string

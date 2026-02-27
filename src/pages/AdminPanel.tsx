@@ -313,8 +313,10 @@ const AdminPanel = () => {
   const openEdit = (comp: Competition) => {
     setEditingId(comp.id);
     // Need to fetch full data
-    supabase.from("competitions").select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at, payment_details").eq("id", comp.id).single().then(({ data }) => {
+    supabase.from("competitions").select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at").eq("id", comp.id).single().then(async ({ data }) => {
       if (data) {
+        // Fetch payment details from separate admin-only table
+        const { data: pd } = await supabase.from("competition_payment_details" as any).select("paypal_email, bank_details, upi_id").eq("competition_id", comp.id).maybeSingle();
         setForm({
           title: data.title || "",
           description: data.description || "",
@@ -327,9 +329,9 @@ const AdminPanel = () => {
           max_photos_per_entry: String(data.max_photos_per_entry || 5),
           starts_at: data.starts_at ? data.starts_at.slice(0, 16) : "",
           ends_at: data.ends_at ? data.ends_at.slice(0, 16) : "",
-          paypal_email: (data.payment_details as any)?.paypal_email || "",
-          bank_details: (data.payment_details as any)?.bank_details || "",
-          upi_id: (data.payment_details as any)?.upi_id || "",
+          paypal_email: (pd as any)?.paypal_email || "",
+          bank_details: (pd as any)?.bank_details || "",
+          upi_id: (pd as any)?.upi_id || "",
         });
         setShowForm(true);
       }
@@ -356,21 +358,29 @@ const AdminPanel = () => {
       starts_at: new Date(form.starts_at).toISOString(),
       ends_at: new Date(form.ends_at).toISOString(),
       updated_at: new Date().toISOString(),
-      payment_details: (form.paypal_email.trim() || form.bank_details.trim() || form.upi_id.trim())
-        ? {
-            paypal_email: form.paypal_email.trim() || null,
-            bank_details: form.bank_details.trim() || null,
-            upi_id: form.upi_id.trim() || null,
-          }
-        : null,
     };
 
     let error;
+    let compId = editingId;
     if (editingId) {
       ({ error } = await supabase.from("competitions").update(payload).eq("id", editingId));
     } else {
-      ({ error } = await supabase.from("competitions").insert({ ...payload, created_by: user.id }));
+      const res = await supabase.from("competitions").insert({ ...payload, created_by: user.id }).select("id").single();
+      error = res.error;
+      compId = res.data?.id || null;
     }
+
+    // Save payment details to separate admin-only table
+    if (!error && compId && (form.paypal_email.trim() || form.bank_details.trim() || form.upi_id.trim())) {
+      await supabase.from("competition_payment_details" as any).upsert({
+        competition_id: compId,
+        paypal_email: form.paypal_email.trim() || null,
+        bank_details: form.bank_details.trim() || null,
+        upi_id: form.upi_id.trim() || null,
+        updated_at: new Date().toISOString(),
+      } as any, { onConflict: "competition_id" });
+    }
+
     setSaving(false);
 
     if (error) {
