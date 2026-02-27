@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ThumbsUp, MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X, Download } from "lucide-react";
+import { MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X, Download } from "lucide-react";
 import { compressImageToFiles, getJpegDownloadUrl } from "@/lib/imageCompression";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +57,8 @@ const FacebookImage = ({ src, downloadUrl }: { src: string; downloadUrl: string 
   );
 };
 
+import ReactionPicker, { ReactionType, REACTION_EMOJI_MAP, getReactionColor } from "@/components/ReactionPicker";
+
 interface Post {
   id: string;
   user_id: string;
@@ -70,6 +72,8 @@ interface Post {
   like_count: number;
   comment_count: number;
   is_liked: boolean;
+  user_reaction: ReactionType | null;
+  top_reactions: string[];
 }
 
 interface PostComment {
@@ -142,33 +146,47 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
 
     const postIds = postsData.map((p) => p.id);
     const [reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
-      supabase.from("post_reactions").select("post_id").in("post_id", postIds),
+      supabase.from("post_reactions").select("post_id, reaction_type").in("post_id", postIds),
       user
-        ? supabase.from("post_reactions").select("post_id").in("post_id", postIds).eq("user_id", user.id)
+        ? supabase.from("post_reactions").select("post_id, reaction_type").in("post_id", postIds).eq("user_id", user.id)
         : Promise.resolve({ data: [] }),
       supabase.from("post_comments").select("post_id").in("post_id", postIds),
     ]);
 
     const likeCounts: Record<string, number> = {};
+    const reactionTypeCounts: Record<string, Record<string, number>> = {};
     (reactionsRes.data || []).forEach((r) => {
       likeCounts[r.post_id] = (likeCounts[r.post_id] || 0) + 1;
+      if (!reactionTypeCounts[r.post_id]) reactionTypeCounts[r.post_id] = {};
+      reactionTypeCounts[r.post_id][r.reaction_type] = (reactionTypeCounts[r.post_id][r.reaction_type] || 0) + 1;
     });
-    const userLikedSet = new Set((userReactionsRes.data || []).map((r) => r.post_id));
+    const userReactionMap = new Map<string, string>();
+    (userReactionsRes.data || []).forEach((r: any) => userReactionMap.set(r.post_id, r.reaction_type));
     const commentCounts: Record<string, number> = {};
     (commentsCountRes.data || []).forEach((c) => {
       commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1;
     });
 
     setPosts(
-      postsData.map((p) => ({
-        ...p,
-        privacy: p.privacy as Privacy,
-        author_name: profileMap.get(p.user_id)?.full_name || null,
-        author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
-        like_count: likeCounts[p.id] || 0,
-        comment_count: commentCounts[p.id] || 0,
-        is_liked: userLikedSet.has(p.id),
-      }))
+      postsData.map((p) => {
+        const userRx = userReactionMap.get(p.id) as ReactionType | undefined;
+        const typeCounts = reactionTypeCounts[p.id] || {};
+        const topReactions = Object.entries(typeCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([type]) => type);
+        return {
+          ...p,
+          privacy: p.privacy as Privacy,
+          author_name: profileMap.get(p.user_id)?.full_name || null,
+          author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
+          like_count: likeCounts[p.id] || 0,
+          comment_count: commentCounts[p.id] || 0,
+          is_liked: !!userRx,
+          user_reaction: userRx || null,
+          top_reactions: topReactions,
+        };
+      })
     );
     setLoading(false);
   }, [targetUserId, user]);
@@ -261,25 +279,37 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
     setActionLoading(null);
   };
 
-  const toggleLike = async (postId: string) => {
+  const handleReact = async (postId: string, reactionType: ReactionType) => {
     if (!user) return;
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
-    if (post.is_liked) {
+
+    // Remove existing reaction first if any
+    if (post.user_reaction) {
       await supabase.from("post_reactions").delete().eq("post_id", postId).eq("user_id", user.id);
-      setPosts((prev) =>
-        prev.map((p) => p.id === postId ? { ...p, is_liked: false, like_count: p.like_count - 1 } : p)
-      );
-    } else {
-      const { error } = await supabase.from("post_reactions").insert({
-        post_id: postId, user_id: user.id, reaction_type: "like",
-      });
-      if (!error) {
-        setPosts((prev) =>
-          prev.map((p) => p.id === postId ? { ...p, is_liked: true, like_count: p.like_count + 1 } : p)
-        );
-      }
     }
+
+    const { error } = await supabase.from("post_reactions").insert({
+      post_id: postId, user_id: user.id, reaction_type: reactionType,
+    });
+    if (!error) {
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p.id !== postId) return p;
+          const newCount = p.user_reaction ? p.like_count : p.like_count + 1;
+          const topReactions = p.top_reactions.includes(reactionType) ? p.top_reactions : [reactionType, ...p.top_reactions].slice(0, 3);
+          return { ...p, is_liked: true, user_reaction: reactionType, like_count: newCount, top_reactions: topReactions };
+        })
+      );
+    }
+  };
+
+  const handleUnreact = async (postId: string) => {
+    if (!user) return;
+    await supabase.from("post_reactions").delete().eq("post_id", postId).eq("user_id", user.id);
+    setPosts((prev) =>
+      prev.map((p) => p.id === postId ? { ...p, is_liked: false, user_reaction: null, like_count: Math.max(0, p.like_count - 1) } : p)
+    );
   };
 
   const loadComments = async (postId: string) => {
@@ -570,8 +600,12 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                 <div className="flex items-center justify-between px-3 py-2.5">
                   {post.like_count > 0 ? (
                     <div className="flex items-center gap-1.5">
-                      <div className="w-[18px] h-[18px] rounded-full bg-primary flex items-center justify-center">
-                        <ThumbsUp className="h-2.5 w-2.5 text-primary-foreground fill-current" />
+                      <div className="flex -space-x-1">
+                        {(post.top_reactions.length > 0 ? post.top_reactions : ["like"]).map((type, i) => (
+                          <span key={type} className="text-base leading-none" style={{ zIndex: 3 - i }}>
+                            {REACTION_EMOJI_MAP[type] || "👍"}
+                          </span>
+                        ))}
                       </div>
                       <span className="text-[15px] text-muted-foreground">{post.like_count}</span>
                     </div>
@@ -587,21 +621,15 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                 </div>
               )}
 
-              {/* ── Action Bar (Like / Comment) ── */}
+              {/* ── Action Bar (React / Comment) ── */}
               <div className="mx-3 border-t border-border">
                 <div className="flex">
-                  <button
-                    onClick={() => toggleLike(post.id)}
+                  <ReactionPicker
+                    currentReaction={post.user_reaction}
+                    onReact={(type) => handleReact(post.id, type)}
+                    onUnreact={() => handleUnreact(post.id)}
                     disabled={!user}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md my-1 text-sm font-semibold transition-colors ${
-                      post.is_liked
-                        ? "text-primary hover:bg-primary/5"
-                        : "text-muted-foreground hover:bg-muted/50"
-                    } disabled:opacity-40`}
-                  >
-                    <ThumbsUp className={`h-5 w-5 ${post.is_liked ? "fill-current" : ""}`} />
-                    <T>Like</T>
-                  </button>
+                  />
                   <button
                     onClick={() => toggleComments(post.id)}
                     className="flex-1 flex items-center justify-center gap-2 py-2 rounded-md my-1 text-sm font-semibold text-muted-foreground hover:bg-muted/50 transition-colors"
