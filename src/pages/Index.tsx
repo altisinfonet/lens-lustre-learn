@@ -1,4 +1,4 @@
-import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand } from "lucide-react";
+import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand, Calendar } from "lucide-react";
 import T from "@/components/T";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
@@ -709,16 +709,47 @@ const Index = () => {
                           transition={{ delay: i * 0.05, duration: 0.5, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
                         >
                           <Link to={`/competitions/${comp.id}`} className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
-                            <div className="relative h-48 overflow-hidden bg-muted">
+                            {/* Image with hover-reveal overlay */}
+                            <div className="relative aspect-square overflow-hidden bg-muted">
                               {comp.cover_image_url ? (
-                                <img src={comp.cover_image_url} alt={comp.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]" loading="lazy" />
+                                <img src={comp.cover_image_url} alt={comp.title} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" loading="lazy" />
                               ) : (
                                 <div className="w-full h-full bg-gradient-to-br from-primary/10 to-muted flex items-center justify-center">
                                   <Trophy className="h-10 w-10 text-primary/30" />
                                 </div>
                               )}
+
+                              {/* Dark overlay on hover */}
+                              <div className="absolute inset-0 bg-background/0 group-hover:bg-background/70 transition-all duration-500" />
+
+                              {/* Content that slides up on hover */}
+                              <div className="absolute inset-0 flex flex-col justify-end p-5 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out">
+                                <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                                  {comp.category}
+                                </span>
+                                <h3 className="text-lg md:text-xl font-light tracking-tight text-foreground mb-2" style={{ fontFamily: "var(--font-display)" }}>
+                                  {comp.title}
+                                </h3>
+                                <div className="w-10 h-px bg-primary mb-3" />
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Calendar className="h-3.5 w-3.5 text-primary" />
+                                  <span className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                                    {comp.status === "closed"
+                                      ? `Ended ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                                      : comp.status === "open" || comp.status === "active"
+                                      ? `Ends ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                                      : `Starts ${new Date(comp.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                                  </span>
+                                </div>
+                                <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary mt-1" style={{ fontFamily: "var(--font-heading)" }}>
+                                  <T>View Details</T>
+                                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-500" />
+                                </span>
+                              </div>
+
+                              {/* Status badge - always visible */}
                               <div className="absolute top-3 left-3">
-                                <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 inline-flex items-center gap-1 border bg-background/80 backdrop-blur-sm ${
+                                <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 inline-flex items-center gap-1 border bg-background/80 backdrop-blur-sm rounded-full ${
                                   comp.status === "open" || comp.status === "active" ? "border-primary text-primary"
                                   : comp.status === "judging" ? "border-yellow-500 text-yellow-500"
                                   : comp.status === "closed" ? "border-foreground/20 text-foreground/40"
@@ -727,32 +758,25 @@ const Index = () => {
                                   {comp.status}
                                 </span>
                               </div>
-                              {comp.prize_info && (
-                                <div className="absolute bottom-0 right-0 p-3 text-right max-w-[70%]">
-                                  <span className="text-[8px] tracking-[0.3em] uppercase text-white/70 block mb-0.5" style={{ fontFamily: "var(--font-heading)", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
-                                    Grand Prize
+
+                              {/* Bottom gradient - hidden on hover */}
+                              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/40 to-transparent group-hover:opacity-0 transition-opacity duration-500" />
+                            </div>
+
+                            {/* Footer: Grand Prize only */}
+                            {comp.prize_info && (
+                              <div className="px-5 py-3 border-t border-border bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[8px] tracking-[0.3em] uppercase text-primary/70" style={{ fontFamily: "var(--font-heading)" }}>
+                                    🏆 Grand Prize
                                   </span>
-                                  <span className="text-lg md:text-xl font-light text-white leading-tight line-clamp-1" style={{ fontFamily: "var(--font-display)", textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}>
+                                  <div className="flex-1 h-px bg-gradient-to-r from-primary/20 to-transparent" />
+                                  <span className="text-sm font-light text-primary tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
                                     {comp.prize_info}
                                   </span>
                                 </div>
-                              )}
-                            </div>
-                            <div className="p-5">
-                              <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                                {comp.category}
-                              </span>
-                              <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
-                                {comp.title}
-                              </h3>
-                              <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                                {comp.status === "closed"
-                                  ? `Ended ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                                  : comp.status === "open" || comp.status === "active"
-                                  ? `Ends ${new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
-                                  : `Starts ${new Date(comp.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-                              </span>
-                            </div>
+                              </div>
+                            )}
                           </Link>
                         </motion.div>
                       ))}
