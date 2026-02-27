@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown } from "lucide-react";
+import { Heart, MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -62,6 +62,9 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
   const [newContent, setNewContent] = useState("");
   const [newPrivacy, setNewPrivacy] = useState<Privacy>("public");
   const [posting, setPosting] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [commentsByPost, setCommentsByPost] = useState<Record<string, PostComment[]>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -129,18 +132,61 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
     fetchPosts();
   }, [fetchPosts]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Only image files are allowed", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image must be under 5MB", variant: "destructive" });
+      return;
+    }
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const createPost = async () => {
-    if (!user || !newContent.trim()) return;
+    if (!user || !selectedImage) {
+      toast({ title: "Please attach a photo to your post", variant: "destructive" });
+      return;
+    }
     setPosting(true);
+
+    // Upload image
+    const ext = selectedImage.name.split(".").pop() || "jpg";
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("post-images")
+      .upload(path, selectedImage, { cacheControl: "3600", upsert: false });
+
+    if (uploadError) {
+      toast({ title: "Image upload failed", description: uploadError.message, variant: "destructive" });
+      setPosting(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(path);
+
     const { error } = await supabase.from("posts").insert({
       user_id: user.id,
       content: newContent.trim(),
       privacy: newPrivacy,
+      image_url: urlData.publicUrl,
     });
     if (error) {
       toast({ title: "Failed to post", description: error.message, variant: "destructive" });
     } else {
       setNewContent("");
+      clearImage();
       await fetchPosts();
     }
     setPosting(false);
@@ -290,14 +336,44 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-px bg-primary" />
             <span className="text-[9px] tracking-[0.3em] uppercase text-primary" style={headingFont}>
-              <T>What's on your mind?</T>
+              <T>Share a photo</T>
             </span>
           </div>
+
+          {/* Image upload area */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          {imagePreview ? (
+            <div className="relative group">
+              <img src={imagePreview} alt="Preview" className="w-full max-h-64 object-cover rounded-sm border border-border" />
+              <button
+                onClick={clearImage}
+                className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm border border-border rounded-full text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full border-2 border-dashed border-border hover:border-primary/50 transition-all duration-300 py-8 flex flex-col items-center gap-2 text-muted-foreground hover:text-primary"
+            >
+              <ImagePlus className="h-8 w-8" />
+              <span className="text-[10px] tracking-[0.15em] uppercase" style={headingFont}><T>Click to add a photo</T></span>
+              <span className="text-[9px] text-muted-foreground" style={bodyFont}><T>Required · Max 5MB</T></span>
+            </button>
+          )}
+
           <Textarea
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
-            placeholder="Share something with your network..."
-            className="bg-transparent resize-none min-h-[80px]"
+            placeholder="Add a caption (optional)..."
+            className="bg-transparent resize-none min-h-[60px]"
             maxLength={2000}
           />
           <div className="flex items-center justify-between">
@@ -327,7 +403,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
 
             <button
               onClick={createPost}
-              disabled={posting || !newContent.trim()}
+              disabled={posting || !selectedImage}
               className="inline-flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase px-5 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 disabled:opacity-50"
               style={headingFont}
             >
