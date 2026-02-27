@@ -450,7 +450,47 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
         </div>
       )}
 
-      {/* Users Grid */}
+      {/* Badge Management Panel */}
+      {badgeTarget && (
+        <div className="border border-amber-500/30 bg-amber-500/5 p-4 rounded-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] tracking-[0.2em] uppercase text-amber-600 font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+              <Award className="h-3.5 w-3.5 inline mr-1.5" />
+              Manage Badges: {badgeTarget.full_name || badgeTarget.email}
+            </span>
+            <button onClick={() => setBadgeTarget(null)} className="text-muted-foreground hover:text-foreground"><XCircle className="h-4 w-4" /></button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {BADGE_TYPES.map((badge) => {
+              const cfg = BADGES[badge];
+              const has = badgeTarget.badges.includes(badge);
+              return (
+                <button
+                  key={badge}
+                  onClick={() => {
+                    if (has) {
+                      removeBadge(badgeTarget.id, badge);
+                    } else {
+                      assignBadge(badgeTarget.id, badge);
+                    }
+                  }}
+                  disabled={actionLoading === badgeTarget.id}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-wider uppercase border rounded-sm transition-all ${
+                    has
+                      ? `${cfg.badgeClass} font-medium`
+                      : "border-dashed border-muted-foreground/30 text-muted-foreground hover:border-amber-500 hover:text-amber-600"
+                  }`}
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  {has ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                  {cfg.icon} {cfg.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-muted-foreground">Click a badge to assign it. Click an assigned badge to remove it.</p>
+        </div>
+      )}
       {users.length > 0 && (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
