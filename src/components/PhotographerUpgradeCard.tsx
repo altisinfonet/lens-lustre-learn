@@ -4,10 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { z } from "zod";
-
-const urlSchema = z.string().url("Must be a valid URL").max(500);
-
 interface Props {
   onUpgraded: () => void;
 }
@@ -30,21 +26,6 @@ const PhotographerUpgradeCard = ({ onUpgraded }: Props) => {
     if (!fb && !ig && !web) {
       toast({ title: "Please provide at least one social media link", variant: "destructive" });
       return;
-    }
-
-    // Validate URLs
-    const links = [
-      { val: fb, label: "Facebook" },
-      { val: ig, label: "Instagram" },
-      { val: web, label: "Website" },
-    ].filter((l) => l.val);
-
-    for (const link of links) {
-      const result = urlSchema.safeParse(link.val);
-      if (!result.success) {
-        toast({ title: `Invalid ${link.label} URL`, description: result.error.errors[0]?.message, variant: "destructive" });
-        return;
-      }
     }
 
     setSubmitting(true);
