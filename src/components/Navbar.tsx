@@ -1,19 +1,15 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import T from "@/components/T";
-import { LogOut, Shield, Menu, X, Sun, Moon, Scale, Wallet } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { useUserRoles } from "@/hooks/useUserRoles";
 import GlobalSearch from "@/components/GlobalSearch";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useTheme } from "@/hooks/useTheme";
-import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import UserMenu from "@/components/UserMenu";
 
 interface NavbarProps {
-  /** When true the nav is rendered absolute/transparent over a hero section */
   transparent?: boolean;
 }
 
@@ -25,22 +21,10 @@ const navLinks = [
 ];
 
 const Navbar = ({ transparent = false }: NavbarProps) => {
-  const { user, signOut } = useAuth();
-  const { isAdmin } = useIsAdmin();
-  const { hasRole } = useUserRoles();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const { theme, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    if (!user || isAdmin) return;
-    supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle()
-      .then(({ data }) => setWalletBalance(data?.balance ?? 0));
-  }, [user, isAdmin]);
-
-  const isHome = location.pathname === "/";
 
   return (
     <>
@@ -69,7 +53,6 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
             className="hidden lg:flex items-center gap-5 xl:gap-8 text-xs tracking-[0.15em] uppercase flex-shrink-0"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            
             {navLinks.map((l) => (
               <Link
                 key={l.to}
@@ -81,31 +64,6 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                 <T>{l.label}</T>
               </Link>
             ))}
-            {user && <Link to="/profile" className="hover:opacity-60 transition-opacity duration-500"><T>Profile</T></Link>}
-            {user && <Link to="/dashboard" className="hover:opacity-60 transition-opacity duration-500"><T>Dashboard</T></Link>}
-            {user && !isAdmin && (
-              <Link to="/wallet" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
-                <Wallet className="h-3 w-3" />
-                <T>Wallet</T>
-                {walletBalance !== null && (
-                  <span className="text-[8px] tracking-[0.1em] px-1.5 py-0.5 bg-primary/15 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
-                    ${Number(walletBalance).toFixed(2)}
-                  </span>
-                )}
-              </Link>
-            )}
-            {isAdmin && (
-              <Link to="/admin" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
-                <Shield className="h-3 w-3" />
-                <T>Admin</T>
-              </Link>
-            )}
-            {(hasRole("judge") || isAdmin) && (
-              <Link to="/judge" className="hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5">
-                <Scale className="h-3 w-3" />
-                <T>Judge</T>
-              </Link>
-            )}
           </div>
 
           {/* Desktop right */}
@@ -120,31 +78,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
             </button>
             <GlobalSearch />
             {user ? (
-              <>
-                <span
-                  className="text-xs tracking-[0.15em] uppercase text-muted-foreground flex items-center gap-2"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  {user.user_metadata?.full_name || user.email?.split("@")[0]}
-                  {hasRole("admin") ? (
-                    <Badge variant="default" className="text-[9px] px-1.5 py-0">Admin</Badge>
-                  ) : hasRole("registered_photographer") ? (
-                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Photographer</Badge>
-                  ) : hasRole("student") ? (
-                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Student</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-[9px] px-1.5 py-0">Guest</Badge>
-                  )}
-                </span>
-                <button
-                  onClick={async () => { await signOut(); navigate("/"); }}
-                  className="text-xs tracking-[0.15em] uppercase px-4 py-2 border border-foreground/30 hover:bg-foreground hover:text-background transition-all duration-700 inline-flex items-center gap-2"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  <LogOut className="h-3 w-3" />
-                  <T>Logout</T>
-                </button>
-              </>
+              <UserMenu variant="desktop" />
             ) : (
               <>
                 <Link
@@ -219,67 +153,18 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                     {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </button>
                 </div>
-                
+
                 {navLinks.map((l) => (
                   <Link key={l.to} to={l.to} onClick={() => setMobileMenuOpen(false)}
                     className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors">
                     <T>{l.label}</T>
                   </Link>
                 ))}
-                {user && (
-                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors"><T>Profile</T></Link>
-                )}
-                {user && (
-                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors"><T>Dashboard</T></Link>
-                )}
-                {user && !isAdmin && (
-                  <Link to="/wallet" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
-                    <Wallet className="h-3.5 w-3.5" />
-                    <T>Wallet</T>
-                    {walletBalance !== null && (
-                      <span className="text-[9px] px-1.5 py-0.5 bg-primary/15 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
-                        ${Number(walletBalance).toFixed(2)}
-                      </span>
-                    )}
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
-                    <Shield className="h-3.5 w-3.5" />
-                    <T>Admin</T>
-                  </Link>
-                )}
-                {(hasRole("judge") || isAdmin) && (
-                  <Link to="/judge" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors flex items-center gap-2">
-                    <Scale className="h-3.5 w-3.5" />
-                    <T>Judge</T>
-                  </Link>
-                )}
 
                 <div className="h-px bg-border my-2" />
 
                 {user ? (
-                  <>
-                    <span className="text-xs tracking-[0.15em] uppercase text-muted-foreground flex items-center gap-2 flex-wrap">
-                      {user.user_metadata?.full_name || user.email?.split("@")[0]}
-                      {hasRole("admin") ? (
-                        <Badge variant="default" className="text-[9px] px-1.5 py-0">Admin</Badge>
-                      ) : hasRole("registered_photographer") ? (
-                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Photographer</Badge>
-                      ) : hasRole("student") ? (
-                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Student</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0">Guest</Badge>
-                      )}
-                    </span>
-                    <button
-                      onClick={async () => { await signOut(); setMobileMenuOpen(false); navigate("/"); }}
-                      className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors inline-flex items-center gap-2"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      <T>Logout</T>
-                    </button>
-                  </>
+                  <UserMenu variant="mobile" onNavigate={() => setMobileMenuOpen(false)} />
                 ) : (
                   <>
                     <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-sm tracking-[0.15em] uppercase hover:text-primary transition-colors"><T>Login</T></Link>
