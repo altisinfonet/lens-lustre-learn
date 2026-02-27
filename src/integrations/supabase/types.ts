@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      bank_details: {
+        Row: {
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_ifsc: string | null
+          bank_name: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       certificate_testimonials: {
         Row: {
           certificate_id: string
@@ -1098,10 +1131,6 @@ export type Database = {
           address_line1: string | null
           address_line2: string | null
           avatar_url: string | null
-          bank_account_name: string | null
-          bank_account_number: string | null
-          bank_ifsc: string | null
-          bank_name: string | null
           bio: string | null
           city: string | null
           country: string | null
@@ -1130,10 +1159,6 @@ export type Database = {
           address_line1?: string | null
           address_line2?: string | null
           avatar_url?: string | null
-          bank_account_name?: string | null
-          bank_account_number?: string | null
-          bank_ifsc?: string | null
-          bank_name?: string | null
           bio?: string | null
           city?: string | null
           country?: string | null
@@ -1162,10 +1187,6 @@ export type Database = {
           address_line1?: string | null
           address_line2?: string | null
           avatar_url?: string | null
-          bank_account_name?: string | null
-          bank_account_number?: string | null
-          bank_ifsc?: string | null
-          bank_name?: string | null
           bio?: string | null
           city?: string | null
           country?: string | null
