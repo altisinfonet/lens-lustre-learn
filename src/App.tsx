@@ -38,6 +38,7 @@ const JudgePanel = lazy(() => import("./pages/JudgePanel"));
 const Wallet = lazy(() => import("./pages/Wallet"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const FeaturedArtistPage = lazy(() => import("./pages/FeaturedArtistPage"));
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const App = () => (
                 <Route path="/verify" element={<VerifyCertificate />} />
                 <Route path="/winners" element={<Winners />} />
                 <Route path="/wallet" element={<Wallet />} />
+                <Route path="/featured-artist/:slug" element={<FeaturedArtistPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Route>
