@@ -65,6 +65,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [commentsByPost, setCommentsByPost] = useState<Record<string, PostComment[]>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -132,9 +133,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
     fetchPosts();
   }, [fetchPosts]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast({ title: "Only image files are allowed", variant: "destructive" });
       return;
@@ -145,6 +144,23 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
     }
     setSelectedImage(file);
     setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
   };
 
   const clearImage = () => {
@@ -361,10 +377,17 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full border-2 border-dashed border-border hover:border-primary/50 transition-all duration-300 py-8 flex flex-col items-center gap-2 text-muted-foreground hover:text-primary"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={() => setIsDragOver(false)}
+              className={`w-full border-2 border-dashed transition-all duration-300 py-8 flex flex-col items-center gap-2 ${
+                isDragOver
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border hover:border-primary/50 text-muted-foreground hover:text-primary"
+              }`}
             >
               <ImagePlus className="h-8 w-8" />
-              <span className="text-[10px] tracking-[0.15em] uppercase" style={headingFont}><T>Click to add a photo</T></span>
+              <span className="text-[10px] tracking-[0.15em] uppercase" style={headingFont}><T>{isDragOver ? "Drop image here" : "Click or drag a photo"}</T></span>
               <span className="text-[9px] text-muted-foreground" style={bodyFont}><T>Required · Max 5MB</T></span>
             </button>
           )}
