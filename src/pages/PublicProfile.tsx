@@ -226,19 +226,19 @@ const PublicProfile = () => {
     <main className="min-h-screen bg-background text-foreground">
       {/* ═══ Cover / Header ═══ */}
       <section className="relative bg-muted/30">
-        <div className="container mx-auto px-4 md:px-8 max-w-5xl pt-8 pb-0">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-8 pb-0">
           <motion.div {...fadeUp()} className="flex flex-col sm:flex-row items-center sm:items-end gap-5 pb-6">
             {/* Avatar */}
-            <div className="relative flex-shrink-0 -mb-12 sm:-mb-16 z-10">
+            <div className="relative flex-shrink-0 sm:-mb-16 z-10">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt={displayName}
-                  className="h-28 w-28 sm:h-36 sm:w-36 rounded-full object-cover border-4 border-background shadow-xl"
+                  className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover border-4 border-background shadow-xl"
                 />
               ) : (
-                <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-full bg-muted border-4 border-background flex items-center justify-center shadow-xl">
-                  <Camera className="h-10 w-10 text-muted-foreground/30" />
+                <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full bg-muted border-4 border-background flex items-center justify-center shadow-xl">
+                  <Camera className="h-8 w-8 text-muted-foreground/30" />
                 </div>
               )}
             </div>
@@ -246,7 +246,7 @@ const PublicProfile = () => {
             {/* Name & quick info */}
             <div className="text-center sm:text-left flex-1 pb-2 sm:pb-4">
               <h1
-                className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight"
+                className="text-xl sm:text-2xl md:text-3xl font-light tracking-tight"
                 style={displayFont}
               >
                 {displayName}
@@ -291,8 +291,8 @@ const PublicProfile = () => {
 
       {/* ═══ Tabs Navigation ═══ */}
       <div className="border-b border-border bg-background sticky top-0 z-20">
-        <div className="container mx-auto px-4 md:px-8 max-w-5xl">
-          <div className="flex items-center gap-0 pt-4 sm:pt-0 sm:pl-40">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+          <div className="flex items-center gap-0 sm:pl-36">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -322,10 +322,10 @@ const PublicProfile = () => {
       </div>
 
       {/* ═══ Main Content: Two-Column Layout ═══ */}
-      <div className="container mx-auto px-4 md:px-8 max-w-5xl py-6">
+      <div className="container mx-auto px-4 md:px-8 max-w-7xl py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* ── Left Sidebar ── */}
-          <aside className="w-full lg:w-72 flex-shrink-0 space-y-4">
+          <aside className="w-full lg:w-80 flex-shrink-0 space-y-4">
             {/* Intro Card */}
             <div className="border border-border p-5 space-y-4">
               <h3 className="text-[11px] tracking-[0.2em] uppercase text-foreground" style={headingFont}>
@@ -691,7 +691,7 @@ const PublicProfile = () => {
       </AnimatePresence>
 
       {/* Footer */}
-      <div className="container mx-auto px-4 md:px-8 max-w-5xl py-8 text-center">
+      <div className="container mx-auto px-4 md:px-8 max-w-7xl py-8 text-center">
         <Link to="/" className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500" style={headingFont}>
           ← Back to 50mm Retina
         </Link>

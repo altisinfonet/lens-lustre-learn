@@ -81,7 +81,7 @@ const Profile = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-6 md:px-12 py-12 md:py-20 max-w-3xl">
+      <div className="container mx-auto px-6 md:px-12 py-10 md:py-16 max-w-5xl">
         <Breadcrumbs items={[{ label: "Dashboard", to: "/dashboard" }, { label: "Profile" }]} className="mb-12" />
 
         <motion.div
@@ -113,7 +113,7 @@ const Profile = () => {
                     <T>Profile</T>
                   </span>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
+                <h1 className="text-2xl md:text-3xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
                   {displayName}
                 </h1>
                 {/* Badge Ribbons */}
