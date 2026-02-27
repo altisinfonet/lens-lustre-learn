@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
@@ -12,6 +12,7 @@ import AdminUsers from "@/components/admin/AdminUsers";
 import AdminPhotoOfDay from "@/components/admin/AdminPhotoOfDay";
 import AdminExcellence from "@/components/admin/AdminExcellence";
 import AdminFeaturedArtist from "@/components/admin/AdminFeaturedArtist";
+import AdminSettings from "@/components/admin/AdminSettings";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,7 +78,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -491,6 +492,9 @@ const AdminPanel = () => {
     { label: "Finance", items: [
       ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift],
     ] as const },
+    { label: "Settings", items: [
+      ["settings", "Integrations", Settings],
+    ] as const },
   ];
 
   return (
@@ -571,6 +575,9 @@ const AdminPanel = () => {
 
         {/* Featured Artist Tab */}
         {tab === "featured_artist" && <AdminFeaturedArtist user={user} />}
+
+        {/* Settings Tab */}
+        {tab === "settings" && <AdminSettings user={user} />}
 
         {/* Users Tab */}
         {tab === "users" && <AdminUsers user={user} />}
