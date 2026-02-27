@@ -129,13 +129,13 @@ const Competitions = () => {
                   to={`/competitions/${comp.id}`}
                   className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden"
                 >
-                  {/* Cover */}
-                  <div className="relative h-48 overflow-hidden bg-muted">
+                  {/* Image with hover-reveal overlay */}
+                  <div className="relative aspect-square overflow-hidden bg-muted">
                     {comp.cover_image_url ? (
                       <img
                         src={comp.cover_image_url}
                         alt={comp.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]"
+                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                         loading="lazy"
                       />
                     ) : (
@@ -143,47 +143,61 @@ const Competitions = () => {
                         <Trophy className="h-8 w-8 text-muted-foreground/20" />
                       </div>
                     )}
-                    <div className="absolute top-3 right-3">
-                      <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 border bg-background/80 backdrop-blur-sm ${statusColors[comp.status] || ""}`} style={{ fontFamily: "var(--font-heading)" }}>
-                        <T>{comp.status.charAt(0).toUpperCase() + comp.status.slice(1)}</T>
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Info */}
-                  <div className="p-5">
-                    <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                      {comp.category}
-                    </span>
-                    <h3 className="text-lg font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500" style={{ fontFamily: "var(--font-display)" }}>
-                      {comp.title}
-                    </h3>
-                    {comp.description && (
-                      <p className="text-[11px] text-muted-foreground line-clamp-2 mb-4" style={{ fontFamily: "var(--font-body)" }}>
-                        {comp.description}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3 w-3" />
-                        <span style={{ fontFamily: "var(--font-body)" }}>
+                    {/* Dark overlay on hover */}
+                    <div className="absolute inset-0 bg-background/0 group-hover:bg-background/70 transition-all duration-500" />
+
+                    {/* Content that slides up on hover */}
+                    <div className="absolute inset-0 flex flex-col justify-end p-5 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out">
+                      <span className="text-[9px] tracking-[0.2em] uppercase text-primary block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                        {comp.category}
+                      </span>
+                      <h3 className="text-xl font-light tracking-tight text-foreground mb-2" style={{ fontFamily: "var(--font-display)" }}>
+                        {comp.title}
+                      </h3>
+                      <div className="w-10 h-px bg-primary mb-3" />
+                      {comp.description && (
+                        <p className="text-xs text-muted-foreground/80 leading-relaxed line-clamp-2 mb-3" style={{ fontFamily: "var(--font-body)" }}>
+                          {comp.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                           {new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        {comp.entry_fee > 0 && (
-                          <span style={{ fontFamily: "var(--font-heading)" }} className="tracking-[0.1em]">
-                            ${comp.entry_fee} <T>entry</T>
-                          </span>
-                        )}
-                        {comp.prize_info && (
-                          <span className="text-primary" style={{ fontFamily: "var(--font-heading)" }} title={comp.prize_info}>
-                            🏆 <T>Prize</T>
-                          </span>
-                        )}
+                      <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary mt-1" style={{ fontFamily: "var(--font-heading)" }}>
+                        <T>View Details</T>
+                        <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-500" />
+                      </span>
+                    </div>
+
+                    {/* Status badge - always visible */}
+                    <div className="absolute top-3 left-3">
+                      <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 border bg-background/80 backdrop-blur-sm rounded-full ${statusColors[comp.status] || ""}`} style={{ fontFamily: "var(--font-heading)" }}>
+                        <T>{comp.status.charAt(0).toUpperCase() + comp.status.slice(1)}</T>
+                      </span>
+                    </div>
+
+                    {/* Bottom gradient - hidden on hover */}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/40 to-transparent group-hover:opacity-0 transition-opacity duration-500" />
+                  </div>
+
+                  {/* Footer: Grand Prize only */}
+                  {comp.prize_info && (
+                    <div className="px-5 py-3 border-t border-border bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[8px] tracking-[0.3em] uppercase text-primary/70" style={{ fontFamily: "var(--font-heading)" }}>
+                          🏆 Grand Prize
+                        </span>
+                        <div className="flex-1 h-px bg-gradient-to-r from-primary/20 to-transparent" />
+                        <span className="text-sm font-light text-primary tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                          {comp.prize_info}
+                        </span>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </Link>
               </motion.div>
             ))}
