@@ -219,12 +219,21 @@ const EditProfile = () => {
         setPostalCode((data as any).postal_code || "");
         setPhone((data as any).phone || "");
         setWhatsapp((data as any).whatsapp || "");
-        setBankAccountName((data as any).bank_account_name || "");
-        setBankAccountNumber((data as any).bank_account_number || "");
-        setBankName((data as any).bank_name || "");
-        setBankIfsc((data as any).bank_ifsc || "");
+        // Bank details loaded separately below
         setNationalIdUrl((data as any).national_id_url || null);
         setPreferredLanguage((data as any).preferred_language || "English");
+      }
+      // Fetch bank details from separate table
+      const { data: bankData } = await supabase
+        .from("bank_details" as any)
+        .select("bank_account_name, bank_account_number, bank_name, bank_ifsc")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (bankData) {
+        setBankAccountName((bankData as any).bank_account_name || "");
+        setBankAccountNumber((bankData as any).bank_account_number || "");
+        setBankName((bankData as any).bank_name || "");
+        setBankIfsc((bankData as any).bank_ifsc || "");
       }
       setLoading(false);
     };
@@ -310,7 +319,7 @@ const EditProfile = () => {
     bank_account_name: bankAccountName,
     bank_account_number: bankAccountNumber,
     bank_name: bankName,
-    bank_ifsc: bankIfsc,
+    bank_ifsc: bankIfsc,  // from bank_details table
     national_id_url: nationalIdUrl,
   };
 
@@ -359,15 +368,23 @@ const EditProfile = () => {
         postal_code: postalCode.trim() || null,
         phone: phone.trim() || null,
         whatsapp: whatsapp.trim() || null,
-        bank_account_name: bankAccountName.trim() || null,
-        bank_account_number: bankAccountNumber.trim() || null,
-        bank_name: bankName.trim() || null,
-        bank_ifsc: bankIfsc.trim() || null,
         national_id_url: nationalIdUrl || null,
         preferred_language: preferredLanguage,
         updated_at: new Date().toISOString(),
       } as any)
       .eq("id", user.id);
+    // Save bank details to separate table
+    if (!error) {
+      const bankPayload = {
+        user_id: user.id,
+        bank_account_name: bankAccountName.trim() || null,
+        bank_account_number: bankAccountNumber.trim() || null,
+        bank_name: bankName.trim() || null,
+        bank_ifsc: bankIfsc.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+      await supabase.from("bank_details" as any).upsert(bankPayload as any, { onConflict: "user_id" });
+    }
     setSaving(false);
     if (error) {
       toast({ title: "Failed to save", description: error.message, variant: "destructive" });
