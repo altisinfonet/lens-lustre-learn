@@ -22,6 +22,7 @@ import {
   Bell,
   Users,
   MessageSquare,
+  Compass,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -97,6 +98,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
     { icon: User, label: "Profile", to: "/profile", show: true },
     { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard", show: true },
     { icon: Users, label: "Friends & Network", to: "/friends", show: true },
+    { icon: Compass, label: "Discover Photographers", to: "/discover", show: true },
     { icon: MessageSquare, label: "My Wall", to: `/profile/${user.id}`, show: true },
     {
       icon: Wallet,

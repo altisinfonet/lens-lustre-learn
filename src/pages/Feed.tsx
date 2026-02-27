@@ -341,7 +341,7 @@ const Feed = () => {
             <Rss className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground mb-2" style={bodyFont}><T>Your feed is empty</T></p>
             <p className="text-xs text-muted-foreground" style={bodyFont}><T>Follow people or add friends to see their posts here.</T></p>
-            <Link to="/competitions" className="inline-block mt-4 text-[10px] tracking-[0.15em] uppercase text-primary hover:underline" style={headingFont}>
+            <Link to="/discover" className="inline-block mt-4 text-[10px] tracking-[0.15em] uppercase text-primary hover:underline" style={headingFont}>
               <T>Discover photographers</T>
             </Link>
           </div>
