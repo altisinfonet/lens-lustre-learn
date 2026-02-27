@@ -38,6 +38,7 @@ const JudgePanel = lazy(() => import("./pages/JudgePanel"));
 const Wallet = lazy(() => import("./pages/Wallet"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const Friends = lazy(() => import("./pages/Friends"));
+const Feed = lazy(() => import("./pages/Feed"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const FeaturedArtistPage = lazy(() => import("./pages/FeaturedArtistPage"));
 
@@ -76,6 +77,7 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:userId" element={<PublicProfile />} />
                 <Route path="/friends" element={<Friends />} />
+                <Route path="/feed" element={<Feed />} />
                 <Route path="/competitions" element={<Competitions />} />
                 <Route path="/competitions/:id" element={<CompetitionDetail />} />
                 <Route path="/competitions/:id/submit" element={<CompetitionSubmit />} />
