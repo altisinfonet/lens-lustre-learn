@@ -468,10 +468,10 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
               <div className="flex items-center gap-3 p-4 pb-0">
                 <Link to={`/profile/${post.user_id}`} className="shrink-0">
                   {post.author_avatar ? (
-                    <img src={post.author_avatar} alt="" className="w-9 h-9 rounded-full object-cover" />
+                    <img src={post.author_avatar} alt="" className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-full object-cover" />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-xs text-primary" style={displayFont}>
+                    <div className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-[10px] text-primary" style={displayFont}>
                         {(post.author_name || "?")[0]?.toUpperCase()}
                       </span>
                     </div>
