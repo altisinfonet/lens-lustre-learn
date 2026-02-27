@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Edit2, ExternalLink, Globe, KeyRound, Mail, MapPin, Phone, User } from "lucide-react";
+import { Camera, Copy, Check, Edit2, ExternalLink, Globe, KeyRound, Lock, Mail, MapPin, Phone, Share2, User } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
@@ -27,6 +27,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [sendingReset, setSendingReset] = useState(false);
   const [userBadges, setUserBadges] = useState<string[]>([]);
+  const [copied, setCopied] = useState(false);
 
   const handlePasswordReset = async () => {
     if (!user?.email) return;
@@ -103,7 +104,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="text-center md:text-left flex-1">
+            <div className="text-center md:text-left flex-1 min-w-0">
               <div className="flex items-center gap-4 mb-2 justify-center md:justify-start">
                 <div className="w-12 h-px bg-primary hidden md:block" />
                 <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
@@ -132,14 +133,54 @@ const Profile = () => {
                   })}
                 </div>
               )}
-              <div className="flex items-center gap-4 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                {memberSince && <span><T>Member since</T> {memberSince}</span>}
-                {user?.email && (
-                  <>
-                    <span className="text-border">•</span>
-                    <span>{user.email}</span>
-                  </>
+
+              {/* Member Since & Email (private) */}
+              <div className="space-y-2 mb-5">
+                {memberSince && (
+                  <div className="flex items-center gap-2 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                    <span><T>Member since</T> {memberSince}</span>
+                  </div>
                 )}
+                {user?.email && (
+                  <div className="flex items-center gap-2 justify-center md:justify-start text-[10px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                    <Mail className="h-3 w-3" />
+                    <span>{user.email}</span>
+                    <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 border border-border text-muted-foreground/50 rounded-sm">
+                      <Lock className="h-2.5 w-2.5" />
+                      <T>Private</T>
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Public Profile URL */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/50 border border-border rounded-sm max-w-full overflow-hidden">
+                  <Share2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  <span className="text-[10px] tracking-[0.1em] text-muted-foreground truncate" style={{ fontFamily: "var(--font-heading)" }}>
+                    {window.location.origin}/profile/{user?.id}
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/profile/${user?.id}`);
+                      setCopied(true);
+                      toast({ title: "Profile URL copied!" });
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="flex-shrink-0 p-1 hover:text-primary transition-colors duration-300"
+                    title="Copy profile URL"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+                  </button>
+                </div>
+                <Link
+                  to={`/profile/${user?.id}`}
+                  className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase text-primary hover:underline transition-all duration-300"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  <T>View Public Profile</T>
+                </Link>
               </div>
             </div>
 
