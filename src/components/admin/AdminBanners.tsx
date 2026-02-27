@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Eye, EyeOff, XCircle, Loader2, Upload, Image, GripVertical, Globe, Type, Save } from "lucide-react";
+import { compressImageToFiles } from "@/lib/imageCompression";
 import type { User } from "@supabase/supabase-js";
 
 interface Banner {
@@ -66,17 +67,22 @@ const AdminBanners = ({ user }: { user: User | null }) => {
   const resetForm = () => { setForm({ title: "", category: "General", image_url: "" }); setEditingId(null); setShowForm(false); };
 
   const handleImageUpload = async (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 10MB per banner image", variant: "destructive" });
-      return;
-    }
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const filePath = `banners/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("portfolio-images").upload(filePath, file);
-    if (error) { toast({ title: "Upload failed", variant: "destructive" }); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("portfolio-images").getPublicUrl(filePath);
-    setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
+    try {
+      const baseName = `banner-${Date.now()}`;
+      const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
+      const webpPath = `banners/${baseName}.webp`;
+      const jpegPath = `banners/${baseName}.jpg`;
+      const [webpRes] = await Promise.all([
+        supabase.storage.from("portfolio-images").upload(webpPath, webpFile),
+        supabase.storage.from("portfolio-images").upload(jpegPath, jpegFile),
+      ]);
+      if (webpRes.error) { toast({ title: "Upload failed", variant: "destructive" }); setUploading(false); return; }
+      const { data: urlData } = supabase.storage.from("portfolio-images").getPublicUrl(webpPath);
+      setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
+    } catch {
+      toast({ title: "Compression failed", variant: "destructive" });
+    }
     setUploading(false);
   };
 

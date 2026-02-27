@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ThumbsUp, MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X, SmilePlus } from "lucide-react";
+import { ThumbsUp, MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X } from "lucide-react";
+import { compressImageToFiles } from "@/lib/imageCompression";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
@@ -142,10 +143,6 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       toast({ title: "Only image files are allowed", variant: "destructive" });
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "Image must be under 5MB", variant: "destructive" });
-      return;
-    }
     setSelectedImage(file);
     setImagePreview(URL.createObjectURL(file));
   };
@@ -180,29 +177,36 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       return;
     }
     setPosting(true);
-    const ext = selectedImage.name.split(".").pop() || "jpg";
-    const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from("post-images")
-      .upload(path, selectedImage, { cacheControl: "3600", upsert: false });
-    if (uploadError) {
-      toast({ title: "Image upload failed", description: uploadError.message, variant: "destructive" });
-      setPosting(false);
-      return;
-    }
-    const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(path);
-    const { error } = await supabase.from("posts").insert({
-      user_id: user.id,
-      content: newContent.trim(),
-      privacy: newPrivacy,
-      image_url: urlData.publicUrl,
-    });
-    if (error) {
-      toast({ title: "Failed to post", description: error.message, variant: "destructive" });
-    } else {
-      setNewContent("");
-      clearImage();
-      await fetchPosts();
+    try {
+      const baseName = `${Date.now()}`;
+      const { webpFile, jpegFile } = await compressImageToFiles(selectedImage, baseName);
+      const webpPath = `${user.id}/${baseName}.webp`;
+      const jpegPath = `${user.id}/${baseName}.jpg`;
+      const [webpUpload, jpegUpload] = await Promise.all([
+        supabase.storage.from("post-images").upload(webpPath, webpFile, { cacheControl: "3600", upsert: false }),
+        supabase.storage.from("post-images").upload(jpegPath, jpegFile, { cacheControl: "3600", upsert: false }),
+      ]);
+      if (webpUpload.error) {
+        toast({ title: "Image upload failed", description: webpUpload.error.message, variant: "destructive" });
+        setPosting(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(webpPath);
+      const { error } = await supabase.from("posts").insert({
+        user_id: user.id,
+        content: newContent.trim(),
+        privacy: newPrivacy,
+        image_url: urlData.publicUrl,
+      });
+      if (error) {
+        toast({ title: "Failed to post", description: error.message, variant: "destructive" });
+      } else {
+        setNewContent("");
+        clearImage();
+        await fetchPosts();
+      }
+    } catch (err: any) {
+      toast({ title: "Compression failed", description: err.message, variant: "destructive" });
     }
     setPosting(false);
   };

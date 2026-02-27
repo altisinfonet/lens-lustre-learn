@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { useWallet } from "@/hooks/useWallet";
 import { toast } from "@/hooks/use-toast";
+import { compressImageToFiles } from "@/lib/imageCompression";
 
 const CompetitionSubmit = () => {
   const { id } = useParams<{ id: string }>();
@@ -73,22 +74,26 @@ const CompetitionSubmit = () => {
 
     for (const file of filesToUpload) {
       if (!file.type.startsWith("image/")) continue;
-      if (file.size > 10 * 1024 * 1024) {
-        toast({ title: `${file.name} exceeds 10MB limit`, variant: "destructive" });
-        continue;
+
+      try {
+        const baseName = crypto.randomUUID();
+        const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
+        const webpPath = `${user.id}/${id}/${baseName}.webp`;
+        const jpegPath = `${user.id}/${id}/${baseName}.jpg`;
+
+        const [webpRes, _jpegRes] = await Promise.all([
+          supabase.storage.from("competition-photos").upload(webpPath, webpFile),
+          supabase.storage.from("competition-photos").upload(jpegPath, jpegFile),
+        ]);
+        if (webpRes.error) {
+          toast({ title: `Upload failed: ${file.name}`, description: webpRes.error.message, variant: "destructive" });
+          continue;
+        }
+        const { data: urlData } = supabase.storage.from("competition-photos").getPublicUrl(webpPath);
+        setPhotos((prev) => [...prev, { url: urlData.publicUrl, path: webpPath }]);
+      } catch (err: any) {
+        toast({ title: `Compression failed: ${file.name}`, variant: "destructive" });
       }
-
-      const ext = file.name.split(".").pop();
-      const path = `${user.id}/${id}/${crypto.randomUUID()}.${ext}`;
-
-      const { error } = await supabase.storage.from("competition-photos").upload(path, file);
-      if (error) {
-        toast({ title: `Upload failed: ${file.name}`, description: error.message, variant: "destructive" });
-        continue;
-      }
-
-      const { data: urlData } = supabase.storage.from("competition-photos").getPublicUrl(path);
-      setPhotos((prev) => [...prev, { url: urlData.publicUrl, path }]);
     }
 
     setUploading(false);

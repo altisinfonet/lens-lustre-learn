@@ -8,6 +8,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { compressImageToFiles } from "@/lib/imageCompression";
 import { toast } from "@/hooks/use-toast";
 
 
@@ -94,16 +95,25 @@ const CourseEditor = () => {
   const generateSlug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) + "-" + Date.now().toString(36);
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const ext = file.name.split(".").pop();
-    const path = `covers/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from("course-images").upload(path, file);
-    if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return null; }
-    return supabase.storage.from("course-images").getPublicUrl(path).data.publicUrl;
+    try {
+      const baseName = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
+      const webpPath = `covers/${baseName}.webp`;
+      const jpegPath = `covers/${baseName}.jpg`;
+      const [webpRes] = await Promise.all([
+        supabase.storage.from("course-images").upload(webpPath, webpFile),
+        supabase.storage.from("course-images").upload(jpegPath, jpegFile),
+      ]);
+      if (webpRes.error) { toast({ title: "Upload failed", description: webpRes.error.message, variant: "destructive" }); return null; }
+      return supabase.storage.from("course-images").getPublicUrl(webpPath).data.publicUrl;
+    } catch (err: any) {
+      toast({ title: "Compression failed", variant: "destructive" }); return null;
+    }
   };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || file.size > 10 * 1024 * 1024) { toast({ title: "Max 10MB", variant: "destructive" }); return; }
+    if (!file || !file.type.startsWith("image/")) { toast({ title: "Only images allowed", variant: "destructive" }); return; }
     setUploading(true);
     const url = await uploadImage(file);
     if (url) setCoverUrl(url);
