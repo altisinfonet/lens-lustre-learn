@@ -1,8 +1,18 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield } from "lucide-react";
+import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield, Plus, X } from "lucide-react";
 import type { User as AuthUser } from "@supabase/supabase-js";
+
+const ALL_ROLES = ["user", "admin", "judge", "content_editor", "registered_photographer", "student"] as const;
+const ROLE_LABELS: Record<string, string> = {
+  user: "User",
+  admin: "Admin",
+  judge: "Jury",
+  content_editor: "Contributor",
+  registered_photographer: "Photographer",
+  student: "Student",
+};
 
 interface UserRow {
   id: string;
@@ -32,6 +42,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
   const [editTarget, setEditTarget] = useState<UserRow | null>(null);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
+  const [roleTarget, setRoleTarget] = useState<UserRow | null>(null);
 
   const fetchUsers = async (query = "", by = searchBy) => {
     setLoading(true);
@@ -131,10 +142,38 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
     setActionLoading(null);
   };
 
+  const assignRole = async (userId: string, role: string) => {
+    setActionLoading(userId);
+    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: role as any });
+    if (error) {
+      if (error.code === "23505") toast({ title: "Role already assigned" });
+      else toast({ title: "Assign failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `${ROLE_LABELS[role] || role} role assigned` });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, roles: [...u.roles, role] } : u));
+    }
+    setActionLoading(null);
+  };
+
+  const removeRole = async (userId: string, role: string) => {
+    if (role === "user") { toast({ title: "Cannot remove base user role" }); return; }
+    if (!confirm(`Remove "${ROLE_LABELS[role]}" role?`)) return;
+    setActionLoading(userId);
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role as any);
+    if (error) toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+    else {
+      toast({ title: `${ROLE_LABELS[role] || role} role removed` });
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, roles: u.roles.filter((r) => r !== role) } : u));
+    }
+    setActionLoading(null);
+  };
+
   const roleColor = (r: string) => {
     if (r === "admin") return "bg-destructive/10 text-destructive border-destructive/30";
-    if (r === "judge") return "bg-yellow-500/10 text-yellow-600 border-yellow-500/30";
-    if (r === "content_editor") return "bg-blue-500/10 text-blue-600 border-blue-500/30";
+    if (r === "judge") return "bg-accent/50 text-accent-foreground border-accent";
+    if (r === "content_editor") return "bg-primary/10 text-primary border-primary/30";
+    if (r === "registered_photographer") return "bg-secondary text-secondary-foreground border-secondary";
+    if (r === "student") return "bg-muted text-muted-foreground border-border";
     return "bg-muted text-muted-foreground border-border";
   };
 
@@ -237,6 +276,49 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
         </div>
       )}
 
+      {/* Role Management Panel */}
+      {roleTarget && (
+        <div className="border border-primary/30 bg-primary/5 p-4 rounded-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] tracking-[0.2em] uppercase text-primary font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+              <Shield className="h-3.5 w-3.5 inline mr-1.5" />
+              Manage Roles: {roleTarget.full_name || roleTarget.email}
+            </span>
+            <button onClick={() => setRoleTarget(null)} className="text-muted-foreground hover:text-foreground"><XCircle className="h-4 w-4" /></button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {ALL_ROLES.map((role) => {
+              const has = roleTarget.roles.includes(role);
+              return (
+                <button
+                  key={role}
+                  onClick={() => {
+                    if (has) {
+                      removeRole(roleTarget.id, role);
+                      setRoleTarget({ ...roleTarget, roles: roleTarget.roles.filter((r) => r !== role) });
+                    } else {
+                      assignRole(roleTarget.id, role);
+                      setRoleTarget({ ...roleTarget, roles: [...roleTarget.roles, role] });
+                    }
+                  }}
+                  disabled={actionLoading === roleTarget.id || (role === "user" && has)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] tracking-wider uppercase border rounded-sm transition-all ${
+                    has
+                      ? `${roleColor(role)} font-medium`
+                      : "border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary hover:text-primary"
+                  }`}
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  {has ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                  {ROLE_LABELS[role]}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-muted-foreground">Click a role to assign it. Click an assigned role to remove it.</p>
+        </div>
+      )}
+
       {/* Users Grid */}
       {users.length > 0 && (
         <div className="space-y-1">
@@ -279,16 +361,20 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
                 </div>
 
                 {/* Roles */}
-                <div className="flex gap-1 shrink-0">
+                <div className="flex gap-1 shrink-0 flex-wrap max-w-[200px] justify-end">
                   {u.roles.map((r) => (
                     <span key={r} className={`text-[8px] px-1.5 py-0.5 border rounded-sm uppercase tracking-wider ${roleColor(r)}`}>
-                      {r.replace(/_/g, " ")}
+                      {ROLE_LABELS[r] || r.replace(/_/g, " ")}
                     </span>
                   ))}
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => setRoleTarget(u)}
+                    className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Manage Roles" disabled={actionLoading === u.id}>
+                    <Shield className="h-3.5 w-3.5" />
+                  </button>
                   <button onClick={() => { setEditTarget(u); setEditName(u.full_name || ""); setEditBio(u.bio || ""); }}
                     className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit" disabled={actionLoading === u.id}>
                     <Pencil className="h-3.5 w-3.5" />
@@ -300,7 +386,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
                     </button>
                   ) : (
                     <button onClick={() => setSuspendTarget(u)}
-                      className="p-1.5 hover:text-yellow-500 transition-colors rounded-sm hover:bg-yellow-500/10" title="Suspend" disabled={actionLoading === u.id}>
+                      className="p-1.5 hover:text-destructive/70 transition-colors rounded-sm hover:bg-destructive/10" title="Suspend" disabled={actionLoading === u.id}>
                       <Ban className="h-3.5 w-3.5" />
                     </button>
                   )}
