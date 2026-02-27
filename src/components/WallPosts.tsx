@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X, Download } from "lucide-react";
+import { MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X, Download, Share2, Link2, Copy } from "lucide-react";
 import { compressImageToFiles, getJpegDownloadUrl } from "@/lib/imageCompression";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -312,6 +312,29 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
     );
   };
 
+  const shareToWall = async (post: Post) => {
+    if (!user) return;
+    const sharedContent = `Shared from ${post.author_name || "a user"}:\n\n"${post.content}"`;
+    const { error } = await supabase.from("posts").insert({
+      user_id: user.id,
+      content: sharedContent,
+      image_url: post.image_url,
+      privacy: "public",
+    });
+    if (error) {
+      toast({ title: "Failed to share", variant: "destructive" });
+    } else {
+      toast({ title: "Shared to your wall!" });
+      fetchPosts();
+    }
+  };
+
+  const copyPostLink = (postId: string) => {
+    const url = `${window.location.origin}/profile/${posts.find(p => p.id === postId)?.user_id || ""}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: "Link copied to clipboard!" });
+  };
+
   const loadComments = async (postId: string) => {
     const { data } = await supabase
       .from("post_comments")
@@ -621,7 +644,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                 </div>
               )}
 
-              {/* ── Action Bar (React / Comment) ── */}
+              {/* ── Action Bar (React / Comment / Share) ── */}
               <div className="mx-3 border-t border-border">
                 <div className="flex">
                   <ReactionPicker
@@ -637,6 +660,24 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                     <MessageCircle className="h-5 w-5" />
                     <T>Comment</T>
                   </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-md my-1 text-sm font-semibold text-muted-foreground hover:bg-muted/50 transition-colors">
+                        <Share2 className="h-5 w-5" />
+                        <T>Share</T>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <DropdownMenuItem onClick={() => shareToWall(post)} className="py-2.5 cursor-pointer">
+                        <Share2 className="h-4 w-4 mr-2.5" />
+                        <T>Share to your wall</T>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => copyPostLink(post.id)} className="py-2.5 cursor-pointer">
+                        <Copy className="h-4 w-4 mr-2.5" />
+                        <T>Copy link</T>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
 

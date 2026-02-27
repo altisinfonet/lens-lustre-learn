@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MessageCircle, Send, Globe, Users, Rss, RefreshCw, Loader2, ArrowUp, Download } from "lucide-react";
+import { MessageCircle, Send, Globe, Users, Rss, RefreshCw, Loader2, ArrowUp, Download, Share2, Copy } from "lucide-react";
 import { getJpegDownloadUrl } from "@/lib/imageCompression";
 import ReactionPicker, { ReactionType, REACTION_EMOJI_MAP } from "@/components/ReactionPicker";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { profilesPublic } from "@/lib/profilesPublic";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -304,6 +305,28 @@ const Feed = () => {
     setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, is_liked: false, user_reaction: null, like_count: Math.max(0, p.like_count - 1) } : p));
   };
 
+  const shareToWall = async (post: FeedPost) => {
+    if (!user) return;
+    const sharedContent = `Shared from ${post.author_name || "a user"}:\n\n"${post.content}"`;
+    const { error } = await supabase.from("posts").insert({
+      user_id: user.id,
+      content: sharedContent,
+      image_url: post.image_url,
+      privacy: "public",
+    });
+    if (error) {
+      toast({ title: "Failed to share", variant: "destructive" });
+    } else {
+      toast({ title: "Shared to your wall!" });
+    }
+  };
+
+  const copyPostLink = (post: FeedPost) => {
+    const url = `${window.location.origin}/profile/${post.user_id}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: "Link copied to clipboard!" });
+  };
+
   const loadComments = async (postId: string) => {
     const { data } = await supabase
       .from("post_comments")
@@ -479,6 +502,23 @@ const Feed = () => {
                     <button onClick={() => toggleComments(post.id)} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
                       <MessageCircle className="h-3.5 w-3.5" /><T>Comment</T>
                     </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
+                          <Share2 className="h-3.5 w-3.5" /><T>Share</T>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52">
+                        <DropdownMenuItem onClick={() => shareToWall(post)} className="py-2.5 cursor-pointer">
+                          <Share2 className="h-4 w-4 mr-2.5" />
+                          <T>Share to your wall</T>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => copyPostLink(post)} className="py-2.5 cursor-pointer">
+                          <Copy className="h-4 w-4 mr-2.5" />
+                          <T>Copy link</T>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   {/* Comments section */}
