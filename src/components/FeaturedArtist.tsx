@@ -55,13 +55,16 @@ export default function FeaturedArtist() {
         </span>
       </div>
 
-      {/* Image */}
-      <div className="relative overflow-hidden rounded-sm aspect-[4/3] bg-muted mb-4">
+      {/* Image with hover overlay */}
+      <Link
+        to={`/featured-artist/${artist.slug}`}
+        className="group relative overflow-hidden rounded-sm aspect-square bg-muted mb-4 block"
+      >
         {artist.cover_image_url ? (
           <motion.img
             src={artist.cover_image_url}
             alt={artist.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             initial={{ scale: 1.06 }}
             whileInView={{ scale: 1 }}
             viewport={{ once: true }}
@@ -72,50 +75,71 @@ export default function FeaturedArtist() {
             <Palette className="h-16 w-16 text-primary/20" />
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/30 to-transparent" />
-      </div>
 
-      {/* Title */}
-      <h3
-        className="text-2xl md:text-3xl font-light tracking-tight mb-2"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        {artist.title}
-      </h3>
+        {/* Dark overlay on hover */}
+        <div className="absolute inset-0 bg-background/0 group-hover:bg-background/70 transition-all duration-500" />
 
-      <div className="w-12 h-px bg-border mb-4" />
-
-      {artist.artist_name && (
-        <div className="flex items-center gap-3 mb-3">
-          {artist.artist_avatar_url && (
-            <img
-              src={artist.artist_avatar_url}
-              alt={artist.artist_name}
-              className="h-7 w-7 rounded-full object-cover border border-border"
-            />
+        {/* Content that slides up on hover */}
+        <div className="absolute inset-0 flex flex-col justify-end p-5 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out">
+          <h3
+            className="text-xl md:text-2xl font-light tracking-tight text-foreground mb-2"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {artist.title}
+          </h3>
+          <div className="w-10 h-px bg-primary mb-3" />
+          {artist.artist_name && (
+            <div className="flex items-center gap-3 mb-2">
+              {artist.artist_avatar_url && (
+                <img
+                  src={artist.artist_avatar_url}
+                  alt={artist.artist_name}
+                  className="h-6 w-6 rounded-full object-cover border border-border"
+                />
+              )}
+              <span className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                {artist.artist_name}
+              </span>
+            </div>
           )}
-          <span className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-            {artist.artist_name}
+          {artist.excerpt && (
+            <p
+              className="text-xs text-muted-foreground/80 leading-relaxed line-clamp-2 mb-3"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {artist.excerpt}
+            </p>
+          )}
+          <span
+            className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-primary"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            <T>Read More</T>
+            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-500" />
           </span>
         </div>
-      )}
 
-      {artist.excerpt && (
-        <p
-          className="text-sm text-muted-foreground/80 leading-relaxed line-clamp-3 mb-6"
-          style={{ fontFamily: "var(--font-body)" }}
-        >
-          {artist.excerpt}
-        </p>
-      )}
+        {/* Artist badge - always visible */}
+        {artist.artist_name && (
+          <div className="absolute top-3 left-3 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-full px-3 py-1.5">
+            {artist.artist_avatar_url && (
+              <img
+                src={artist.artist_avatar_url}
+                alt={artist.artist_name}
+                className="h-4 w-4 rounded-full object-cover"
+              />
+            )}
+            <span
+              className="text-[9px] tracking-[0.15em] uppercase text-foreground"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {artist.artist_name}
+            </span>
+          </div>
+        )}
 
-      <Link
-        to={`/featured-artist/${artist.slug}`}
-        className="group inline-flex items-center gap-3 text-[10px] tracking-[0.2em] uppercase text-primary hover:text-primary/80 transition-colors duration-500 mt-auto"
-        style={{ fontFamily: "var(--font-heading)" }}
-      >
-        <T>Read More</T>
-        <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-500" />
+        {/* Bottom gradient - hidden on hover */}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/40 to-transparent group-hover:opacity-0 transition-opacity duration-500" />
       </Link>
     </motion.div>
   );
