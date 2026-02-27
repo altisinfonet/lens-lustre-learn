@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2, AlertCircle } from "lucide-react";
+import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2, AlertCircle, ExternalLink } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import T from "@/components/T";
@@ -48,8 +48,12 @@ const EditProfile = () => {
   const [bio, setBio] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [interests, setInterests] = useState<string[]>([]);
-  const [facebookUrl, setFacebookUrl] = useState("");
-  const [instagramUrl, setInstagramUrl] = useState("");
+  const [facebookUrl, setFacebookUrl] = useState(""); // stores username only
+  const [instagramUrl, setInstagramUrl] = useState(""); // stores username only
+  const [fbVerified, setFbVerified] = useState<boolean | null>(null);
+  const [igVerified, setIgVerified] = useState<boolean | null>(null);
+  const [verifyingFb, setVerifyingFb] = useState(false);
+  const [verifyingIg, setVerifyingIg] = useState(false);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -136,8 +140,10 @@ const EditProfile = () => {
         setBio(data.bio || "");
         setPortfolioUrl(data.portfolio_url || "");
         setInterests(data.photography_interests || []);
-        setFacebookUrl((data as any).facebook_url || "");
-        setInstagramUrl((data as any).instagram_url || "");
+        const rawFb = (data as any).facebook_url || "";
+        setFacebookUrl(rawFb.replace(/^https?:\/\/(www\.)?facebook\.com\//i, "").replace(/\/$/, ""));
+        const rawIg = (data as any).instagram_url || "";
+        setInstagramUrl(rawIg.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/$/, ""));
         setWebsiteUrl((data as any).website_url || "");
         setAvatarUrl(data.avatar_url || null);
         setAddressLine1((data as any).address_line1 || "");
@@ -226,8 +232,8 @@ const EditProfile = () => {
     bio,
     portfolio_url: portfolioUrl,
     photography_interests: interests,
-    facebook_url: facebookUrl,
-    instagram_url: instagramUrl,
+    facebook_url: facebookUrl.trim() ? `https://www.facebook.com/${facebookUrl.trim()}` : null,
+    instagram_url: instagramUrl.trim() ? `https://www.instagram.com/${instagramUrl.trim()}` : null,
     website_url: websiteUrl,
     address_line1: addressLine1,
     city,
@@ -271,8 +277,8 @@ const EditProfile = () => {
         bio: bio.trim() || null,
         portfolio_url: portfolioUrl.trim() || null,
         photography_interests: interests.length > 0 ? interests : null,
-        facebook_url: facebookUrl.trim() || null,
-        instagram_url: instagramUrl.trim() || null,
+        facebook_url: facebookUrl.trim() ? `https://www.facebook.com/${facebookUrl.trim()}` : null,
+        instagram_url: instagramUrl.trim() ? `https://www.instagram.com/${instagramUrl.trim()}` : null,
         website_url: websiteUrl.trim() || null,
         address_line1: addressLine1.trim() || null,
         address_line2: addressLine2.trim() || null,
@@ -555,20 +561,115 @@ const EditProfile = () => {
           <div className="border border-border p-8">
             <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}><T>Social Media Links</T></span>
             <div className="space-y-5">
+              {/* Facebook */}
               <div>
                 <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  <Facebook className="h-3 w-3" /> <T>Facebook URL</T>
+                  <Facebook className="h-3 w-3" /> <T>Facebook</T>
                 </label>
-                <input type="url" value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} maxLength={500}
-                  className={inputCls} placeholder="https://facebook.com/yourprofile" style={{ fontFamily: "var(--font-body)" }} />
+                <div className="flex items-center gap-0">
+                  <span className="text-xs text-muted-foreground bg-muted border-b border-l border-t border-border px-3 py-3 whitespace-nowrap select-none" style={{ fontFamily: "var(--font-body)" }}>
+                    https://www.facebook.com/
+                  </span>
+                  <input
+                    type="text"
+                    value={facebookUrl}
+                    onChange={(e) => { setFacebookUrl(e.target.value.replace(/\s/g, "")); setFbVerified(null); }}
+                    maxLength={100}
+                    className={`${inputCls} flex-1`}
+                    placeholder="yourprofile"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  />
+                  {facebookUrl.trim() && (
+                    <button
+                      type="button"
+                      disabled={verifyingFb}
+                      onClick={async () => {
+                        setVerifyingFb(true);
+                        try {
+                          const url = `https://www.facebook.com/${facebookUrl.trim()}`;
+                          const res = await fetch(url, { method: "HEAD", mode: "no-cors" });
+                          // no-cors always returns opaque, so we open in new tab for manual check
+                          window.open(url, "_blank", "noopener,noreferrer");
+                          setFbVerified(true);
+                        } catch {
+                          setFbVerified(false);
+                        }
+                        setVerifyingFb(false);
+                      }}
+                      className="ml-2 inline-flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase px-3 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-300 whitespace-nowrap"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {verifyingFb ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
+                      <T>Verify</T>
+                    </button>
+                  )}
+                </div>
+                {fbVerified === true && (
+                  <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
+                  </span>
+                )}
+                {fbVerified === false && (
+                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <AlertCircle className="h-3 w-3" /> <T>Could not verify — please check the username</T>
+                  </span>
+                )}
               </div>
+
+              {/* Instagram */}
               <div>
                 <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  <Instagram className="h-3 w-3" /> <T>Instagram URL</T>
+                  <Instagram className="h-3 w-3" /> <T>Instagram</T>
                 </label>
-                <input type="url" value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} maxLength={500}
-                  className={inputCls} placeholder="https://instagram.com/yourhandle" style={{ fontFamily: "var(--font-body)" }} />
+                <div className="flex items-center gap-0">
+                  <span className="text-xs text-muted-foreground bg-muted border-b border-l border-t border-border px-3 py-3 whitespace-nowrap select-none" style={{ fontFamily: "var(--font-body)" }}>
+                    https://www.instagram.com/
+                  </span>
+                  <input
+                    type="text"
+                    value={instagramUrl}
+                    onChange={(e) => { setInstagramUrl(e.target.value.replace(/\s/g, "")); setIgVerified(null); }}
+                    maxLength={100}
+                    className={`${inputCls} flex-1`}
+                    placeholder="yourhandle"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  />
+                  {instagramUrl.trim() && (
+                    <button
+                      type="button"
+                      disabled={verifyingIg}
+                      onClick={async () => {
+                        setVerifyingIg(true);
+                        try {
+                          const url = `https://www.instagram.com/${instagramUrl.trim()}`;
+                          window.open(url, "_blank", "noopener,noreferrer");
+                          setIgVerified(true);
+                        } catch {
+                          setIgVerified(false);
+                        }
+                        setVerifyingIg(false);
+                      }}
+                      className="ml-2 inline-flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase px-3 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-300 whitespace-nowrap"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {verifyingIg ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
+                      <T>Verify</T>
+                    </button>
+                  )}
+                </div>
+                {igVerified === true && (
+                  <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
+                  </span>
+                )}
+                {igVerified === false && (
+                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <AlertCircle className="h-3 w-3" /> <T>Could not verify — please check the username</T>
+                  </span>
+                )}
               </div>
+
+              {/* Website */}
               <div>
                 <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
                   <Globe className="h-3 w-3" /> <T>Website URL</T>
