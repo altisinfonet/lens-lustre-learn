@@ -1,13 +1,13 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Upload, X, Loader2, ImagePlus, Camera } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { useWallet } from "@/hooks/useWallet";
 import { toast } from "@/hooks/use-toast";
-
 
 const CompetitionSubmit = () => {
   const { id } = useParams<{ id: string }>();
@@ -115,7 +115,6 @@ const CompetitionSubmit = () => {
       return;
     }
 
-    // Deduct entry fee from wallet if applicable
     if (entryFee > 0) {
       if (balance < entryFee) {
         toast({ title: "Insufficient wallet balance", description: `You need $${entryFee} but have $${Number(balance).toFixed(2)}. Add funds to your wallet first.`, variant: "destructive" });
@@ -150,7 +149,7 @@ const CompetitionSubmit = () => {
   if (authLoading || loading || rolesLoading || walletLoading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}>Loading...</div>
+        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}><T>Loading...</T></div>
       </main>
     );
   }
@@ -162,16 +161,16 @@ const CompetitionSubmit = () => {
           <Breadcrumbs items={[{ label: "Competitions", to: "/competitions" }]} className="mb-10" />
           <div className="border border-border p-10 text-center">
             <Camera className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-            <h2 className="text-xl font-light mb-3" style={{ fontFamily: "var(--font-display)" }}>Verified Members Only</h2>
+            <h2 className="text-xl font-light mb-3" style={{ fontFamily: "var(--font-display)" }}><T>Verified Members Only</T></h2>
             <p className="text-sm text-muted-foreground mb-6" style={{ fontFamily: "var(--font-body)" }}>
-              You need to be a Registered Photographer or Student to submit to competitions. Go to your dashboard to verify your profile with social media links, or enroll in a course.
+              <T>You need to be a Registered Photographer or Student to submit to competitions. Go to your dashboard to verify your profile with social media links, or enroll in a course.</T>
             </p>
             <Link
               to="/dashboard"
               className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Go to Dashboard
+              <T>Go to Dashboard</T>
             </Link>
           </div>
         </div>
@@ -186,7 +185,7 @@ const CompetitionSubmit = () => {
 
         <div className="flex items-center gap-4 mb-2">
           <div className="w-12 h-px bg-primary" />
-          <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Submit Entry</span>
+          <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Submit Entry</T></span>
         </div>
         <h1 className="text-3xl md:text-4xl font-light tracking-tight mb-12" style={{ fontFamily: "var(--font-display)" }}>
           {compTitle}
@@ -195,7 +194,7 @@ const CompetitionSubmit = () => {
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Title */}
           <div>
-            <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Entry Title *</label>
+            <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}><T>Entry Title</T> *</label>
             <input
               type="text"
               value={title}
@@ -209,7 +208,7 @@ const CompetitionSubmit = () => {
 
           {/* Description */}
           <div>
-            <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Description</label>
+            <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}><T>Description</T></label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -224,7 +223,7 @@ const CompetitionSubmit = () => {
           {/* Photos */}
           <div>
             <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-4" style={{ fontFamily: "var(--font-heading)" }}>
-              Photos * ({photos.length}/{maxPhotos})
+              <T>Photos</T> * ({photos.length}/{maxPhotos})
             </label>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -253,7 +252,7 @@ const CompetitionSubmit = () => {
                   ) : (
                     <>
                       <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>Add Photo</span>
+                      <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}><T>Add Photo</T></span>
                     </>
                   )}
                 </button>
@@ -269,7 +268,7 @@ const CompetitionSubmit = () => {
               className="hidden"
             />
             <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}>
-              Max 10MB per photo. JPG, PNG, or WebP.
+              <T>Max 10MB per photo. JPG, PNG, or WebP.</T>
             </p>
           </div>
 
@@ -277,12 +276,12 @@ const CompetitionSubmit = () => {
           {entryFee > 0 && (
             <div className="p-4 border border-border bg-muted/30 space-y-2">
               <p className="text-xs" style={{ fontFamily: "var(--font-heading)" }}>
-                Entry Fee: <strong>${entryFee}</strong> (≈ ₹{toINR(entryFee).toLocaleString("en-IN", { minimumFractionDigits: 2 })})
+                <T>Entry Fee:</T> <strong>${entryFee}</strong> (≈ ₹{toINR(entryFee).toLocaleString("en-IN", { minimumFractionDigits: 2 })})
               </p>
               <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                Wallet Balance: ${Number(balance).toFixed(2)}
+                <T>Wallet Balance:</T> ${Number(balance).toFixed(2)}
                 {balance < entryFee && (
-                  <> — <Link to="/wallet" className="text-primary underline">Add funds</Link></>
+                  <> — <Link to="/wallet" className="text-primary underline"><T>Add funds</T></Link></>
                 )}
               </p>
             </div>
@@ -297,7 +296,7 @@ const CompetitionSubmit = () => {
               style={{ fontFamily: "var(--font-heading)" }}
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-              {entryFee > 0 ? `Pay $${entryFee} & Submit` : "Submit Entry"}
+              {entryFee > 0 ? <T>{`Pay $${entryFee} & Submit`}</T> : <T>Submit Entry</T>}
             </button>
           </div>
         </form>
