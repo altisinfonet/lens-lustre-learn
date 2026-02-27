@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { compressImageToFiles } from "@/lib/imageCompression";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 
@@ -138,22 +139,32 @@ const JournalEditor = () => {
     "-" + Date.now().toString(36);
 
   const uploadImage = async (file: File, folder: string): Promise<string | null> => {
-    const ext = file.name.split(".").pop();
-    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from("journal-images").upload(path, file);
-    if (error) {
-      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    try {
+      const baseName = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
+      const webpPath = `${folder}/${baseName}.webp`;
+      const jpegPath = `${folder}/${baseName}.jpg`;
+      const [webpRes] = await Promise.all([
+        supabase.storage.from("journal-images").upload(webpPath, webpFile),
+        supabase.storage.from("journal-images").upload(jpegPath, jpegFile),
+      ]);
+      if (webpRes.error) {
+        toast({ title: "Upload failed", description: webpRes.error.message, variant: "destructive" });
+        return null;
+      }
+      const { data } = supabase.storage.from("journal-images").getPublicUrl(webpPath);
+      return data.publicUrl;
+    } catch (err: any) {
+      toast({ title: "Compression failed", description: err.message, variant: "destructive" });
       return null;
     }
-    const { data } = supabase.storage.from("journal-images").getPublicUrl(path);
-    return data.publicUrl;
   };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 10MB", variant: "destructive" });
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Only images allowed", variant: "destructive" });
       return;
     }
     setUploading(true);

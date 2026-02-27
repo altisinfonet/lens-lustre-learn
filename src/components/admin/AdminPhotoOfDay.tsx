@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Eye, EyeOff, Upload, Star, Loader2, XCircle } from "lucide-react";
+import { compressImageToFiles } from "@/lib/imageCompression";
 import { User } from "@supabase/supabase-js";
 
 interface POTD {
@@ -43,16 +44,25 @@ export default function AdminPhotoOfDay({ user }: { user: User | null }) {
   const handleUpload = async (file: File) => {
     if (!user) return;
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `potd/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("portfolio-images").upload(path, file);
-    if (error) {
-      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
-      setUploading(false);
-      return;
+    try {
+      const baseName = `potd-${Date.now()}`;
+      const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
+      const webpPath = `potd/${baseName}.webp`;
+      const jpegPath = `potd/${baseName}.jpg`;
+      const [webpRes] = await Promise.all([
+        supabase.storage.from("portfolio-images").upload(webpPath, webpFile),
+        supabase.storage.from("portfolio-images").upload(jpegPath, jpegFile),
+      ]);
+      if (webpRes.error) {
+        toast({ title: "Upload failed", description: webpRes.error.message, variant: "destructive" });
+        setUploading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("portfolio-images").getPublicUrl(webpPath);
+      setForm(f => ({ ...f, image_url: urlData.publicUrl }));
+    } catch {
+      toast({ title: "Compression failed", variant: "destructive" });
     }
-    const { data: urlData } = supabase.storage.from("portfolio-images").getPublicUrl(path);
-    setForm(f => ({ ...f, image_url: urlData.publicUrl }));
     setUploading(false);
   };
 

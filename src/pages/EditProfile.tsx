@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { compressAvatar } from "@/lib/imageCompression";
 
 const INTEREST_OPTIONS = [
   "Wildlife", "Street", "Portrait", "Aerial", "Documentary",
@@ -247,25 +248,25 @@ const EditProfile = () => {
       toast({ title: "Please select an image file", variant: "destructive" });
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "Image must be under 5MB", variant: "destructive" });
-      return;
-    }
     setUploadingAvatar(true);
-    const ext = file.name.split(".").pop();
-    const filePath = `${user.id}/avatar.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
-    if (uploadError) {
-      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
-      setUploadingAvatar(false);
-      return;
+    try {
+      const { webpFile } = await compressAvatar(file);
+      const filePath = `${user.id}/avatar.webp`;
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, webpFile, { upsert: true });
+      if (uploadError) {
+        toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+        setUploadingAvatar(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      await supabase.from("profiles").update({ avatar_url: newUrl } as any).eq("id", user.id);
+      setAvatarUrl(newUrl);
+      toast({ title: "Profile picture updated" });
+    } catch (err: any) {
+      toast({ title: "Compression failed", description: err.message, variant: "destructive" });
     }
-    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
-    const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-    await supabase.from("profiles").update({ avatar_url: newUrl } as any).eq("id", user.id);
-    setAvatarUrl(newUrl);
     setUploadingAvatar(false);
-    toast({ title: "Profile picture updated" });
   };
 
   const handleIdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
