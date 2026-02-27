@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { MessageSquare, Reply, Trash2, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -43,12 +44,11 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
 
     // Fetch profiles
     const userIds = [...new Set(data.map((c) => c.user_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
+    const { data: profiles } = await profilesPublic()
       .select("id, full_name, avatar_url")
       .in("id", userIds);
 
-    const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
+    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
 
     // Build tree
     const allComments = data.map((c) => ({

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Users, Heart, UserMinus, UserX, UserCheck, Search, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { toast } from "@/hooks/use-toast";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
@@ -100,9 +101,8 @@ const Friends = () => {
     // Batch fetch all profiles
     const profileMap = new Map<string, FriendProfile>();
     if (userIds.size > 0) {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url, bio, city, country")
+      const { data: profiles } = await profilesPublic()
+        .select("id, full_name, avatar_url, bio")
         .in("id", Array.from(userIds));
       profiles?.forEach((p) => profileMap.set(p.id, p));
     }

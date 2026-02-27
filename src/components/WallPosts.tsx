@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Heart, MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { toast } from "@/hooks/use-toast";
 import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
@@ -87,11 +88,10 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
 
     // Get author profiles
     const authorIds = [...new Set(postsData.map((p) => p.user_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
+    const { data: profiles } = await profilesPublic()
       .select("id, full_name, avatar_url")
       .in("id", authorIds);
-    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
 
     // Get reaction counts & user's reactions
     const postIds = postsData.map((p) => p.id);
@@ -257,11 +257,10 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
 
     if (!data) return;
     const authorIds = [...new Set(data.map((c) => c.user_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
+    const { data: profiles } = await profilesPublic()
       .select("id, full_name, avatar_url")
       .in("id", authorIds);
-    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
 
     setCommentsByPost((prev) => ({
       ...prev,

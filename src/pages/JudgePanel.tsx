@@ -6,6 +6,7 @@ import CommentsSection from "@/components/CommentsSection";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { toast } from "@/hooks/use-toast";
 
 interface Competition {
@@ -103,12 +104,12 @@ const JudgePanel = () => {
 
       // Fetch in parallel: profiles, votes, scores
       const [profilesRes, votesRes, scoresRes] = await Promise.all([
-        supabase.from("profiles").select("id, full_name").in("id", userIds),
+        profilesPublic().select("id, full_name").in("id", userIds),
         supabase.from("competition_votes").select("entry_id").in("entry_id", entryIds),
         supabase.from("judge_scores").select("entry_id, judge_id, score, feedback").in("entry_id", entryIds),
       ]);
 
-      const profileMap = new Map(profilesRes.data?.map((p) => [p.id, p.full_name]) || []);
+      const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p.full_name]) || []);
 
       const enriched: JudgeEntry[] = rawEntries.map((entry) => {
         const entryVotes = votesRes.data?.filter((v) => v.entry_id === entry.id) || [];

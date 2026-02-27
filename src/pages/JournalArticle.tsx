@@ -6,6 +6,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { generateArticlePdf } from "@/lib/generateArticlePdf";
 import { toast } from "@/hooks/use-toast";
 
@@ -59,8 +60,7 @@ const JournalArticle = () => {
 
       if (data) {
         setArticle(data);
-        const { data: profile } = await supabase
-          .from("profiles")
+        const { data: profile } = await profilesPublic()
           .select("full_name")
           .eq("id", data.author_id)
           .maybeSingle();

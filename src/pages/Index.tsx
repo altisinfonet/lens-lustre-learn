@@ -8,6 +8,7 @@ import PhotoOfTheDay from "@/components/PhotoOfTheDay";
 import FeaturedArtist from "@/components/FeaturedArtist";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { toast } from "@/hooks/use-toast";
 
 /* Classic easing — gentle, cinematic transitions */
@@ -320,14 +321,14 @@ const Index = () => {
 
       const [profilesRes, compsRes] = await Promise.all([
         allUserIds.length > 0
-          ? supabase.from("profiles").select("id, full_name, avatar_url").in("id", allUserIds)
+          ? profilesPublic().select("id, full_name, avatar_url").in("id", allUserIds)
           : Promise.resolve({ data: [] }),
         compIds.length > 0
           ? supabase.from("competitions").select("id, title").in("id", compIds)
           : Promise.resolve({ data: [] }),
       ]);
 
-      const profileMap = new Map((profilesRes.data || []).map((p) => [p.id, p]));
+      const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
       const compMap = new Map((compsRes.data || []).map((c) => [c.id, c.title]));
 
       if (winnerData.length > 0) {
@@ -368,10 +369,10 @@ const Index = () => {
         const tUserIds = [...new Set(testData.map((t) => t.user_id))];
         const tCertIds = [...new Set(testData.map((t) => t.certificate_id))];
         const [{ data: tProfiles }, { data: tCerts }] = await Promise.all([
-          supabase.from("profiles").select("id, full_name").in("id", tUserIds),
+          profilesPublic().select("id, full_name").in("id", tUserIds),
           supabase.from("certificates").select("id, title").in("id", tCertIds),
         ]);
-        const tpMap = new Map(tProfiles?.map((p) => [p.id, p.full_name]) || []);
+        const tpMap = new Map((tProfiles as any[] || []).map((p: any) => [p.id, p.full_name]) || []);
         const tcMap = new Map(tCerts?.map((c) => [c.id, c.title]) || []);
         setTestimonials(testData.map((t) => ({
           id: t.id, testimonial: t.testimonial, user_name: tpMap.get(t.user_id) || null,

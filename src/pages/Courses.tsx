@@ -5,6 +5,7 @@ import { BookOpen, Clock, DollarSign, GraduationCap, PenLine, LogOut } from "luc
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
@@ -71,7 +72,7 @@ const Courses = () => {
       if (data) {
         const authorIds = [...new Set(data.map((c: any) => c.author_id))];
         const [{ data: profiles }, { data: lessons }] = await Promise.all([
-          supabase.from("profiles").select("id, full_name").in("id", authorIds),
+          profilesPublic().select("id, full_name").in("id", authorIds),
           supabase.from("lessons").select("id, course_id"),
         ]);
 

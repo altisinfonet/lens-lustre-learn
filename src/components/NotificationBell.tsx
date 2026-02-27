@@ -3,6 +3,7 @@ import { Bell, UserPlus, Gift, Check, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { AnimatePresence, motion } from "framer-motion";
 import T from "@/components/T";
 
@@ -60,8 +61,7 @@ const NotificationBell = () => {
     const requesterIds = (friendsRes.data || []).map((f) => f.requester_id);
     let profileMap = new Map<string, { full_name: string | null; avatar_url: string | null }>();
     if (requesterIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from("profiles")
+      const { data: profiles } = await profilesPublic()
         .select("id, full_name, avatar_url")
         .in("id", requesterIds);
       profileMap = new Map((profiles || []).map((p) => [p.id, p]));
