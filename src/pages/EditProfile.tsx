@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2, AlertCircle, ExternalLink } from "lucide-react";
+import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2, AlertCircle, ExternalLink, Twitter, Youtube } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import T from "@/components/T";
@@ -54,6 +54,12 @@ const EditProfile = () => {
   const [igVerified, setIgVerified] = useState<boolean | null>(null);
   const [verifyingFb, setVerifyingFb] = useState(false);
   const [verifyingIg, setVerifyingIg] = useState(false);
+  const [twitterUrl, setTwitterUrl] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [twVerified, setTwVerified] = useState<boolean | null>(null);
+  const [ytVerified, setYtVerified] = useState<boolean | null>(null);
+  const [verifyingTw, setVerifyingTw] = useState(false);
+  const [verifyingYt, setVerifyingYt] = useState(false);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -144,6 +150,10 @@ const EditProfile = () => {
         setFacebookUrl(rawFb.replace(/^https?:\/\/(www\.)?facebook\.com\//i, "").replace(/\/$/, ""));
         const rawIg = (data as any).instagram_url || "";
         setInstagramUrl(rawIg.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/$/, ""));
+        const rawTw = (data as any).twitter_url || "";
+        setTwitterUrl(rawTw.replace(/^https?:\/\/(www\.)?(twitter\.com|x\.com)\//i, "").replace(/\/$/, ""));
+        const rawYt = (data as any).youtube_url || "";
+        setYoutubeUrl(rawYt.replace(/^https?:\/\/(www\.)?youtube\.com\/@?/i, "").replace(/\/$/, ""));
         setWebsiteUrl((data as any).website_url || "");
         setAvatarUrl(data.avatar_url || null);
         setAddressLine1((data as any).address_line1 || "");
@@ -279,6 +289,8 @@ const EditProfile = () => {
         photography_interests: interests.length > 0 ? interests : null,
         facebook_url: facebookUrl.trim() ? `https://www.facebook.com/${facebookUrl.trim()}` : null,
         instagram_url: instagramUrl.trim() ? `https://www.instagram.com/${instagramUrl.trim()}` : null,
+        twitter_url: twitterUrl.trim() ? `https://x.com/${twitterUrl.trim()}` : null,
+        youtube_url: youtubeUrl.trim() ? `https://www.youtube.com/@${youtubeUrl.trim()}` : null,
         website_url: websiteUrl.trim() || null,
         address_line1: addressLine1.trim() || null,
         address_line2: addressLine2.trim() || null,
@@ -665,6 +677,92 @@ const EditProfile = () => {
                 {igVerified === false && (
                   <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
                     <AlertCircle className="h-3 w-3" /> <T>Could not verify — please check the username</T>
+                  </span>
+                )}
+              </div>
+
+              {/* Twitter/X */}
+              <div>
+                <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <Twitter className="h-3 w-3" /> <T>Twitter / X</T>
+                </label>
+                <div className="flex items-center gap-0">
+                  <span className="text-xs text-muted-foreground bg-muted border-b border-l border-t border-border px-3 py-3 whitespace-nowrap select-none" style={{ fontFamily: "var(--font-body)" }}>
+                    https://x.com/
+                  </span>
+                  <input
+                    type="text"
+                    value={twitterUrl}
+                    onChange={(e) => { setTwitterUrl(e.target.value.replace(/\s/g, "")); setTwVerified(null); }}
+                    maxLength={100}
+                    className={`${inputCls} flex-1`}
+                    placeholder="yourhandle"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  />
+                  {twitterUrl.trim() && (
+                    <button
+                      type="button"
+                      disabled={verifyingTw}
+                      onClick={() => {
+                        setVerifyingTw(true);
+                        window.open(`https://x.com/${twitterUrl.trim()}`, "_blank", "noopener,noreferrer");
+                        setTwVerified(true);
+                        setVerifyingTw(false);
+                      }}
+                      className="ml-2 inline-flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase px-3 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-300 whitespace-nowrap"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <T>Verify</T>
+                    </button>
+                  )}
+                </div>
+                {twVerified === true && (
+                  <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
+                  </span>
+                )}
+              </div>
+
+              {/* YouTube */}
+              <div>
+                <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <Youtube className="h-3 w-3" /> <T>YouTube</T>
+                </label>
+                <div className="flex items-center gap-0">
+                  <span className="text-xs text-muted-foreground bg-muted border-b border-l border-t border-border px-3 py-3 whitespace-nowrap select-none" style={{ fontFamily: "var(--font-body)" }}>
+                    https://youtube.com/@
+                  </span>
+                  <input
+                    type="text"
+                    value={youtubeUrl}
+                    onChange={(e) => { setYoutubeUrl(e.target.value.replace(/\s/g, "")); setYtVerified(null); }}
+                    maxLength={100}
+                    className={`${inputCls} flex-1`}
+                    placeholder="yourchannel"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  />
+                  {youtubeUrl.trim() && (
+                    <button
+                      type="button"
+                      disabled={verifyingYt}
+                      onClick={() => {
+                        setVerifyingYt(true);
+                        window.open(`https://www.youtube.com/@${youtubeUrl.trim()}`, "_blank", "noopener,noreferrer");
+                        setYtVerified(true);
+                        setVerifyingYt(false);
+                      }}
+                      className="ml-2 inline-flex items-center gap-1 text-[10px] tracking-[0.1em] uppercase px-3 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-300 whitespace-nowrap"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <T>Verify</T>
+                    </button>
+                  )}
+                </div>
+                {ytVerified === true && (
+                  <span className="text-[10px] text-green-500 flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <CheckCircle2 className="h-3 w-3" /> <T>Opened for verification — confirm the profile exists</T>
                   </span>
                 )}
               </div>
