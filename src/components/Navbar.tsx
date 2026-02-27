@@ -66,7 +66,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
 
           {/* Desktop links */}
           <div
-            className="hidden md:flex items-center gap-6 lg:gap-8 text-xs tracking-[0.15em] uppercase flex-shrink-0"
+            className="hidden lg:flex items-center gap-5 xl:gap-8 text-xs tracking-[0.15em] uppercase flex-shrink-0"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             
@@ -109,7 +109,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
           </div>
 
           {/* Desktop right */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             <LanguageSelector compact />
             <button
               onClick={toggleTheme}
@@ -168,7 +168,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden p-2 hover:opacity-60 transition-opacity"
+            className="lg:hidden p-2 hover:opacity-60 transition-opacity"
             aria-label="Open menu"
           >
             <Menu className="h-6 w-6" />
