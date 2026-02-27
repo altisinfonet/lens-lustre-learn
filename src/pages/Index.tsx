@@ -194,6 +194,14 @@ const Index = () => {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [compFilter, setCompFilter] = useState("All");
+  const [heroContent, setHeroContent] = useState({
+    label: "Photography Platform",
+    heading: "Every Frame",
+    heading_accent: "Tells",
+    subtitle: "A curated space for photographers who see the world differently. Compete globally. Learn from masters. Share your stories.",
+    cta_text: "Begin Your Journey",
+    cta_link: "/signup",
+  });
 
   // Scroll-linked background for middle sections
   const middleRef = useRef<HTMLDivElement>(null);
@@ -259,7 +267,7 @@ const Index = () => {
   useEffect(() => {
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
-      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes, bannersRes] = await Promise.all([
+      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes, bannersRes, heroContentRes] = await Promise.all([
         supabase
           .from("competition_entries")
           .select("id, title, photos, competition_id, user_id")
@@ -302,7 +310,16 @@ const Index = () => {
           .select("id, title, category, image_url, sort_order")
           .eq("is_active", true)
           .order("sort_order", { ascending: true }),
+        supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "hero_content")
+          .maybeSingle(),
       ]);
+
+      if (heroContentRes.data?.value) {
+        setHeroContent(heroContentRes.data.value as any);
+      }
 
       const winnerData = winnersRes.data || [];
       const certData = certsRes.data || [];
@@ -553,7 +570,7 @@ const Index = () => {
               >
                 <div className="w-16 h-px bg-primary" />
                 <span className="text-xs tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  <T>Photography Platform</T>
+                  <T>{heroContent.label}</T>
                 </span>
               </motion.div>
 
@@ -564,8 +581,8 @@ const Index = () => {
                 className="text-5xl md:text-7xl lg:text-8xl font-light leading-[0.9] mb-6 tracking-tight"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                <T>Every Frame</T>{" "}
-                <em className="text-primary font-light italic"><T>Tells</T></em>
+                <T>{heroContent.heading}</T>{" "}
+                <em className="text-primary font-light italic"><T>{heroContent.heading_accent}</T></em>
               </motion.h1>
 
               <motion.p
@@ -575,7 +592,7 @@ const Index = () => {
                 className="text-sm md:text-base text-muted-foreground max-w-md leading-relaxed mb-12"
                 style={{ fontFamily: "var(--font-body)" }}
               >
-                <T>A curated space for photographers who see the world differently. Compete globally. Learn from masters. Share your stories.</T>
+                <T>{heroContent.subtitle}</T>
               </motion.p>
 
               <motion.div
@@ -585,14 +602,14 @@ const Index = () => {
                 className="flex items-center gap-6"
               >
                 <Link
-                  to="/signup"
+                  to={heroContent.cta_link}
                   className="group inline-flex items-center gap-3 text-sm tracking-[0.15em] uppercase"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
                   <span className="w-12 h-12 rounded-full bg-primary flex items-center justify-center group-hover:w-14 group-hover:h-14 transition-all duration-700">
                     <ArrowRight className="h-4 w-4 text-primary-foreground" />
                   </span>
-                  <T>Begin Your Journey</T>
+                  <T>{heroContent.cta_text}</T>
                 </Link>
               </motion.div>
             </motion.div>
