@@ -40,7 +40,7 @@ const CompetitionSubmit = () => {
     const fetch = async () => {
       const { data } = await supabase
         .from("competitions")
-        .select("title, max_photos_per_entry, status, entry_fee, payment_details")
+        .select("title, max_photos_per_entry, status, entry_fee")
         .eq("id", id)
         .single();
       if (data) {
@@ -52,7 +52,6 @@ const CompetitionSubmit = () => {
         setCompTitle(data.title);
         setMaxPhotos(data.max_photos_per_entry || 5);
         setEntryFee((data as any).entry_fee || 0);
-        setPaymentDetails((data as any).payment_details || null);
       }
       setLoading(false);
     };
