@@ -627,7 +627,7 @@ const Index = () => {
       <motion.div ref={middleRef} style={{ backgroundColor: scrollBg }} className="transition-colors duration-700">
 
       {/* Photo of the Day + Featured Artist — Split Layout */}
-      <section className="py-16 md:py-24" aria-label="Spotlight">
+      <section className="py-8 md:py-12" aria-label="Spotlight">
         <div className="container mx-auto px-6 md:px-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             <PhotoOfTheDay />
