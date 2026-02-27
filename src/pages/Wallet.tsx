@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Wallet as WalletIcon, Plus, ArrowDownLeft, ArrowUpRight, Download, CreditCard, Loader2, Banknote, IndianRupee, AlertTriangle, Clock } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
 import { useAuth } from "@/hooks/useAuth";
 import { useWallet, WalletTransaction } from "@/hooks/useWallet";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -83,7 +84,7 @@ const Wallet = () => {
   if (authLoading || loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}>Loading…</div>
+        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}><T>Loading…</T></div>
       </main>
     );
   }
@@ -186,10 +187,10 @@ const Wallet = () => {
 
         <div className="flex items-center gap-4 mb-2">
           <div className="w-12 h-px bg-primary" />
-          <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>e-Wallet</span>
+          <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>e-Wallet</T></span>
         </div>
         <h1 className="text-3xl md:text-5xl font-light tracking-tight mb-10" style={{ fontFamily: "var(--font-display)" }}>
-          My <em className="italic text-primary">Wallet</em>
+          <T>My</T> <em className="italic text-primary"><T>Wallet</T></em>
         </h1>
 
         {/* Balance Card */}
@@ -198,7 +199,7 @@ const Wallet = () => {
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
-              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>Available Balance</span>
+              <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}><T>Available Balance</T></span>
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl md:text-5xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
                   ${Number(balance).toFixed(2)}
@@ -210,18 +211,17 @@ const Wallet = () => {
               <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}>
                 1 USD ≈ ₹{exchangeRate.rate}
               </p>
-              {/* Expiring Balance Warning */}
               {expiringBalance.amount > 0 && (
                 <div className="mt-3 flex items-start gap-2 px-3 py-2 border border-yellow-500/40 bg-yellow-500/5 rounded-sm">
                   <AlertTriangle className="h-3.5 w-3.5 text-yellow-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-[10px] font-medium text-yellow-700 dark:text-yellow-400" style={{ fontFamily: "var(--font-heading)" }}>
-                      ${expiringBalance.amount.toFixed(2)} expiring soon
+                      ${expiringBalance.amount.toFixed(2)} <T>expiring soon</T>
                     </p>
                     <p className="text-[9px] text-yellow-600/80 dark:text-yellow-500/80" style={{ fontFamily: "var(--font-body)" }}>
-                      {expiringBalance.count} gift credit{expiringBalance.count > 1 ? "s" : ""} with expiry
+                      {expiringBalance.count} <T>{`gift credit${expiringBalance.count > 1 ? "s" : ""} with expiry`}</T>
                       {expiringBalance.soonest && (
-                        <> · Next: {new Date(expiringBalance.soonest).toLocaleDateString()}</>
+                        <> · <T>Next:</T> {new Date(expiringBalance.soonest).toLocaleDateString()}</>
                       )}
                     </p>
                   </div>
@@ -234,14 +234,14 @@ const Wallet = () => {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                <Plus className="h-3.5 w-3.5" /> Add Money
+                <Plus className="h-3.5 w-3.5" /> <T>Add Money</T>
               </button>
               <button
                 onClick={() => setShowWithdraw(true)}
                 className="inline-flex items-center gap-2 px-6 py-3 border border-border text-xs tracking-[0.2em] uppercase hover:border-primary/50 transition-all duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                <Banknote className="h-3.5 w-3.5" /> Withdraw
+                <Banknote className="h-3.5 w-3.5" /> <T>Withdraw</T>
               </button>
               <button
                 onClick={() => setCurrencyDisplay(c => c === "usd" ? "inr" : "usd")}
@@ -249,7 +249,7 @@ const Wallet = () => {
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 {currencyDisplay === "usd" ? <IndianRupee className="h-3.5 w-3.5" /> : <CreditCard className="h-3.5 w-3.5" />}
-                {currencyDisplay === "usd" ? "Show INR" : "Show USD"}
+                {currencyDisplay === "usd" ? <T>Show INR</T> : <T>Show USD</T>}
               </button>
             </div>
           </div>
@@ -259,7 +259,7 @@ const Wallet = () => {
         {showAddMoney && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="border border-primary/30 p-6 md:p-8 mb-8 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Add Money</span>
+              <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Add Money</T></span>
               <button onClick={() => setShowAddMoney(false)} className="text-muted-foreground hover:text-foreground text-sm">✕</button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -289,13 +289,13 @@ const Wallet = () => {
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 {processing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                Confirm (Manual)
+                <T>Confirm (Manual)</T>
               </button>
               <button onClick={() => toast({ title: "Stripe checkout coming soon", description: "Payment gateway integration is in progress." })}
                 className="inline-flex items-center gap-2 px-6 py-3 border border-border text-xs tracking-[0.2em] uppercase hover:border-primary/50 transition-all duration-500"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
-                <CreditCard className="h-3.5 w-3.5" /> Pay with Stripe
+                <CreditCard className="h-3.5 w-3.5" /> <T>Pay with Stripe</T>
               </button>
             </div>
           </motion.div>
@@ -305,7 +305,7 @@ const Wallet = () => {
         {showWithdraw && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="border border-primary/30 p-6 md:p-8 mb-8 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Withdraw to Bank</span>
+              <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Withdraw to Bank</T></span>
               <button onClick={() => setShowWithdraw(false)} className="text-muted-foreground hover:text-foreground text-sm">✕</button>
             </div>
             <input
@@ -326,7 +326,7 @@ const Wallet = () => {
               style={{ fontFamily: "var(--font-heading)" }}
             >
               {processing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Banknote className="h-3.5 w-3.5" />}
-              Submit Request
+              <T>Submit Request</T>
             </button>
           </motion.div>
         )}
@@ -336,7 +336,7 @@ const Wallet = () => {
           className="flex flex-wrap items-center gap-4 mb-8 p-4 border border-border"
         >
           <Download className="h-4 w-4 text-muted-foreground" />
-          <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>Download Ledger</span>
+          <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}><T>Download Ledger</T></span>
           <div className="flex gap-2">
             {[1, 2, 3, 5].map(yr => (
               <button key={yr} onClick={() => setLedgerYears(yr)}
@@ -366,13 +366,13 @@ const Wallet = () => {
         {/* Transaction History */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={2}>
           <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-4" style={{ fontFamily: "var(--font-heading)" }}>
-            Transaction History ({transactions.length})
+            <T>Transaction History</T> ({transactions.length})
           </span>
 
           {transactions.length === 0 ? (
             <div className="border border-border p-10 text-center">
               <WalletIcon className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>No transactions yet. Add money to get started.</p>
+              <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>No transactions yet. Add money to get started.</T></p>
             </div>
           ) : (
             <div className="border border-border divide-y divide-border">
@@ -394,11 +394,11 @@ const Wallet = () => {
                       </p>
                       {t.type === "gift" && t.metadata?.expires_at && (
                         <span className={`text-[9px] px-1.5 py-0.5 border rounded-sm ${new Date(t.metadata.expires_at) < new Date() ? "border-destructive/40 text-destructive bg-destructive/5" : "border-yellow-500/40 text-yellow-600 bg-yellow-500/5"}`}>
-                          {new Date(t.metadata.expires_at) < new Date() ? "Expired" : `Expires: ${new Date(t.metadata.expires_at).toLocaleDateString()}`}
+                          {new Date(t.metadata.expires_at) < new Date() ? <T>Expired</T> : <><T>Expires:</T> {new Date(t.metadata.expires_at).toLocaleDateString()}</>}
                         </span>
                       )}
                       {t.type === "gift" && !t.metadata?.expires_at && (
-                        <span className="text-[9px] px-1.5 py-0.5 border border-primary/30 text-primary bg-primary/5 rounded-sm">No expiry</span>
+                        <span className="text-[9px] px-1.5 py-0.5 border border-primary/30 text-primary bg-primary/5 rounded-sm"><T>No expiry</T></span>
                       )}
                     </div>
                   </div>
@@ -407,7 +407,7 @@ const Wallet = () => {
                       {Number(t.amount) >= 0 ? "+" : ""}{formatCurrency(Number(t.amount))}
                     </p>
                     <p className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                      Bal: {formatCurrency(Number(t.balance_after))}
+                      <T>Bal:</T> {formatCurrency(Number(t.balance_after))}
                     </p>
                   </div>
                 </div>

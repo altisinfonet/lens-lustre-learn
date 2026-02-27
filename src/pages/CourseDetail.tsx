@@ -3,10 +3,10 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Award, BookOpen, CheckCircle, Circle, DollarSign, GraduationCap, Lock, Play } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 
@@ -89,8 +89,6 @@ const CourseDetail = () => {
     } else {
       setEnrolled(true);
       toast({ title: "Enrolled successfully!" });
-
-      // Auto-assign student role
       await supabase.from("user_roles").insert({ user_id: user.id, role: "student" as any }).then(({ error: roleErr }) => {
         if (roleErr && !roleErr.message.includes("duplicate")) {
           console.warn("Could not assign student role:", roleErr.message);
@@ -101,14 +99,14 @@ const CourseDetail = () => {
   };
 
   if (loading) {
-    return <main className="min-h-screen bg-background flex items-center justify-center"><div className="animate-pulse text-muted-foreground text-sm">Loading…</div></main>;
+    return <main className="min-h-screen bg-background flex items-center justify-center"><div className="animate-pulse text-muted-foreground text-sm"><T>Loading…</T></div></main>;
   }
 
   if (!course) {
     return (
       <main className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">Course not found.</p>
-        <Link to="/courses" className="text-primary text-sm underline">Back to Courses</Link>
+        <p className="text-muted-foreground"><T>Course not found.</T></p>
+        <Link to="/courses" className="text-primary text-sm underline"><T>Back to Courses</T></Link>
       </main>
     );
   }
@@ -155,16 +153,16 @@ const CourseDetail = () => {
           {/* Main */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }} className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <span className={`text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 border ${course.difficulty === "Beginner" ? "text-primary border-primary" : course.difficulty === "Intermediate" ? "text-yellow-500 border-yellow-500" : "text-accent border-accent"}`} style={{ fontFamily: "var(--font-heading)" }}>{course.difficulty}</span>
+              <span className={`text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 border ${course.difficulty === "Beginner" ? "text-primary border-primary" : course.difficulty === "Intermediate" ? "text-yellow-500 border-yellow-500" : "text-accent border-accent"}`} style={{ fontFamily: "var(--font-heading)" }}><T>{course.difficulty}</T></span>
               <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>{course.category}</span>
             </div>
 
             <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-6 leading-[1.1]" style={{ fontFamily: "var(--font-display)" }}>{course.title}</h1>
 
             <div className="flex items-center gap-4 text-xs text-muted-foreground mb-8" style={{ fontFamily: "var(--font-heading)" }}>
-              <span className="tracking-[0.1em] uppercase">{authorName || "Unknown"}</span>
-              <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" />{lessons.length} lessons</span>
-              {course.is_free ? <span className="text-primary">Free</span> : <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{course.price}</span>}
+              <span className="tracking-[0.1em] uppercase">{authorName || <T>Unknown</T>}</span>
+              <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" />{lessons.length} <T>lessons</T></span>
+              {course.is_free ? <span className="text-primary"><T>Free</T></span> : <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{course.price}</span>}
             </div>
 
             {course.description && (
@@ -181,7 +179,7 @@ const CourseDetail = () => {
             <div>
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-px bg-primary" />
-                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Curriculum</span>
+                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Curriculum</T></span>
               </div>
 
               <div className="border border-border divide-y divide-border">
@@ -206,7 +204,7 @@ const CourseDetail = () => {
                   );
                 })}
                 {lessons.length === 0 && (
-                  <div className="p-8 text-center text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>No lessons yet</div>
+                  <div className="p-8 text-center text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>No lessons yet</T></div>
                 )}
               </div>
             </div>
@@ -218,18 +216,18 @@ const CourseDetail = () => {
               {enrolled && lessons.length > 0 && (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>Progress</span>
+                    <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}><T>Progress</T></span>
                     <span className="text-xs text-primary" style={{ fontFamily: "var(--font-heading)" }}>{progressPercent}%</span>
                   </div>
                   <Progress value={progressPercent} className="h-1.5" />
                   <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}>
-                    {completedLessons.size} of {lessons.length} lessons completed
+                    {completedLessons.size} <T>of</T> {lessons.length} <T>lessons completed</T>
                   </p>
                   {courseComplete && (
                     <div className="mt-4 space-y-3">
                       <div className="flex items-center gap-2 text-primary">
                         <GraduationCap className="h-4 w-4" />
-                        <span className="text-xs" style={{ fontFamily: "var(--font-heading)" }}>Course Complete!</span>
+                        <span className="text-xs" style={{ fontFamily: "var(--font-heading)" }}><T>Course Complete!</T></span>
                       </div>
                       {hasCertificate ? (
                         <Link
@@ -237,7 +235,7 @@ const CourseDetail = () => {
                           className="flex items-center gap-2 text-xs tracking-[0.1em] uppercase text-primary hover:opacity-80 transition-opacity"
                           style={{ fontFamily: "var(--font-heading)" }}
                         >
-                          <Award className="h-3.5 w-3.5" /> View Certificate
+                          <Award className="h-3.5 w-3.5" /> <T>View Certificate</T>
                         </Link>
                       ) : (
                         <button
@@ -247,7 +245,7 @@ const CourseDetail = () => {
                           style={{ fontFamily: "var(--font-heading)" }}
                         >
                           <Award className="h-3.5 w-3.5" />
-                          {issuingCert ? "Issuing…" : "Claim Certificate"}
+                          {issuingCert ? <T>Issuing…</T> : <T>Claim Certificate</T>}
                         </button>
                       )}
                     </div>
@@ -258,19 +256,19 @@ const CourseDetail = () => {
               {!course.is_free && (
                 <div className="flex items-baseline gap-1 mb-4">
                   <span className="text-3xl font-light" style={{ fontFamily: "var(--font-display)" }}>${course.price}</span>
-                  <span className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>one-time</span>
+                  <span className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>one-time</T></span>
                 </div>
               )}
 
               {!enrolled ? (
                 <Button onClick={handleEnroll} disabled={enrolling} className="w-full bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase py-6" style={{ fontFamily: "var(--font-heading)" }}>
                   <GraduationCap className="h-4 w-4 mr-2" />
-                  {enrolling ? "Enrolling…" : course.is_free ? "Enroll for Free" : "Enroll Now"}
+                  {enrolling ? <T>Enrolling…</T> : course.is_free ? <T>Enroll for Free</T> : <T>Enroll Now</T>}
                 </Button>
               ) : (
                 <div className="text-center">
                   <span className="text-xs text-primary flex items-center justify-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
-                    <CheckCircle className="h-4 w-4" /> Enrolled
+                    <CheckCircle className="h-4 w-4" /> <T>Enrolled</T>
                   </span>
                   {lessons.length > 0 && (
                     <Button onClick={() => {
@@ -278,7 +276,7 @@ const CourseDetail = () => {
                       navigate(`/courses/${course.slug}/lessons/${nextLesson.id}`);
                     }} variant="outline" className="w-full mt-3 text-xs tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
                       <Play className="h-3.5 w-3.5 mr-2" />
-                      {completedLessons.size === 0 ? "Start Learning" : "Continue"}
+                      {completedLessons.size === 0 ? <T>Start Learning</T> : <T>Continue</T>}
                     </Button>
                   )}
                 </div>
@@ -286,13 +284,13 @@ const CourseDetail = () => {
 
               <div className="mt-6 space-y-3 border-t border-border pt-6">
                 <div className="flex justify-between text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                  <span>Lessons</span><span>{lessons.length}</span>
+                  <span><T>Lessons</T></span><span>{lessons.length}</span>
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                  <span>Difficulty</span><span>{course.difficulty}</span>
+                  <span><T>Difficulty</T></span><span><T>{course.difficulty}</T></span>
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                  <span>Category</span><span>{course.category}</span>
+                  <span><T>Category</T></span><span>{course.category}</span>
                 </div>
               </div>
             </div>

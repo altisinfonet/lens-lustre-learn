@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Clock, Tag, Download, Share2, Check } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
+import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
 import { generateArticlePdf } from "@/lib/generateArticlePdf";
 import { toast } from "@/hooks/use-toast";
@@ -108,7 +109,7 @@ const JournalArticle = () => {
   if (loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground text-sm">Loading…</div>
+        <div className="animate-pulse text-muted-foreground text-sm"><T>Loading…</T></div>
       </main>
     );
   }
@@ -116,8 +117,8 @@ const JournalArticle = () => {
   if (!article) {
     return (
       <main className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">Article not found.</p>
-        <Link to="/journal" className="text-primary text-sm underline">Back to Journal</Link>
+        <p className="text-muted-foreground"><T>Article not found.</T></p>
+        <Link to="/journal" className="text-primary text-sm underline"><T>Back to Journal</T></Link>
       </main>
     );
   }
@@ -137,7 +138,7 @@ const JournalArticle = () => {
               style={{ fontFamily: "var(--font-heading)" }}
             >
               {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Share2 className="h-3.5 w-3.5" />}
-              {copied ? "Copied" : "Share"}
+              {copied ? <T>Copied</T> : <T>Share</T>}
             </button>
             <button
               onClick={handleDownloadPdf}
@@ -146,7 +147,7 @@ const JournalArticle = () => {
               style={{ fontFamily: "var(--font-heading)" }}
             >
               <Download className="h-3.5 w-3.5" />
-              {generatingPdf ? "Generating…" : "PDF"}
+              {generatingPdf ? <T>Generating…</T> : "PDF"}
             </button>
           </div>
         </div>
@@ -179,7 +180,7 @@ const JournalArticle = () => {
           </h1>
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground mb-12 pb-8 border-b border-border" style={{ fontFamily: "var(--font-heading)" }}>
-            <span className="tracking-[0.1em] uppercase">{authorName || "Unknown"}</span>
+            <span className="tracking-[0.1em] uppercase">{authorName || <T>Unknown</T>}</span>
             <span className="flex items-center gap-1 tracking-[0.1em]">
               <Clock className="h-3 w-3" />
               {new Date(article.published_at || article.created_at).toLocaleDateString("en-US", {
@@ -188,7 +189,7 @@ const JournalArticle = () => {
             </span>
           </div>
 
-          {/* Body — render paragraphs and inline images */}
+          {/* Body */}
           <div className="prose-custom space-y-6">
             {bodyBlocks.map((block, i) =>
               block.type === "image" ? (
@@ -215,7 +216,7 @@ const JournalArticle = () => {
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-px bg-primary" />
                 <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                  Photo Gallery
+                  <T>Photo Gallery</T>
                 </span>
               </div>
               <div className="columns-2 md:columns-3 gap-3 space-y-3">
