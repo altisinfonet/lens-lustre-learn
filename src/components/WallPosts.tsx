@@ -18,6 +18,45 @@ import {
 
 type Privacy = "public" | "friends" | "private";
 
+/** Facebook-style image display: landscape natural, portrait capped at 4:5, square 1:1 */
+const FacebookImage = ({ src, downloadUrl }: { src: string; downloadUrl: string }) => {
+  const [ratio, setRatio] = useState<number | null>(null);
+
+  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth && img.naturalHeight) {
+      setRatio(img.naturalWidth / img.naturalHeight);
+    }
+  };
+
+  // Facebook caps portrait at 4:5 (0.8), landscape shown naturally, very wide capped ~1.91:1
+  const clampedRatio = ratio ? Math.max(0.8, Math.min(ratio, 1.91)) : 1;
+  const paddingTop = ratio ? `${(1 / clampedRatio) * 100}%` : "100%";
+
+  return (
+    <div className="mt-2 relative group/img bg-muted/30">
+      <div style={{ paddingTop, position: "relative", width: "100%" }}>
+        <img
+          src={src}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+          loading="lazy"
+          onLoad={handleLoad}
+        />
+      </div>
+      <a
+        href={downloadUrl}
+        download
+        onClick={(e) => e.stopPropagation()}
+        className="absolute bottom-3 right-3 p-2 rounded-full bg-card/80 backdrop-blur-sm text-foreground opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-card shadow-sm"
+        title="Download JPEG"
+      >
+        <Download className="h-4 w-4" />
+      </a>
+    </div>
+  );
+};
+
 interface Post {
   id: string;
   user_id: string;
@@ -518,25 +557,12 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                 </div>
               )}
 
-              {/* ── Post Image ── */}
+              {/* ── Post Image (Facebook-style ratio) ── */}
               {post.image_url && (
-                <div className="mt-2 relative group/img">
-                  <img
-                    src={post.image_url}
-                    alt=""
-                    className="w-full max-h-[600px] object-cover cursor-pointer"
-                    loading="lazy"
-                  />
-                  <a
-                    href={getJpegDownloadUrl(post.image_url)}
-                    download
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute bottom-3 right-3 p-2 rounded-full bg-card/80 backdrop-blur-sm text-foreground opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-card shadow-sm"
-                    title="Download JPEG"
-                  >
-                    <Download className="h-4 w-4" />
-                  </a>
-                </div>
+                <FacebookImage
+                  src={post.image_url}
+                  downloadUrl={getJpegDownloadUrl(post.image_url)}
+                />
               )}
 
               {/* ── Reaction & Comment Counts ── */}
