@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2 } from "lucide-react";
+import { Camera, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2, AlertCircle } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import T from "@/components/T";
 import { COUNTRIES } from "@/lib/profileCompletion";
+import { getCountries, getStatesForCountry, getCitiesForState } from "@/lib/locationData";
 import { SUPPORTED_LANGUAGES, useLanguage } from "@/hooks/useLanguage";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -69,6 +70,54 @@ const EditProfile = () => {
   const [nationalIdUrl, setNationalIdUrl] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState(false);
   const idFileRef = useRef<HTMLInputElement>(null);
+
+  // Validation errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Cascading location lists
+  const availableCountries = [...new Set([...getCountries(), ...COUNTRIES])].sort();
+  const availableStates = country ? getStatesForCountry(country) : [];
+  const availableCities = country && state ? getCitiesForState(country, state) : [];
+
+  // Validation helpers
+  const validatePhone = (value: string): string => {
+    if (!value.trim()) return "";
+    const cleaned = value.replace(/[\s\-()]/g, "");
+    if (!/^\+?\d{7,15}$/.test(cleaned)) return "Enter a valid phone number (7-15 digits, optional + prefix)";
+    return "";
+  };
+
+  const validatePostalCode = (value: string): string => {
+    if (!value.trim()) return "";
+    if (!/^[A-Za-z0-9\s\-]{3,10}$/.test(value.trim())) return "Enter a valid postal/ZIP code";
+    return "";
+  };
+
+  const handlePhoneChange = (val: string) => {
+    setPhone(val);
+    setErrors((prev) => ({ ...prev, phone: validatePhone(val) }));
+  };
+
+  const handleWhatsappChange = (val: string) => {
+    setWhatsapp(val);
+    setErrors((prev) => ({ ...prev, whatsapp: validatePhone(val) }));
+  };
+
+  const handlePostalCodeChange = (val: string) => {
+    setPostalCode(val);
+    setErrors((prev) => ({ ...prev, postalCode: validatePostalCode(val) }));
+  };
+
+  const handleCountryChange = (val: string) => {
+    setCountry(val);
+    setState("");
+    setCity("");
+  };
+
+  const handleStateChange = (val: string) => {
+    setState(val);
+    setCity("");
+  };
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
@@ -203,6 +252,15 @@ const EditProfile = () => {
     }
     if (!avatarUrl) {
       toast({ title: "Profile picture is required", variant: "destructive" });
+      return;
+    }
+    // Validate phone/whatsapp/postal
+    const phoneErr = validatePhone(phone);
+    const whatsappErr = validatePhone(whatsapp);
+    const postalErr = validatePostalCode(postalCode);
+    if (phoneErr || whatsappErr || postalErr) {
+      setErrors({ phone: phoneErr, whatsapp: whatsappErr, postalCode: postalErr });
+      toast({ title: "Please fix validation errors before saving", variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -353,31 +411,54 @@ const EditProfile = () => {
                 <input type="text" value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} maxLength={200}
                   className={inputCls} placeholder="Apartment, suite, etc." style={{ fontFamily: "var(--font-body)" }} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>City</T></label>
-                  <input type="text" value={city} onChange={(e) => setCity(e.target.value)} maxLength={100}
-                    className={inputCls} placeholder="City" style={{ fontFamily: "var(--font-body)" }} />
-                </div>
-                <div>
-                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>State / Province</T></label>
-                  <input type="text" value={state} onChange={(e) => setState(e.target.value)} maxLength={100}
-                    className={inputCls} placeholder="State" style={{ fontFamily: "var(--font-body)" }} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Country</T></label>
-                  <select value={country} onChange={(e) => setCountry(e.target.value)}
+                  <select value={country} onChange={(e) => handleCountryChange(e.target.value)}
                     className={`${inputCls} bg-background`} style={{ fontFamily: "var(--font-body)" }}>
                     <option value="">Select country</option>
-                    {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    {availableCountries.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
+                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>State / Province</T></label>
+                  {availableStates.length > 0 ? (
+                    <select value={state} onChange={(e) => handleStateChange(e.target.value)}
+                      className={`${inputCls} bg-background`} style={{ fontFamily: "var(--font-body)" }}>
+                      <option value="">Select state</option>
+                      {availableStates.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  ) : (
+                    <input type="text" value={state} onChange={(e) => setState(e.target.value)} maxLength={100}
+                      className={inputCls} placeholder={country ? "Enter state" : "Select country first"} disabled={!country}
+                      style={{ fontFamily: "var(--font-body)" }} />
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>City</T></label>
+                  {availableCities.length > 0 ? (
+                    <select value={city} onChange={(e) => setCity(e.target.value)}
+                      className={`${inputCls} bg-background`} style={{ fontFamily: "var(--font-body)" }}>
+                      <option value="">Select city</option>
+                      {availableCities.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  ) : (
+                    <input type="text" value={city} onChange={(e) => setCity(e.target.value)} maxLength={100}
+                      className={inputCls} placeholder={state ? "Enter city" : "Select state first"} disabled={!state && availableStates.length > 0}
+                      style={{ fontFamily: "var(--font-body)" }} />
+                  )}
+                </div>
+                <div>
                   <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Postal Code</T></label>
-                  <input type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} maxLength={20}
-                    className={inputCls} placeholder="Postal / ZIP code" style={{ fontFamily: "var(--font-body)" }} />
+                  <input type="text" value={postalCode} onChange={(e) => handlePostalCodeChange(e.target.value)} maxLength={10}
+                    className={`${inputCls} ${errors.postalCode ? "border-destructive" : ""}`} placeholder="Postal / ZIP code" style={{ fontFamily: "var(--font-body)" }} />
+                  {errors.postalCode && (
+                    <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                      <AlertCircle className="h-3 w-3" /> {errors.postalCode}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -391,13 +472,23 @@ const EditProfile = () => {
             <div className="space-y-5">
               <div>
                 <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Phone Number</T></label>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20}
-                  className={inputCls} placeholder="+91 XXXXX XXXXX" style={{ fontFamily: "var(--font-body)" }} />
+                <input type="tel" value={phone} onChange={(e) => handlePhoneChange(e.target.value)} maxLength={20}
+                  className={`${inputCls} ${errors.phone ? "border-destructive" : ""}`} placeholder="+91 XXXXX XXXXX" style={{ fontFamily: "var(--font-body)" }} />
+                {errors.phone && (
+                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <AlertCircle className="h-3 w-3" /> {errors.phone}
+                  </span>
+                )}
               </div>
               <div>
                 <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>WhatsApp Number</T></label>
-                <input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} maxLength={20}
-                  className={inputCls} placeholder="+91 XXXXX XXXXX" style={{ fontFamily: "var(--font-body)" }} />
+                <input type="tel" value={whatsapp} onChange={(e) => handleWhatsappChange(e.target.value)} maxLength={20}
+                  className={`${inputCls} ${errors.whatsapp ? "border-destructive" : ""}`} placeholder="+91 XXXXX XXXXX" style={{ fontFamily: "var(--font-body)" }} />
+                {errors.whatsapp && (
+                  <span className="text-[10px] text-destructive flex items-center gap-1 mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                    <AlertCircle className="h-3 w-3" /> {errors.whatsapp}
+                  </span>
+                )}
               </div>
             </div>
           </div>
