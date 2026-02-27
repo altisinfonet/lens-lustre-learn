@@ -47,17 +47,19 @@ const Lightbox = memo(({ images, currentIndex, isOpen, onClose, onPrev, onNext, 
           className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm"
           onClick={onClose}
         >
-          {/* Top bar: Download + Close */}
+          {/* Top bar: Download (hidden for competitions) + Close */}
           <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
-            <a
-              href={getJpegDownloadUrl(current.src)}
-              download={`${current.title || "photo"}.jpg`}
-              onClick={(e) => e.stopPropagation()}
-              className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-              title="Download JPEG"
-            >
-              <Download className="h-5 w-5" />
-            </a>
+            {imageType !== "competition_entry" && (
+              <a
+                href={getJpegDownloadUrl(current.src)}
+                download={`${current.title || "photo"}.jpg`}
+                onClick={(e) => e.stopPropagation()}
+                className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+                title="Download JPEG"
+              >
+                <Download className="h-5 w-5" />
+              </a>
+            )}
             <button
               onClick={onClose}
               className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
@@ -100,6 +102,7 @@ const Lightbox = memo(({ images, currentIndex, isOpen, onClose, onPrev, onNext, 
                 src={current.src}
                 alt={`${current.title} — ${current.category}`}
                 className="max-w-full max-h-[65vh] object-contain rounded-sm shadow-2xl"
+                {...(imageType === "competition_entry" ? { onContextMenu: (e: React.MouseEvent) => e.preventDefault(), draggable: false, style: { pointerEvents: "auto" as const, userSelect: "none" as const } } : {})}
               />
               <div className="mt-4 text-center">
                 <span
