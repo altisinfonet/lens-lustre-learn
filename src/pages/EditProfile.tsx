@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Camera, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2 } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
+import T from "@/components/T";
 import { COUNTRIES } from "@/lib/profileCompletion";
 import { SUPPORTED_LANGUAGES, useLanguage } from "@/hooks/useLanguage";
 import { useEffect, useRef, useState } from "react";
@@ -159,7 +160,6 @@ const EditProfile = () => {
       setUploadingId(false);
       return;
     }
-    // Store relative path; signed URL generated on view
     setNationalIdUrl(filePath);
     setUploadingId(false);
     toast({ title: "National ID uploaded" });
@@ -246,7 +246,7 @@ const EditProfile = () => {
   if (authLoading || loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}>Loading...</div>
+        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}><T>Loading...</T></div>
       </main>
     );
   }
@@ -258,10 +258,10 @@ const EditProfile = () => {
 
         <div className="flex items-center gap-4 mb-2">
           <div className="w-12 h-px bg-primary" />
-          <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Profile</span>
+          <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Profile</T></span>
         </div>
         <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-8" style={{ fontFamily: "var(--font-display)" }}>
-          Edit <em className="italic text-primary">Profile</em>
+          <T>Edit</T> <em className="italic text-primary"><T>Profile</T></em>
         </h1>
 
         {/* Completion Bar */}
@@ -285,22 +285,22 @@ const EditProfile = () => {
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </div>
             <div>
-              <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Profile Picture *</span>
+              <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Profile Picture</T> *</span>
               <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}
                 className="text-xs text-primary hover:underline transition-all duration-300" style={{ fontFamily: "var(--font-body)" }}>
-                {uploadingAvatar ? "Uploading…" : "Change photo"}
+                {uploadingAvatar ? <T>Uploading…</T> : <T>Change photo</T>}
               </button>
-              <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}>JPG, PNG or WebP. Max 5MB. Required.</p>
+              <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}><T>JPG, PNG or WebP. Max 5MB. Required.</T></p>
             </div>
           </div>
 
           {/* Preferred Language */}
           <div>
             <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>
-              <Languages className="inline h-3 w-3 mr-1.5" />Preferred Language
+              <Languages className="inline h-3 w-3 mr-1.5" /><T>Preferred Language</T>
             </label>
             <p className="text-[10px] text-muted-foreground mb-2" style={{ fontFamily: "var(--font-body)" }}>
-              The entire website will be translated to your preferred language.
+              <T>The entire website will be translated to your preferred language.</T>
             </p>
             <select
               value={preferredLanguage}
@@ -316,14 +316,14 @@ const EditProfile = () => {
 
           {/* Full Name */}
           <div>
-            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Full Name *</label>
+            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Full Name</T> *</label>
             <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100}
               className={inputCls} placeholder="Your full name" style={{ fontFamily: "var(--font-body)" }} />
           </div>
 
           {/* Bio */}
           <div>
-            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Bio</label>
+            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Bio</T></label>
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={500} rows={4}
               className="w-full bg-transparent border border-border focus:border-primary outline-none p-4 text-sm transition-colors duration-500 resize-none"
               placeholder="Tell us about yourself..." style={{ fontFamily: "var(--font-body)" }} />
@@ -332,7 +332,7 @@ const EditProfile = () => {
 
           {/* Portfolio URL */}
           <div>
-            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Portfolio URL</label>
+            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Portfolio URL</T></label>
             <input type="url" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} maxLength={255}
               className={inputCls} placeholder="https://your-portfolio.com" style={{ fontFamily: "var(--font-body)" }} />
           </div>
@@ -340,34 +340,34 @@ const EditProfile = () => {
           {/* Communication Address */}
           <div className="border border-border p-8">
             <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>
-              <MapPin className="inline h-3 w-3 mr-2" />Communication Address
+              <MapPin className="inline h-3 w-3 mr-2" /><T>Communication Address</T>
             </span>
             <div className="space-y-5">
               <div>
-                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Address Line 1</label>
+                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Address Line 1</T></label>
                 <input type="text" value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} maxLength={200}
                   className={inputCls} placeholder="Street address" style={{ fontFamily: "var(--font-body)" }} />
               </div>
               <div>
-                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Address Line 2</label>
+                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Address Line 2</T></label>
                 <input type="text" value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} maxLength={200}
                   className={inputCls} placeholder="Apartment, suite, etc." style={{ fontFamily: "var(--font-body)" }} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>City</label>
+                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>City</T></label>
                   <input type="text" value={city} onChange={(e) => setCity(e.target.value)} maxLength={100}
                     className={inputCls} placeholder="City" style={{ fontFamily: "var(--font-body)" }} />
                 </div>
                 <div>
-                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>State / Province</label>
+                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>State / Province</T></label>
                   <input type="text" value={state} onChange={(e) => setState(e.target.value)} maxLength={100}
                     className={inputCls} placeholder="State" style={{ fontFamily: "var(--font-body)" }} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Country</label>
+                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Country</T></label>
                   <select value={country} onChange={(e) => setCountry(e.target.value)}
                     className={`${inputCls} bg-background`} style={{ fontFamily: "var(--font-body)" }}>
                     <option value="">Select country</option>
@@ -375,7 +375,7 @@ const EditProfile = () => {
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Postal Code</label>
+                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Postal Code</T></label>
                   <input type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} maxLength={20}
                     className={inputCls} placeholder="Postal / ZIP code" style={{ fontFamily: "var(--font-body)" }} />
                 </div>
@@ -386,16 +386,16 @@ const EditProfile = () => {
           {/* Contact Numbers */}
           <div className="border border-border p-8">
             <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>
-              <Phone className="inline h-3 w-3 mr-2" />Contact Numbers
+              <Phone className="inline h-3 w-3 mr-2" /><T>Contact Numbers</T>
             </span>
             <div className="space-y-5">
               <div>
-                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Phone Number</label>
+                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Phone Number</T></label>
                 <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20}
                   className={inputCls} placeholder="+91 XXXXX XXXXX" style={{ fontFamily: "var(--font-body)" }} />
               </div>
               <div>
-                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>WhatsApp Number</label>
+                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>WhatsApp Number</T></label>
                 <input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} maxLength={20}
                   className={inputCls} placeholder="+91 XXXXX XXXXX" style={{ fontFamily: "var(--font-body)" }} />
               </div>
@@ -405,27 +405,27 @@ const EditProfile = () => {
           {/* Bank Details */}
           <div className="border border-border p-8">
             <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>
-              <Building2 className="inline h-3 w-3 mr-2" />Bank Account Details
+              <Building2 className="inline h-3 w-3 mr-2" /><T>Bank Account Details</T>
             </span>
             <div className="space-y-5">
               <div>
-                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Account Holder Name</label>
+                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Account Holder Name</T></label>
                 <input type="text" value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} maxLength={150}
                   className={inputCls} placeholder="Name as on bank account" style={{ fontFamily: "var(--font-body)" }} />
               </div>
               <div>
-                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Account Number</label>
+                <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Account Number</T></label>
                 <input type="text" value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} maxLength={30}
                   className={inputCls} placeholder="Account number" style={{ fontFamily: "var(--font-body)" }} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Bank Name</label>
+                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Bank Name</T></label>
                   <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} maxLength={100}
                     className={inputCls} placeholder="Bank name" style={{ fontFamily: "var(--font-body)" }} />
                 </div>
                 <div>
-                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>IFSC Code</label>
+                  <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>IFSC Code</T></label>
                   <input type="text" value={bankIfsc} onChange={(e) => setBankIfsc(e.target.value)} maxLength={20}
                     className={inputCls} placeholder="IFSC code" style={{ fontFamily: "var(--font-body)" }} />
                 </div>
@@ -436,51 +436,51 @@ const EditProfile = () => {
           {/* National ID Upload */}
           <div className="border border-border p-8">
             <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>
-              <Shield className="inline h-3 w-3 mr-2" />Identity Verification
+              <Shield className="inline h-3 w-3 mr-2" /><T>Identity Verification</T>
             </span>
             <p className="text-xs text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>
-              Upload a government-issued photo ID (Aadhaar, Passport, Driving Licence, etc.). This is kept private and secure.
+              <T>Upload a government-issued photo ID (Aadhaar, Passport, Driving Licence, etc.). This is kept private and secure.</T>
             </p>
             <div className="flex items-center gap-4">
               {nationalIdUrl ? (
                 <span className="text-xs text-green-500 flex items-center gap-1" style={{ fontFamily: "var(--font-body)" }}>
-                  ✓ National ID uploaded
+                  ✓ <T>National ID uploaded</T>
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>No file uploaded</span>
+                <span className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>No file uploaded</T></span>
               )}
               <button type="button" onClick={() => idFileRef.current?.click()} disabled={uploadingId}
                 className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 disabled:opacity-50"
                 style={{ fontFamily: "var(--font-heading)" }}>
                 {uploadingId ? <Loader2 className="h-3 w-3 animate-spin" /> : <Shield className="h-3 w-3" />}
-                {nationalIdUrl ? "Replace" : "Upload"} ID
+                {nationalIdUrl ? <T>Replace</T> : <T>Upload</T>} ID
               </button>
               <input ref={idFileRef} type="file" accept="image/*,application/pdf" onChange={handleIdUpload} className="hidden" />
             </div>
-            <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}>JPG, PNG, WebP or PDF. Max 10MB.</p>
+            <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}><T>JPG, PNG, WebP or PDF. Max 10MB.</T></p>
           </div>
 
           {/* Social Media Links */}
           <div className="border border-border p-8">
-            <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>Social Media Links</span>
+            <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}><T>Social Media Links</T></span>
             <div className="space-y-5">
               <div>
                 <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  <Facebook className="h-3 w-3" /> Facebook URL
+                  <Facebook className="h-3 w-3" /> <T>Facebook URL</T>
                 </label>
                 <input type="url" value={facebookUrl} onChange={(e) => setFacebookUrl(e.target.value)} maxLength={500}
                   className={inputCls} placeholder="https://facebook.com/yourprofile" style={{ fontFamily: "var(--font-body)" }} />
               </div>
               <div>
                 <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  <Instagram className="h-3 w-3" /> Instagram URL
+                  <Instagram className="h-3 w-3" /> <T>Instagram URL</T>
                 </label>
                 <input type="url" value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} maxLength={500}
                   className={inputCls} placeholder="https://instagram.com/yourhandle" style={{ fontFamily: "var(--font-body)" }} />
               </div>
               <div>
                 <label className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  <Globe className="h-3 w-3" /> Website URL
+                  <Globe className="h-3 w-3" /> <T>Website URL</T>
                 </label>
                 <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} maxLength={500}
                   className={inputCls} placeholder="https://yourwebsite.com" style={{ fontFamily: "var(--font-body)" }} />
@@ -490,7 +490,7 @@ const EditProfile = () => {
 
           {/* Photography Interests */}
           <div>
-            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Photography Interests</label>
+            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Photography Interests</T></label>
             <div className="flex flex-wrap gap-2">
               {INTEREST_OPTIONS.map((interest) => {
                 const selected = interests.includes(interest);
@@ -499,7 +499,7 @@ const EditProfile = () => {
                     className={`text-[11px] tracking-[0.1em] px-4 py-2 border transition-all duration-500 ${
                       selected ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-foreground/50"
                     }`} style={{ fontFamily: "var(--font-heading)" }}>
-                    {interest}
+                    <T>{interest}</T>
                     {selected && <X className="inline h-3 w-3 ml-1.5 -mr-1" />}
                   </button>
                 );
@@ -509,27 +509,27 @@ const EditProfile = () => {
 
           {/* Account Settings */}
           <div className="border border-border p-8">
-            <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>Account Settings</span>
+            <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}><T>Account Settings</T></span>
             <div className="mb-6">
-              <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Email Address</span>
+              <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Email Address</T></span>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-3.5 w-3.5" />
                 <span style={{ fontFamily: "var(--font-body)" }}>{user?.email}</span>
                 <span className="text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 border border-border text-muted-foreground/60 ml-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  Cannot be changed
+                  <T>Cannot be changed</T>
                 </span>
               </div>
             </div>
             <div>
-              <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}>Password</span>
+              <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Password</T></span>
               <p className="text-xs text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
-                We'll send a password reset link to your email address.
+                <T>We'll send a password reset link to your email address.</T>
               </p>
               <button type="button" onClick={handlePasswordReset} disabled={sendingReset}
                 className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 disabled:opacity-50"
                 style={{ fontFamily: "var(--font-heading)" }}>
                 <KeyRound className="h-3 w-3" />
-                {sendingReset ? "Sending…" : "Send Reset Link"}
+                {sendingReset ? <T>Sending…</T> : <T>Send Reset Link</T>}
               </button>
             </div>
           </div>
@@ -539,12 +539,12 @@ const EditProfile = () => {
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
               style={{ fontFamily: "var(--font-heading)" }}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              Save Changes
+              <T>Save Changes</T>
             </button>
             <Link to="/dashboard"
               className="text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500"
               style={{ fontFamily: "var(--font-heading)" }}>
-              Cancel
+              <T>Cancel</T>
             </Link>
           </div>
         </form>

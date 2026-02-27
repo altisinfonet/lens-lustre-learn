@@ -3,6 +3,7 @@ import { CheckCircle, Loader2, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import T from "@/components/T";
 
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters").max(72);
 
@@ -16,40 +17,32 @@ const ResetPassword = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Listen for the PASSWORD_RECOVERY event
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsRecovery(true);
       }
     });
-
-    // Also check the URL hash for recovery token
     const hash = window.location.hash;
     if (hash.includes("type=recovery")) {
       setIsRecovery(true);
     }
-
     return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
     const result = passwordSchema.safeParse(password);
     if (!result.success) {
       setError(result.error.errors[0].message);
       return;
     }
-
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
-
     if (error) {
       setError(error.message);
     } else {
@@ -64,13 +57,13 @@ const ResetPassword = () => {
         <div className="max-w-md text-center">
           <Lock className="h-10 w-10 text-muted-foreground mx-auto mb-6" />
           <h1 className="text-2xl font-light tracking-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
-            Invalid Reset Link
+            <T>Invalid Reset Link</T>
           </h1>
           <p className="text-sm text-muted-foreground mb-8" style={{ fontFamily: "var(--font-body)" }}>
-            This link is invalid or has expired. Please request a new password reset.
+            <T>This link is invalid or has expired. Please request a new password reset.</T>
           </p>
           <Link to="/forgot-password" className="text-xs tracking-[0.15em] uppercase text-primary hover:underline" style={{ fontFamily: "var(--font-heading)" }}>
-            Request New Link
+            <T>Request New Link</T>
           </Link>
         </div>
       </main>
@@ -85,10 +78,10 @@ const ResetPassword = () => {
             <CheckCircle className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-light tracking-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
-            Password <em className="italic text-primary">Updated</em>
+            <T>Password</T> <em className="italic text-primary"><T>Updated</T></em>
           </h1>
           <p className="text-sm text-muted-foreground mb-8 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
-            Your password has been successfully changed. You can now sign in with your new password.
+            <T>Your password has been successfully changed. You can now sign in with your new password.</T>
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -96,14 +89,14 @@ const ResetPassword = () => {
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Go to Dashboard
+              <T>Go to Dashboard</T>
             </Link>
             <Link
               to="/profile"
               className="text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              View Profile
+              <T>View Profile</T>
             </Link>
           </div>
         </div>
@@ -117,10 +110,10 @@ const ResetPassword = () => {
         <Lock className="h-8 w-8 text-primary mb-8" />
 
         <h1 className="text-3xl md:text-4xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-          Set New <em className="italic text-primary">Password</em>
+          <T>Set New</T> <em className="italic text-primary"><T>Password</T></em>
         </h1>
         <p className="text-sm text-muted-foreground mb-8" style={{ fontFamily: "var(--font-body)" }}>
-          Choose a strong password for your account.
+          <T>Choose a strong password for your account.</T>
         </p>
 
         {error && (
@@ -132,7 +125,7 @@ const ResetPassword = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-              New Password
+              <T>New Password</T>
             </label>
             <input
               type="password"
@@ -147,7 +140,7 @@ const ResetPassword = () => {
           </div>
           <div>
             <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-              Confirm Password
+              <T>Confirm Password</T>
             </label>
             <input
               type="password"
@@ -167,7 +160,7 @@ const ResetPassword = () => {
             style={{ fontFamily: "var(--font-heading)" }}
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Update Password
+            <T>Update Password</T>
           </button>
         </form>
       </div>

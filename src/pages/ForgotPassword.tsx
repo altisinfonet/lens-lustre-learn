@@ -3,6 +3,7 @@ import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import T from "@/components/T";
 
 const emailSchema = z.string().trim().email("Please enter a valid email").max(255);
 
@@ -41,13 +42,13 @@ const ForgotPassword = () => {
         <div className="max-w-md text-center">
           <Mail className="h-10 w-10 text-primary mx-auto mb-6" />
           <h1 className="text-3xl font-light tracking-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
-            Check Your <em className="italic text-primary">Email</em>
+            <T>Check Your</T> <em className="italic text-primary"><T>Email</T></em>
           </h1>
           <p className="text-sm text-muted-foreground mb-8" style={{ fontFamily: "var(--font-body)" }}>
-            If an account exists for <strong className="text-foreground">{email}</strong>, we've sent a password reset link.
+            <T>If an account exists for</T> <strong className="text-foreground">{email}</strong>, <T>we've sent a password reset link.</T>
           </p>
           <Link to="/login" className="text-xs tracking-[0.15em] uppercase text-primary hover:underline" style={{ fontFamily: "var(--font-heading)" }}>
-            Back to Login
+            <T>Back to Login</T>
           </Link>
         </div>
       </main>
@@ -58,14 +59,14 @@ const ForgotPassword = () => {
     <main className="min-h-screen bg-background text-foreground flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <Link to="/login" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12" style={{ fontFamily: "var(--font-heading)" }}>
-          <ArrowLeft className="h-3 w-3" /> Back to Login
+          <ArrowLeft className="h-3 w-3" /> <T>Back to Login</T>
         </Link>
 
         <h1 className="text-3xl md:text-4xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-          Forgot <em className="italic text-primary">Password?</em>
+          <T>Forgot</T> <em className="italic text-primary"><T>Password?</T></em>
         </h1>
         <p className="text-sm text-muted-foreground mb-8" style={{ fontFamily: "var(--font-body)" }}>
-          Enter your email and we'll send you a reset link.
+          <T>Enter your email and we'll send you a reset link.</T>
         </p>
 
         {error && (
@@ -77,7 +78,7 @@ const ForgotPassword = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-              Email
+              <T>Email</T>
             </label>
             <input
               type="email"
@@ -97,7 +98,7 @@ const ForgotPassword = () => {
             style={{ fontFamily: "var(--font-heading)" }}
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Send Reset Link
+            <T>Send Reset Link</T>
           </button>
         </form>
       </div>
