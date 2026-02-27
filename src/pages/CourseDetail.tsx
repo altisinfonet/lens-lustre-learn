@@ -5,6 +5,7 @@ import { Award, BookOpen, CheckCircle, Circle, DollarSign, GraduationCap, Lock, 
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -57,7 +58,7 @@ const CourseDetail = () => {
 
       const [{ data: lessonData }, { data: profile }] = await Promise.all([
         supabase.from("lessons").select("id, title, sort_order").eq("course_id", courseData.id).order("sort_order"),
-        supabase.from("profiles").select("full_name").eq("id", courseData.author_id).maybeSingle(),
+        profilesPublic().select("full_name").eq("id", courseData.author_id).maybeSingle(),
       ]);
 
       setLessons(lessonData || []);

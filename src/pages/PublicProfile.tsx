@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AnimatePresence, motion } from "framer-motion";
 import { BADGES, type BadgeType } from "@/lib/badgeConfig";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 
 /* ── Mini Carousel on hover ── */
 const MiniCarousel = ({
@@ -157,7 +158,7 @@ const PublicProfile = () => {
     if (!userId) return;
     const load = async () => {
       const [profileRes, entriesRes, certsRes, rolesRes, badgesRes] = await Promise.all([
-        supabase.from("profiles").select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url").eq("id", userId).maybeSingle(),
+        profilesPublic().select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url").eq("id", userId).maybeSingle(),
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
         supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["registered_photographer", "student"] as any),

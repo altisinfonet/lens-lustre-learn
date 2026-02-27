@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -111,8 +112,8 @@ const Dashboard = () => {
       // Enrich friend requests with profile data
       if (friendReqRes.data && friendReqRes.data.length > 0) {
         const requesterIds = friendReqRes.data.map((r) => r.requester_id);
-        const { data: profiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", requesterIds);
-        const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+        const { data: profiles } = await profilesPublic().select("id, full_name, avatar_url").in("id", requesterIds);
+        const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
         setFriendRequests(
           friendReqRes.data.map((r) => ({
             ...r,

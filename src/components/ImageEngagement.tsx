@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Heart, ThumbsUp, Vote, MessageCircle, Send, Flag, Trash2, ChevronDown, ChevronUp, Loader2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesPublic } from "@/lib/profilesPublic";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { moderateComment } from "@/lib/commentModeration";
@@ -85,11 +86,10 @@ const ImageEngagement = ({ imageType, imageId, compact }: Props) => {
     }
 
     const userIds = [...new Set(data.map(c => c.user_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
+    const { data: profiles } = await profilesPublic()
       .select("id, full_name, avatar_url")
       .in("id", userIds);
-    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
 
     const withProfiles = data.map(c => ({
       ...c,

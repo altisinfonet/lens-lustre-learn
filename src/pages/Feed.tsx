@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Send, Globe, Users, Rss, RefreshCw, Loader2, Arro
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { profilesPublic } from "@/lib/profilesPublic";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,13 +73,13 @@ const Feed = () => {
     const postIds = postsData.map((p) => p.id);
 
     const [profilesRes, reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, avatar_url").in("id", authorIds),
+      profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
       supabase.from("post_reactions").select("post_id").in("post_id", postIds),
       supabase.from("post_reactions").select("post_id").in("post_id", postIds).eq("user_id", user.id),
       supabase.from("post_comments").select("post_id").in("post_id", postIds),
     ]);
 
-    const profileMap = new Map((profilesRes.data || []).map((p) => [p.id, p]));
+    const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
     const likeCounts: Record<string, number> = {};
     (reactionsRes.data || []).forEach((r) => { likeCounts[r.post_id] = (likeCounts[r.post_id] || 0) + 1; });
     const userLikedSet = new Set((userReactionsRes.data || []).map((r) => r.post_id));
@@ -247,8 +248,8 @@ const Feed = () => {
       .limit(30);
     if (!data) return;
     const authorIds = [...new Set(data.map((c) => c.user_id))];
-    const { data: profiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", authorIds);
-    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+    const { data: profiles } = await profilesPublic().select("id, full_name, avatar_url").in("id", authorIds);
+    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
     setCommentsByPost((prev) => ({
       ...prev,
       [postId]: data.map((c) => ({
