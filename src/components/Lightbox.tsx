@@ -1,7 +1,8 @@
 import { memo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import ImageEngagement from "@/components/ImageEngagement";
+import { getJpegDownloadUrl } from "@/lib/imageCompression";
 
 interface LightboxProps {
   images: { id?: string; src: string; title: string; category: string }[];
@@ -46,14 +47,25 @@ const Lightbox = memo(({ images, currentIndex, isOpen, onClose, onPrev, onNext, 
           className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-sm"
           onClick={onClose}
         >
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-            aria-label="Close lightbox"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {/* Top bar: Download + Close */}
+          <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
+            <a
+              href={getJpegDownloadUrl(current.src)}
+              download={`${current.title || "photo"}.jpg`}
+              onClick={(e) => e.stopPropagation()}
+              className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+              title="Download JPEG"
+            >
+              <Download className="h-5 w-5" />
+            </a>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+              aria-label="Close lightbox"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
           {/* Previous */}
           <button

@@ -147,3 +147,15 @@ export async function compressThumbnail(file: File, baseName?: string): Promise<
     webpFile: new File([result.webp], `${name}-thumb.webp`, { type: "image/webp" }),
   };
 }
+
+/**
+ * Given a WebP display URL, derive the corresponding JPEG download URL.
+ * If the URL doesn't end with .webp, returns the original URL as-is.
+ */
+export function getJpegDownloadUrl(webpUrl: string): string {
+  if (webpUrl.includes(".webp")) {
+    return webpUrl.replace(".webp", ".jpg");
+  }
+  // Fallback: return original URL (legacy images not yet converted)
+  return webpUrl;
+}
