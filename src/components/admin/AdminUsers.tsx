@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield, Plus, X } from "lucide-react";
+import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield, Plus, X, CheckSquare, Square } from "lucide-react";
 import type { User as AuthUser } from "@supabase/supabase-js";
 
 const ALL_ROLES = ["user", "admin", "judge", "content_editor", "registered_photographer", "student"] as const;
@@ -43,6 +43,60 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
   const [roleTarget, setRoleTarget] = useState<UserRow | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkRole, setBulkRole] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectAll = () => {
+    if (selectedIds.size === users.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(users.map((u) => u.id)));
+  };
+
+  const bulkAssignRole = async () => {
+    if (!bulkRole || selectedIds.size === 0) return;
+    setBulkLoading(true);
+    let success = 0;
+    for (const uid of selectedIds) {
+      const u = users.find((x) => x.id === uid);
+      if (u?.roles.includes(bulkRole)) continue;
+      const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: bulkRole as any });
+      if (!error) {
+        success++;
+        setUsers((prev) => prev.map((x) => x.id === uid ? { ...x, roles: [...x.roles, bulkRole] } : x));
+      }
+    }
+    toast({ title: `${ROLE_LABELS[bulkRole]} assigned to ${success} user(s)` });
+    setSelectedIds(new Set());
+    setBulkRole("");
+    setBulkLoading(false);
+  };
+
+  const bulkRemoveRole = async () => {
+    if (!bulkRole || bulkRole === "user" || selectedIds.size === 0) return;
+    if (!confirm(`Remove "${ROLE_LABELS[bulkRole]}" from ${selectedIds.size} user(s)?`)) return;
+    setBulkLoading(true);
+    let success = 0;
+    for (const uid of selectedIds) {
+      const u = users.find((x) => x.id === uid);
+      if (!u?.roles.includes(bulkRole)) continue;
+      const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", bulkRole as any);
+      if (!error) {
+        success++;
+        setUsers((prev) => prev.map((x) => x.id === uid ? { ...x, roles: x.roles.filter((r) => r !== bulkRole) } : x));
+      }
+    }
+    toast({ title: `${ROLE_LABELS[bulkRole]} removed from ${success} user(s)` });
+    setSelectedIds(new Set());
+    setBulkRole("");
+    setBulkLoading(false);
+  };
 
   const fetchUsers = async (query = "", by = searchBy) => {
     setLoading(true);
@@ -220,6 +274,44 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
         </button>
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 border border-primary/30 bg-primary/5 p-3 rounded-sm">
+          <span className="text-[10px] tracking-[0.15em] uppercase text-primary font-medium shrink-0" style={{ fontFamily: "var(--font-heading)" }}>
+            <CheckSquare className="h-3.5 w-3.5 inline mr-1" />
+            {selectedIds.size} selected
+          </span>
+          <select
+            value={bulkRole}
+            onChange={(e) => setBulkRole(e.target.value)}
+            className="bg-transparent border border-border rounded-sm px-2 py-1.5 text-xs outline-none focus:border-primary"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            <option value="">Select role...</option>
+            {ALL_ROLES.filter((r) => r !== "user").map((r) => (
+              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+            ))}
+          </select>
+          <button onClick={bulkAssignRole} disabled={!bulkRole || bulkLoading}
+            className="px-3 py-1.5 text-[10px] tracking-wider uppercase bg-primary text-primary-foreground hover:opacity-90 rounded-sm disabled:opacity-50 flex items-center gap-1"
+            style={{ fontFamily: "var(--font-heading)" }}>
+            {bulkLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+            Assign
+          </button>
+          <button onClick={bulkRemoveRole} disabled={!bulkRole || bulkRole === "user" || bulkLoading}
+            className="px-3 py-1.5 text-[10px] tracking-wider uppercase border border-destructive/40 text-destructive hover:bg-destructive/10 rounded-sm disabled:opacity-50 flex items-center gap-1"
+            style={{ fontFamily: "var(--font-heading)" }}>
+            {bulkLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+            Remove
+          </button>
+          <button onClick={() => setSelectedIds(new Set())}
+            className="ml-auto text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            style={{ fontFamily: "var(--font-heading)" }}>
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Suspend Modal */}
       {suspendTarget && (
         <div className="border border-destructive/40 bg-destructive/5 p-4 rounded-sm space-y-3">
@@ -322,12 +414,19 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
       {/* Users Grid */}
       {users.length > 0 && (
         <div className="space-y-1">
-          <div className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+          <div className="flex items-center gap-2 text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+            <button onClick={selectAll} className="hover:text-primary transition-colors" title="Select all">
+              {selectedIds.size === users.length && users.length > 0 ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+            </button>
             {users.length} user{users.length !== 1 ? "s" : ""} found
           </div>
           <div className="border border-border rounded-sm overflow-hidden divide-y divide-border">
             {users.map((u) => (
-              <div key={u.id} className={`flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors group ${u.is_suspended ? "opacity-60 bg-destructive/5" : ""}`}>
+              <div key={u.id} className={`flex items-center gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors group ${u.is_suspended ? "opacity-60 bg-destructive/5" : ""} ${selectedIds.has(u.id) ? "bg-primary/5" : ""}`}>
+                {/* Checkbox */}
+                <button onClick={() => toggleSelect(u.id)} className="shrink-0 hover:text-primary transition-colors">
+                  {selectedIds.has(u.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground" />}
+                </button>
                 {/* Avatar */}
                 {u.avatar_url ? (
                   <img src={u.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover border border-border shrink-0" />
