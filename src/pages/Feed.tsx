@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Send, Globe, Users, Rss, RefreshCw, Loader2, ArrowUp, Download } from "lucide-react";
+import { MessageCircle, Send, Globe, Users, Rss, RefreshCw, Loader2, ArrowUp, Download } from "lucide-react";
 import { getJpegDownloadUrl } from "@/lib/imageCompression";
+import ReactionPicker, { ReactionType, REACTION_EMOJI_MAP } from "@/components/ReactionPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -62,6 +63,8 @@ interface FeedPost {
   like_count: number;
   comment_count: number;
   is_liked: boolean;
+  user_reaction: ReactionType | null;
+  top_reactions: string[];
 }
 
 interface PostComment {
@@ -109,26 +112,42 @@ const Feed = () => {
 
     const [profilesRes, reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
       profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
-      supabase.from("post_reactions").select("post_id").in("post_id", postIds),
-      supabase.from("post_reactions").select("post_id").in("post_id", postIds).eq("user_id", user.id),
+      supabase.from("post_reactions").select("post_id, reaction_type").in("post_id", postIds),
+      supabase.from("post_reactions").select("post_id, reaction_type").in("post_id", postIds).eq("user_id", user.id),
       supabase.from("post_comments").select("post_id").in("post_id", postIds),
     ]);
 
     const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
     const likeCounts: Record<string, number> = {};
-    (reactionsRes.data || []).forEach((r) => { likeCounts[r.post_id] = (likeCounts[r.post_id] || 0) + 1; });
-    const userLikedSet = new Set((userReactionsRes.data || []).map((r) => r.post_id));
+    const reactionTypeCounts: Record<string, Record<string, number>> = {};
+    (reactionsRes.data || []).forEach((r: any) => {
+      likeCounts[r.post_id] = (likeCounts[r.post_id] || 0) + 1;
+      if (!reactionTypeCounts[r.post_id]) reactionTypeCounts[r.post_id] = {};
+      reactionTypeCounts[r.post_id][r.reaction_type] = (reactionTypeCounts[r.post_id][r.reaction_type] || 0) + 1;
+    });
+    const userReactionMap = new Map<string, string>();
+    (userReactionsRes.data || []).forEach((r: any) => userReactionMap.set(r.post_id, r.reaction_type));
     const commentCounts: Record<string, number> = {};
     (commentsCountRes.data || []).forEach((c) => { commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
 
-    return postsData.map((p) => ({
-      ...p,
-      author_name: profileMap.get(p.user_id)?.full_name || null,
-      author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
-      like_count: likeCounts[p.id] || 0,
-      comment_count: commentCounts[p.id] || 0,
-      is_liked: userLikedSet.has(p.id),
-    }));
+    return postsData.map((p) => {
+      const userRx = userReactionMap.get(p.id) as ReactionType | undefined;
+      const typeCounts = reactionTypeCounts[p.id] || {};
+      const topReactions = Object.entries(typeCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([type]) => type);
+      return {
+        ...p,
+        author_name: profileMap.get(p.user_id)?.full_name || null,
+        author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
+        like_count: likeCounts[p.id] || 0,
+        comment_count: commentCounts[p.id] || 0,
+        is_liked: !!userRx,
+        user_reaction: userRx || null,
+        top_reactions: topReactions,
+      };
+    });
   }, [user]);
 
   // Fetch relevant user IDs (follows + friends + self)
@@ -261,17 +280,28 @@ const Feed = () => {
     return () => { supabase.removeChannel(channel); };
   }, [user, relevantUserIds, enrichPosts]);
 
-  const toggleLike = async (postId: string) => {
+  const handleReact = async (postId: string, reactionType: ReactionType) => {
     if (!user) return;
     const post = posts.find((p) => p.id === postId);
     if (!post) return;
-    if (post.is_liked) {
+    if (post.user_reaction) {
       await supabase.from("post_reactions").delete().eq("post_id", postId).eq("user_id", user.id);
-      setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, is_liked: false, like_count: p.like_count - 1 } : p));
-    } else {
-      const { error } = await supabase.from("post_reactions").insert({ post_id: postId, user_id: user.id, reaction_type: "like" });
-      if (!error) setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, is_liked: true, like_count: p.like_count + 1 } : p));
     }
+    const { error } = await supabase.from("post_reactions").insert({ post_id: postId, user_id: user.id, reaction_type: reactionType });
+    if (!error) {
+      setPosts((prev) => prev.map((p) => {
+        if (p.id !== postId) return p;
+        const newCount = p.user_reaction ? p.like_count : p.like_count + 1;
+        const topReactions = p.top_reactions.includes(reactionType) ? p.top_reactions : [reactionType, ...p.top_reactions].slice(0, 3);
+        return { ...p, is_liked: true, user_reaction: reactionType, like_count: newCount, top_reactions: topReactions };
+      }));
+    }
+  };
+
+  const handleUnreact = async (postId: string) => {
+    if (!user) return;
+    await supabase.from("post_reactions").delete().eq("post_id", postId).eq("user_id", user.id);
+    setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, is_liked: false, user_reaction: null, like_count: Math.max(0, p.like_count - 1) } : p));
   };
 
   const loadComments = async (postId: string) => {
@@ -423,7 +453,12 @@ const Feed = () => {
                   {(post.like_count > 0 || post.comment_count > 0) && (
                     <div className="flex items-center gap-4 px-4 pb-2 text-[10px] text-muted-foreground" style={headingFont}>
                       {post.like_count > 0 && (
-                        <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3 fill-primary text-primary" />{post.like_count}</span>
+                        <span className="inline-flex items-center gap-1">
+                          {(post.top_reactions.length > 0 ? post.top_reactions : ["like"]).map((type) => (
+                            <span key={type} className="text-sm">{REACTION_EMOJI_MAP[type] || "👍"}</span>
+                          ))}
+                          {post.like_count}
+                        </span>
                       )}
                       {post.comment_count > 0 && (
                         <button onClick={() => toggleComments(post.id)} className="hover:text-foreground transition-colors">
@@ -435,9 +470,12 @@ const Feed = () => {
 
                   {/* Actions */}
                   <div className="flex border-t border-border divide-x divide-border">
-                    <button onClick={() => toggleLike(post.id)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase transition-all duration-300 ${post.is_liked ? "text-primary" : "text-muted-foreground hover:text-foreground"}`} style={headingFont}>
-                      <Heart className={`h-3.5 w-3.5 ${post.is_liked ? "fill-current" : ""}`} /><T>Like</T>
-                    </button>
+                    <ReactionPicker
+                      currentReaction={post.user_reaction}
+                      onReact={(type) => handleReact(post.id, type)}
+                      onUnreact={() => handleUnreact(post.id)}
+                      disabled={!user}
+                    />
                     <button onClick={() => toggleComments(post.id)} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
                       <MessageCircle className="h-3.5 w-3.5" /><T>Comment</T>
                     </button>
