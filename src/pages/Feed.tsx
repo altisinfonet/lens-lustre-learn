@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Send, Globe, Users, Rss, RefreshCw, Loader2, ArrowUp } from "lucide-react";
+import { Heart, MessageCircle, Send, Globe, Users, Rss, RefreshCw, Loader2, ArrowUp, Download } from "lucide-react";
+import { getJpegDownloadUrl } from "@/lib/imageCompression";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -14,6 +15,40 @@ const bodyFont = { fontFamily: "var(--font-body)" };
 const displayFont = { fontFamily: "var(--font-display)" };
 
 const PAGE_SIZE = 15;
+
+/** Facebook-style image: landscape natural, portrait capped at 4:5, wide capped at 1.91:1 */
+const FeedImage = ({ src }: { src: string }) => {
+  const [ratio, setRatio] = useState<number | null>(null);
+  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth && img.naturalHeight) setRatio(img.naturalWidth / img.naturalHeight);
+  };
+  const clamped = ratio ? Math.max(0.8, Math.min(ratio, 1.91)) : 1;
+  const paddingTop = ratio ? `${(1 / clamped) * 100}%` : "100%";
+
+  return (
+    <div className="mt-3 relative group/img bg-muted/30 rounded-sm overflow-hidden">
+      <div style={{ paddingTop, position: "relative", width: "100%" }}>
+        <img
+          src={src}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+          onLoad={handleLoad}
+        />
+      </div>
+      <a
+        href={getJpegDownloadUrl(src)}
+        download
+        onClick={(e) => e.stopPropagation()}
+        className="absolute bottom-3 right-3 p-2 rounded-full bg-card/80 backdrop-blur-sm text-foreground opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-card shadow-sm"
+        title="Download JPEG"
+      >
+        <Download className="h-4 w-4" />
+      </a>
+    </div>
+  );
+};
 
 interface FeedPost {
   id: string;
@@ -381,7 +416,7 @@ const Feed = () => {
                   {/* Content */}
                   <div className="px-4 py-3">
                     <p className="text-sm leading-relaxed whitespace-pre-wrap" style={bodyFont}>{post.content}</p>
-                    {post.image_url && <img src={post.image_url} alt="" className="mt-3 rounded-sm max-h-96 w-full object-cover" />}
+                    {post.image_url && <FeedImage src={post.image_url} />}
                   </div>
 
                   {/* Counts */}
