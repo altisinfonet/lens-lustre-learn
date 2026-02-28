@@ -17,6 +17,7 @@ const FriendFollowActions = ({ targetUserId }: Props) => {
     loading,
     isSelf,
     isLoggedIn,
+    isTargetAdmin,
     sendFriendRequest,
     acceptFriendRequest,
     removeFriend,
@@ -59,7 +60,8 @@ const FriendFollowActions = ({ targetUserId }: Props) => {
       {!isSelf && (
         <div className="flex flex-wrap gap-3">
           {/* Friend button */}
-          {friendStatus === "none" && (
+          {/* Friend button - hidden for admin profiles */}
+          {!isTargetAdmin && friendStatus === "none" && (
             <button
               onClick={() => !requireLogin() && sendFriendRequest()}
               disabled={loading}
