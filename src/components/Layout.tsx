@@ -14,8 +14,19 @@ const Layout = () => {
 
   return (
     <>
-      {!hideNav && <AnnouncementBar />}
-      {!hideNav && <Navbar transparent={isHome} />}
+      {!hideNav && isHome && (
+        /* Home page: announcement + navbar float above hero as a single absolute group */
+        <div className="absolute top-0 left-0 right-0 z-50">
+          <AnnouncementBar />
+          <Navbar transparent />
+        </div>
+      )}
+      {!hideNav && !isHome && (
+        <>
+          <AnnouncementBar />
+          <Navbar />
+        </>
+      )}
       <GiftCelebrationModal />
       <Outlet />
     </>
