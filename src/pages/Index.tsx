@@ -3,9 +3,9 @@ import T from "@/components/T";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 import { useEffect, useState, useCallback, lazy, Suspense, memo, useRef } from "react";
-import Lightbox from "@/components/Lightbox";
-import PhotoOfTheDay from "@/components/PhotoOfTheDay";
-import FeaturedArtist from "@/components/FeaturedArtist";
+const Lightbox = lazy(() => import("@/components/Lightbox"));
+const PhotoOfTheDay = lazy(() => import("@/components/PhotoOfTheDay"));
+const FeaturedArtist = lazy(() => import("@/components/FeaturedArtist"));
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
@@ -387,7 +387,7 @@ const Index = () => {
   const [featuredArticle, setFeaturedArticle] = useState<(JournalPreview & { cover_image_url: string | null; body?: string }) | null>(null);
   const [courses, setCourses] = useState<CoursePreview[]>([]);
   const [galleryWorks, setGalleryWorks] = useState<PortfolioImage[]>(fallbackGalleryWorks);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -473,7 +473,7 @@ const Index = () => {
       setCertificates((prev) => (prev.length > 0 ? prev : fallbackCertificates));
       setJournalArticles((prev) => (prev.length > 0 ? prev : fallbackJournalArticles));
       setDataLoading(false);
-    }, 12000);
+    }, 3000);
 
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
@@ -580,130 +580,60 @@ const Index = () => {
       }));
       setCertificates(mappedCertificates.length > 0 ? mappedCertificates : fallbackCertificates);
 
-      // Fetch testimonials and tier config
-      const [{ data: testData }, { data: tierSetting }] = await Promise.all([
-        supabase.from("certificate_testimonials").select("id, testimonial, user_id, certificate_id, photo_url").eq("is_visible", true).order("sort_order").limit(6),
-        supabase.from("site_settings").select("value").eq("key", "certificate_tiers").maybeSingle(),
-      ]);
+      // Defer secondary fetches (testimonials, tiers, featured article) — non-blocking
+      const deferSecondary = async () => {
+        try {
+          const [{ data: testData }, { data: tierSetting }, { data: featData }] = await Promise.all([
+            supabase.from("certificate_testimonials").select("id, testimonial, user_id, certificate_id, photo_url").eq("is_visible", true).order("sort_order").limit(6),
+            supabase.from("site_settings").select("value").eq("key", "certificate_tiers").maybeSingle(),
+            supabase.from("journal_articles").select("id, title, slug, excerpt, cover_image_url, tags, published_at, author_id, is_featured, body").eq("is_featured", true).eq("status", "published").limit(1).maybeSingle(),
+          ]);
 
-      if (testData && testData.length > 0) {
-        const tUserIds = [...new Set(testData.map((t) => t.user_id))];
-        const tCertIds = [...new Set(testData.map((t) => t.certificate_id))];
-        const [{ data: tProfiles }, { data: tCerts }] = await Promise.all([
-          profilesPublic().select("id, full_name").in("id", tUserIds),
-          supabase.from("certificates").select("id, title").in("id", tCertIds),
-        ]);
-        const tpMap = new Map((tProfiles as any[] || []).map((p: any) => [p.id, p.full_name]) || []);
-        const tcMap = new Map(tCerts?.map((c) => [c.id, c.title]) || []);
-        setTestimonials(testData.map((t) => ({
-          id: t.id, testimonial: t.testimonial, 
-          user_name: resolveName(t.user_id, tpMap.get(t.user_id) || null, adminIds),
-          cert_title: tcMap.get(t.certificate_id) || null, photo_url: t.photo_url,
-        })));
-      }
+          if (testData && testData.length > 0) {
+            const tUserIds = [...new Set(testData.map((t) => t.user_id))];
+            const tCertIds = [...new Set(testData.map((t) => t.certificate_id))];
+            const [{ data: tProfiles }, { data: tCerts }] = await Promise.all([
+              profilesPublic().select("id, full_name").in("id", tUserIds),
+              supabase.from("certificates").select("id, title").in("id", tCertIds),
+            ]);
+            const tpMap = new Map((tProfiles as any[] || []).map((p: any) => [p.id, p.full_name]) || []);
+            const tcMap = new Map(tCerts?.map((c) => [c.id, c.title]) || []);
+            setTestimonials(testData.map((t) => ({
+              id: t.id, testimonial: t.testimonial, 
+              user_name: resolveName(t.user_id, tpMap.get(t.user_id) || null, adminIds),
+              cert_title: tcMap.get(t.certificate_id) || null, photo_url: t.photo_url,
+            })));
+          }
 
-      if (Array.isArray(tierSetting?.value)) {
-        const tiersArr = tierSetting.value as unknown as TierConfig[];
-        setCertTiers(tiersArr);
-        // Build leaderboard
-        if (certData.length > 0) {
-          const countMap = new Map<string, number>();
-          certData.forEach((c) => countMap.set(c.user_id, (countMap.get(c.user_id) || 0) + 1));
-          const sorted = [...countMap.entries()]
-            .map(([uid, count]) => {
-              const tier = [...tiersArr].reverse().find((t) => count >= t.min_certs)?.name || "";
-              return { user_id: uid, full_name: profileMap.get(uid)?.full_name || null, avatar_url: profileMap.get(uid)?.avatar_url || null, cert_count: count, tier };
-            })
-            .sort((a, b) => b.cert_count - a.cert_count)
-            .slice(0, 5);
-          setCertLeaderboard(sorted);
-        }
-      }
+          if (Array.isArray(tierSetting?.value)) {
+            const tiersArr = tierSetting.value as unknown as TierConfig[];
+            setCertTiers(tiersArr);
+            if (certData.length > 0) {
+              const countMap = new Map<string, number>();
+              certData.forEach((c) => countMap.set(c.user_id, (countMap.get(c.user_id) || 0) + 1));
+              const sorted = [...countMap.entries()]
+                .map(([uid, count]) => {
+                  const tier = [...tiersArr].reverse().find((t) => count >= t.min_certs)?.name || "";
+                  return { user_id: uid, full_name: profileMap.get(uid)?.full_name || null, avatar_url: profileMap.get(uid)?.avatar_url || null, cert_count: count, tier };
+                })
+                .sort((a, b) => b.cert_count - a.cert_count)
+                .slice(0, 5);
+              setCertLeaderboard(sorted);
+            }
+          }
 
-      const mappedArticles = articleData.map((a) => ({
-        id: a.id,
-        title: a.title,
-        slug: a.slug,
-        excerpt: a.excerpt,
-        cover_image_url: a.cover_image_url,
-        tags: a.tags || [],
-        published_at: a.published_at,
-        author_name: profileMap.get(a.author_id)?.full_name || null,
-      }));
-      setJournalArticles(mappedArticles.length > 0 ? mappedArticles : fallbackJournalArticles);
-
-      const mappedCompetitions = compsListData.map((c) => ({
-        id: c.id,
-        title: c.title,
-        category: c.category,
-        cover_image_url: c.cover_image_url,
-        status: c.status,
-        starts_at: c.starts_at,
-        ends_at: c.ends_at,
-        prize_info: c.prize_info,
-      }));
-      setCompetitions(mappedCompetitions.length > 0 ? mappedCompetitions : fallbackCompetitions);
-
-      const mappedCourses = coursesData.map((c) => ({
-        id: c.id,
-        title: c.title,
-        slug: c.slug,
-        category: c.category,
-        difficulty: c.difficulty,
-        cover_image_url: c.cover_image_url,
-        is_free: c.is_free,
-        author_name: profileMap.get(c.author_id)?.full_name || null,
-        is_featured: c.is_featured,
-        labels: c.labels || [],
-      }));
-      setCourses(mappedCourses.length > 0 ? mappedCourses : fallbackCourses);
-
-      // Set portfolio images from database (fallback to hardcoded if empty)
-      const portfolioData = portfolioRes.data || [];
-      if (portfolioData.length > 0) {
-        setGalleryWorks(portfolioData.map((p: any) => ({
-          id: p.id,
-          src: p.image_url,
-          title: p.title,
-          category: p.category,
-          is_pinned: p.is_pinned,
-          is_trending: p.is_trending,
-          view_count: p.view_count,
-        })));
-      }
-
-      // Set hero banners from database (fallback to defaults if empty)
-      const bannerData = bannersRes.data || [];
-      if (bannerData.length > 0) {
-        setHeroSlides(bannerData.map((b) => ({
-          src: b.image_url,
-          title: b.title,
-          category: b.category,
-        })));
-      }
-      // Fetch featured article for Philosophy section
-      const { data: featData } = await supabase
-        .from("journal_articles")
-        .select("id, title, slug, excerpt, cover_image_url, tags, published_at, author_id, is_featured, body")
-        .eq("is_featured", true)
-        .eq("status", "published")
-        .limit(1)
-        .maybeSingle();
-
-      if (featData) {
-        const authorName = profileMap.get(featData.author_id)?.full_name || null;
-        setFeaturedArticle({
-          id: featData.id,
-          title: featData.title,
-          slug: featData.slug,
-          excerpt: featData.excerpt,
-          cover_image_url: featData.cover_image_url,
-          tags: featData.tags || [],
-          published_at: featData.published_at,
-          author_name: authorName,
-          body: featData.body,
-        });
-      }
+          if (featData) {
+            const authorName = profileMap.get(featData.author_id)?.full_name || null;
+            setFeaturedArticle({
+              id: featData.id, title: featData.title, slug: featData.slug, excerpt: featData.excerpt,
+              cover_image_url: featData.cover_image_url, tags: featData.tags || [],
+              published_at: featData.published_at, author_name: authorName, body: featData.body,
+            });
+          }
+        } catch { /* secondary data is non-critical */ }
+      };
+      // Fire and forget — don't block primary render
+      deferSecondary();
       } catch (err) {
         console.error("Failed to load showcase data:", err);
       } finally {
@@ -777,12 +707,12 @@ const Index = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 2, delay: 0.5, ease: slowEase }}
+              transition={{ duration: 1.2, delay: 0.2, ease: slowEase }}
             >
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 1.5, delay: 0.8, ease: classicEase }}
+                transition={{ duration: 1, delay: 0.3, ease: classicEase }}
                 className="flex items-center gap-4 mb-6"
               >
                 <div className="w-16 h-px bg-primary" />
@@ -794,7 +724,7 @@ const Index = () => {
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.8, delay: 1, ease: classicEase }}
+                transition={{ duration: 1.2, delay: 0.5, ease: classicEase }}
                 className="text-5xl md:text-7xl lg:text-8xl font-light leading-[0.9] mb-6 tracking-tight"
                 style={{ fontFamily: "var(--font-display)" }}
               >
@@ -805,7 +735,7 @@ const Index = () => {
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1.5, delay: 1.6, ease: slowEase }}
+                transition={{ duration: 1, delay: 0.8, ease: slowEase }}
                 className="text-sm md:text-base text-muted-foreground max-w-md leading-relaxed mb-12"
                 style={{ fontFamily: "var(--font-body)" }}
               >
@@ -815,7 +745,7 @@ const Index = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1.5, delay: 2, ease: slowEase }}
+                transition={{ duration: 1, delay: 1, ease: slowEase }}
                 className="flex items-center gap-6"
               >
                 <Link
@@ -872,8 +802,12 @@ const Index = () => {
       <section className="py-8 md:py-12" aria-label="Spotlight">
         <div className="container mx-auto px-6 md:px-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-            <PhotoOfTheDay />
-            <FeaturedArtist />
+            <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-lg" />}>
+              <PhotoOfTheDay />
+            </Suspense>
+            <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-lg" />}>
+              <FeaturedArtist />
+            </Suspense>
           </div>
         </div>
       </section>
@@ -1237,14 +1171,18 @@ const Index = () => {
       </section>
 
       {/* Lightbox */}
-      <Lightbox
-        images={galleryWorks}
-        currentIndex={lightboxIndex}
-        isOpen={lightboxOpen}
-        onClose={closeLightbox}
-        onPrev={prevLightbox}
-        onNext={nextLightbox}
-      />
+      {lightboxOpen && (
+        <Suspense fallback={null}>
+          <Lightbox
+            images={galleryWorks}
+            currentIndex={lightboxIndex}
+            isOpen={lightboxOpen}
+            onClose={closeLightbox}
+            onPrev={prevLightbox}
+            onNext={nextLightbox}
+          />
+        </Suspense>
+      )}
       </motion.div>
 
       <section id="about" className="py-24 md:py-32 relative" aria-label="Featured from the Journal">
