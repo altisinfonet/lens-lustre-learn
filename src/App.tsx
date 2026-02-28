@@ -43,7 +43,16 @@ const Discover = lazy(() => import("./pages/Discover"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const FeaturedArtistPage = lazy(() => import("./pages/FeaturedArtistPage"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 min
+      gcTime: 10 * 60 * 1000,   // 10 min
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const PageLoader = () => (
   <div className="min-h-[60vh] flex items-center justify-center">
