@@ -42,6 +42,7 @@ const Feed = lazy(() => import("./pages/Feed"));
 const Discover = lazy(() => import("./pages/Discover"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const FeaturedArtistPage = lazy(() => import("./pages/FeaturedArtistPage"));
+const Referrals = lazy(() => import("./pages/Referrals"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,6 +109,7 @@ const App = () => (
                 <Route path="/winners" element={<Winners />} />
                 <Route path="/wallet" element={<Wallet />} />
                 <Route path="/featured-artist/:slug" element={<FeaturedArtistPage />} />
+                <Route path="/referrals" element={<Referrals />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Route>

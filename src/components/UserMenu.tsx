@@ -24,6 +24,7 @@ import {
   MessageSquare,
   Compass,
   Rss,
+  UserPlus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -113,6 +114,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
         </span>
       ) : null,
     },
+    { icon: UserPlus, label: "Referrals", to: "/referrals", show: true },
     { icon: ImageIcon, label: "My Submissions", to: "/dashboard?tab=submissions", show: true },
     { icon: Shield, label: "Admin Panel", to: "/admin", show: isAdmin },
     { icon: Scale, label: "Judge Panel", to: "/judge", show: hasRole("judge") || isAdmin },

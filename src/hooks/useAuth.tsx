@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useReferral";
 
 interface AuthContextType {
   session: Session | null;
@@ -37,6 +38,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await supabase.from("profiles").upsert(payload, { onConflict: "id" });
     };
 
+    const linkReferral = async (user: User) => {
+      const code = getStoredReferralCode();
+      if (!code) return;
+      try {
+        const { data: codeRow } = await (supabase
+          .from("referral_codes" as any)
+          .select("id, user_id")
+          .eq("code", code)
+          .maybeSingle() as any);
+        if (codeRow && codeRow.user_id !== user.id) {
+          await (supabase.from("referrals" as any).insert({
+            referrer_id: codeRow.user_id,
+            referred_id: user.id,
+            referral_code_id: codeRow.id,
+          } as any) as any);
+        }
+      } catch {} finally {
+        clearStoredReferralCode();
+      }
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -44,6 +66,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (session?.user) {
         setTimeout(() => syncProfile(session.user), 0);
+        if (_event === 'SIGNED_IN') {
+          setTimeout(() => linkReferral(session.user), 100);
+        }
       }
     });
 
