@@ -16,6 +16,7 @@ export interface PublicProfile {
   is_suspended: boolean;
   created_at: string;
   updated_at: string;
+  privacy_settings: Record<string, string> | null;
 }
 
 /**

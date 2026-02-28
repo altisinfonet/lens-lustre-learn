@@ -9,6 +9,7 @@ import { BADGES, type BadgeType } from "@/lib/badgeConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { getAdminIds, resolveName, resolveBadges, isAdminUser } from "@/lib/adminBrand";
+import { canViewField, getPrivacy, type PrivacyLevel } from "@/components/PrivacyToggle";
 
 /* ── Mini Carousel on hover ── */
 const MiniCarousel = ({
@@ -113,6 +114,7 @@ interface ProfileData {
   twitter_url: string | null;
   youtube_url: string | null;
   website_url: string | null;
+  privacy_settings: Record<string, string> | null;
 }
 
 interface CompEntry {
@@ -154,17 +156,18 @@ const PublicProfile = () => {
   const [isStudent, setIsStudent] = useState(false);
   const [userBadges, setUserBadges] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"wall" | "works" | "about">("wall");
-
+  const [isFriend, setIsFriend] = useState(false);
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
-      const [profileRes, entriesRes, certsRes, rolesRes, badgesRes, adminIds] = await Promise.all([
-        profilesPublic().select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url").eq("id", userId).maybeSingle(),
+      const [profileRes, entriesRes, certsRes, rolesRes, badgesRes, adminIds, friendRes] = await Promise.all([
+        profilesPublic().select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url, privacy_settings").eq("id", userId).maybeSingle(),
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
         supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["registered_photographer", "student"] as any),
         supabase.from("user_badges").select("badge_type").eq("user_id", userId),
         getAdminIds(),
+        currentUser ? supabase.rpc("are_friends", { _user_a: currentUser.id, _user_b: userId }) : Promise.resolve({ data: false }),
       ]);
 
       if (!profileRes.data) {
@@ -187,6 +190,7 @@ const PublicProfile = () => {
       setIsStudent(userRoles.includes("student"));
       const rawBadges = (badgesRes.data as any[])?.map((b: any) => b.badge_type) || [];
       setUserBadges(resolveBadges(userId, rawBadges, adminIds));
+      setIsFriend(!!(friendRes as any)?.data);
       setLoading(false);
     };
     load();
@@ -217,14 +221,18 @@ const PublicProfile = () => {
   const displayName = profile.full_name || "Photographer";
   const memberSince = new Date(profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-  const socialLinks = [
+  const isOwner = currentUser?.id === userId;
+  const ps = profile.privacy_settings;
+  const canView = (field: string) => canViewField(getPrivacy(ps, field), isOwner, isFriend);
+
+  const socialLinks = canView("social_links") ? [
     profile.facebook_url && { icon: Facebook, label: "Facebook", url: profile.facebook_url },
     profile.instagram_url && { icon: Instagram, label: "Instagram", url: profile.instagram_url },
     profile.twitter_url && { icon: Twitter, label: "X", url: profile.twitter_url },
     profile.youtube_url && { icon: Youtube, label: "YouTube", url: profile.youtube_url },
     profile.website_url && { icon: Globe, label: "Website", url: profile.website_url },
-    profile.portfolio_url && !profile.website_url && { icon: Globe, label: "Portfolio", url: profile.portfolio_url },
-  ].filter(Boolean) as { icon: any; label: string; url: string }[];
+    canView("portfolio") && profile.portfolio_url && !profile.website_url && { icon: Globe, label: "Portfolio", url: profile.portfolio_url },
+  ].filter(Boolean) as { icon: any; label: string; url: string }[] : [];
 
   const tabs = [
     { key: "wall" as const, label: "Wall" },
@@ -240,7 +248,7 @@ const PublicProfile = () => {
           <motion.div {...fadeUp()} className="flex flex-col sm:flex-row items-center sm:items-end gap-5 pb-6">
             {/* Avatar */}
             <div className="relative flex-shrink-0 sm:-mb-16 z-10">
-              {profile.avatar_url ? (
+              {canView("avatar") && profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt={displayName}
@@ -342,7 +350,7 @@ const PublicProfile = () => {
                 Intro
               </h3>
 
-              {profile.bio && (
+              {canView("bio") && profile.bio && (
                 <p className="text-sm text-muted-foreground leading-relaxed" style={bodyFont}>
                   {profile.bio.length > 150 ? profile.bio.slice(0, 150) + "…" : profile.bio}
                 </p>
@@ -375,7 +383,7 @@ const PublicProfile = () => {
             </div>
 
             {/* Interests */}
-            {profile.photography_interests && profile.photography_interests.length > 0 && (
+            {canView("interests") && profile.photography_interests && profile.photography_interests.length > 0 && (
               <div className="border border-border p-5 space-y-3">
                 <h3 className="text-[11px] tracking-[0.2em] uppercase text-foreground" style={headingFont}>
                   Specializations
@@ -573,7 +581,7 @@ const PublicProfile = () => {
                 className="space-y-6"
               >
                 {/* Full bio */}
-                {profile.bio && (
+                {canView("bio") && profile.bio && (
                   <div className="border border-border p-6">
                     <h3 className="text-[11px] tracking-[0.2em] uppercase text-foreground mb-4" style={headingFont}>About</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed" style={bodyFont}>{profile.bio}</p>
@@ -632,7 +640,7 @@ const PublicProfile = () => {
                 )}
 
                 {/* Interests full */}
-                {profile.photography_interests && profile.photography_interests.length > 0 && (
+                {canView("interests") && profile.photography_interests && profile.photography_interests.length > 0 && (
                   <div className="border border-border p-6">
                     <h3 className="text-[11px] tracking-[0.2em] uppercase text-foreground mb-4" style={headingFont}>Specializations</h3>
                     <div className="flex flex-wrap gap-2">
