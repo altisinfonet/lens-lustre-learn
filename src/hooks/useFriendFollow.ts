@@ -14,11 +14,21 @@ export const useFriendFollow = (targetUserId: string | undefined) => {
   const [followingCount, setFollowingCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [friendshipId, setFriendshipId] = useState<string | null>(null);
+  const [isTargetAdmin, setIsTargetAdmin] = useState(false);
 
   const isSelf = user?.id === targetUserId;
 
   const fetchData = useCallback(async () => {
     if (!targetUserId) return;
+
+    // Check if target user is admin (block friend requests)
+    const { data: targetRoles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", targetUserId)
+      .eq("role", "admin")
+      .maybeSingle();
+    setIsTargetAdmin(!!targetRoles);
 
     // Fetch public counts
     const [friendCountRes, followerRes, followingRes] = await Promise.all([
@@ -64,7 +74,7 @@ export const useFriendFollow = (targetUserId: string | undefined) => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const sendFriendRequest = async () => {
-    if (!user || !targetUserId || isSelf) return;
+    if (!user || !targetUserId || isSelf || isTargetAdmin) return;
     setLoading(true);
     const { error } = await supabase.from("friendships").insert({
       requester_id: user.id,
@@ -133,6 +143,7 @@ export const useFriendFollow = (targetUserId: string | undefined) => {
     loading,
     isSelf,
     isLoggedIn: !!user,
+    isTargetAdmin,
     sendFriendRequest,
     acceptFriendRequest,
     removeFriend,

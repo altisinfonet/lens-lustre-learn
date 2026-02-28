@@ -33,7 +33,7 @@ interface DiscoverProfile {
 // Inline action buttons per card
 const DiscoverActions = ({ targetUserId }: { targetUserId: string }) => {
   const {
-    friendStatus, isFollowing, loading, isSelf,
+    friendStatus, isFollowing, loading, isSelf, isTargetAdmin,
     sendFriendRequest, removeFriend, acceptFriendRequest, toggleFollow,
   } = useFriendFollow(targetUserId);
 
@@ -43,7 +43,7 @@ const DiscoverActions = ({ targetUserId }: { targetUserId: string }) => {
 
   return (
     <div className="flex gap-2 mt-3">
-      {friendStatus === "none" && (
+      {!isTargetAdmin && friendStatus === "none" && (
         <button onClick={sendFriendRequest} disabled={loading}
           className={`${btnBase} border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground`} style={headingFont}>
           <UserPlus className="h-3 w-3" /> <T>Add Friend</T>
@@ -94,10 +94,22 @@ const Discover = () => {
     if (!user) return;
     setLoading(true);
 
+    // Fetch admin & judge user IDs to exclude from results
+    const { data: hiddenRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .in("role", ["admin", "judge"]);
+    const hiddenIds = [...new Set((hiddenRoles || []).map((r) => r.user_id))];
+
     let query = profilesPublic()
       .select("id, full_name, avatar_url, bio, photography_interests, created_at")
       .eq("is_suspended", false)
       .neq("id", user.id);
+
+    // Exclude admin and jury profiles
+    if (hiddenIds.length > 0) {
+      query = query.not("id", "in", `(${hiddenIds.join(",")})`);
+    }
 
     if (search.trim()) {
       query = query.ilike("full_name", `%${search.trim()}%`);
