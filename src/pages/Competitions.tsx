@@ -49,7 +49,7 @@ const Competitions = () => {
       let query = supabase
         .from("competitions")
         .select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, starts_at, ends_at")
-        .order("starts_at", { ascending: false });
+        .order("updated_at", { ascending: false });
 
       if (filter !== "all") {
         query = query.eq("status", filter);
