@@ -1,4 +1,4 @@
-import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand, Calendar } from "lucide-react";
+import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand, Calendar, Rss, Users, Globe, MessageCircle } from "lucide-react";
 import T from "@/components/T";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
@@ -1771,6 +1771,305 @@ const Index = () => {
           )}
           </div>
         </section>
+
+      {/* Social Engagement Showcase */}
+      <section className="py-24 md:py-32 overflow-hidden" aria-label="Community and social features">
+        <div className="container mx-auto px-6 md:px-12">
+          <motion.header
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="flex items-end justify-between mb-16"
+          >
+            <div>
+              <motion.div variants={fadeUp} custom={0} className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-px bg-primary" />
+                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                  <T>Community</T>
+                </span>
+              </motion.div>
+              <motion.h2 variants={fadeUp} custom={1} className="text-3xl sm:text-5xl md:text-7xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                <T>Connect &</T> <em className="italic text-primary"><T>Engage</T></em>
+              </motion.h2>
+            </div>
+            <motion.div variants={fadeIn} custom={2}>
+              <Link
+                to={user ? "/feed" : "/signup"}
+                className="group inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                <T>{user ? "Go to Feed" : "Join Now"}</T> <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-500" />
+              </Link>
+            </motion.div>
+          </motion.header>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Feature Card 1 — Wall Posts & Reactions */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: classicEase }}
+              className="group border border-border hover:border-primary/40 rounded-sm p-6 md:p-8 transition-all duration-700 relative overflow-hidden lg:col-span-2"
+            >
+              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-[1.5s]" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Rss className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-light tracking-tight" style={{ fontFamily: "var(--font-heading)" }}><T>Share Your Story</T></h3>
+                    <p className="text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>Post photos, write captions & share with friends</T></p>
+                  </div>
+                </div>
+                {/* Mock post preview */}
+                <div className="bg-card border border-border rounded-lg p-4 mb-4 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-full bg-muted overflow-hidden">
+                      <img src="/images/portrait-1.jpg" alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium block" style={{ fontFamily: "var(--font-body)" }}>Ankit Sharma</span>
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        2h ago · <Globe className="h-2.5 w-2.5" />
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>"Golden hour at the ghats... Every frame tells a story of devotion and light ✨"</p>
+                  <div className="h-40 rounded-md overflow-hidden bg-muted mb-3">
+                    <img src="/images/devotion.jpg" alt="" className="w-full h-full object-cover" />
+                  </div>
+                  {/* Reaction bar */}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-2 px-1">
+                    <div className="flex items-center gap-1">
+                      <span className="flex -space-x-0.5">
+                        <span className="text-base">❤️</span>
+                        <span className="text-base">👍</span>
+                        <span className="text-base">😮</span>
+                      </span>
+                      <span className="ml-1.5">24</span>
+                    </div>
+                    <span>8 comments</span>
+                  </div>
+                  <div className="border-t border-border pt-2 flex items-center justify-around">
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-default"
+                    >
+                      <span className="text-lg">👍</span> <T>Like</T>
+                    </motion.div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <MessageCircle className="h-4 w-4" /> <T>Comment</T>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Rss className="h-4 w-4" /> <T>Share</T>
+                    </div>
+                  </div>
+                </div>
+                {/* Floating reaction emojis */}
+                <div className="flex items-center gap-1 bg-card border border-border rounded-full px-3 py-1.5 shadow-md w-fit">
+                  {["👍", "❤️", "😂", "😮", "😢", "😡"].map((e, i) => (
+                    <motion.span
+                      key={e}
+                      initial={{ opacity: 0, y: 8 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.8 + i * 0.08, duration: 0.3 }}
+                      className="text-2xl cursor-default hover:scale-125 hover:-translate-y-1 transition-transform duration-150"
+                    >
+                      {e}
+                    </motion.span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Feature Card 2 — Friends & Follow */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.15, duration: 0.8, ease: classicEase }}
+              className="group border border-border hover:border-primary/40 rounded-sm p-6 md:p-8 transition-all duration-700 relative overflow-hidden"
+            >
+              <div className="absolute bottom-0 left-0 w-40 h-40 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2 group-hover:scale-150 transition-transform duration-[1.5s]" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-light tracking-tight" style={{ fontFamily: "var(--font-heading)" }}><T>Build Your Circle</T></h3>
+                    <p className="text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>Friend, follow & discover photographers</T></p>
+                  </div>
+                </div>
+                {/* Mock friend avatars */}
+                <div className="space-y-3">
+                  {[
+                    { name: "Priya Mehra", img: "/images/behind-the-veil.jpg", badge: "Friend" },
+                    { name: "Rajesh Kumar", img: "/images/the-craftsman.jpg", badge: "Following" },
+                    { name: "Sara Ali", img: "/images/frozen-love.jpg", badge: "Friend" },
+                  ].map((f, i) => (
+                    <motion.div
+                      key={f.name}
+                      initial={{ opacity: 0, x: -15 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.6 + i * 0.12, duration: 0.5 }}
+                      className="flex items-center gap-3 bg-card border border-border rounded-lg px-3 py-2.5"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-muted overflow-hidden shrink-0">
+                        <img src={f.img} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <span className="text-sm flex-1 truncate" style={{ fontFamily: "var(--font-body)" }}>{f.name}</span>
+                      <span className={`text-[9px] tracking-[0.1em] uppercase px-2 py-0.5 rounded-sm border ${
+                        f.badge === "Friend" ? "border-primary/40 text-primary" : "border-border text-muted-foreground"
+                      }`} style={{ fontFamily: "var(--font-heading)" }}>
+                        {f.badge}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3 mt-5">
+                  {[
+                    { label: "Friends", value: "128" },
+                    { label: "Followers", value: "2.4K" },
+                    { label: "Following", value: "312" },
+                  ].map((s) => (
+                    <div key={s.label} className="text-center py-2 bg-muted/30 rounded-sm">
+                      <span className="text-lg font-light block" style={{ fontFamily: "var(--font-display)" }}>{s.value}</span>
+                      <span className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Feature Card 3 — Live Feed */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.25, duration: 0.8, ease: classicEase }}
+              className="group border border-border hover:border-primary/40 rounded-sm p-6 md:p-8 transition-all duration-700 relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-36 h-36 bg-primary/5 rounded-full -translate-y-1/2 -translate-x-1/2 group-hover:scale-150 transition-transform duration-[1.5s]" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Rss className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-light tracking-tight" style={{ fontFamily: "var(--font-heading)" }}><T>Your Feed</T></h3>
+                    <p className="text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>See what your community is creating</T></p>
+                  </div>
+                </div>
+                {/* Mock feed items */}
+                <div className="space-y-3">
+                  {[
+                    { text: "shared a new wildlife photo", emoji: "📸", time: "5m" },
+                    { text: "won 1st place in Portrait Masters", emoji: "🏆", time: "1h" },
+                    { text: "reacted ❤️ to your sunset shot", emoji: "❤️", time: "2h" },
+                    { text: "started following you", emoji: "👋", time: "3h" },
+                    { text: "commented on your post", emoji: "💬", time: "4h" },
+                  ].map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.7 + i * 0.1, duration: 0.4 }}
+                      className="flex items-center gap-2.5 text-sm"
+                      style={{ fontFamily: "var(--font-body)" }}
+                    >
+                      <span className="text-base">{item.emoji}</span>
+                      <span className="flex-1 text-muted-foreground text-xs truncate">{item.text}</span>
+                      <span className="text-[10px] text-muted-foreground/50 shrink-0">{item.time}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Feature Card 4 — Privacy & Sharing */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 0.8, ease: classicEase }}
+              className="group border border-border hover:border-primary/40 rounded-sm p-6 md:p-8 transition-all duration-700 relative overflow-hidden"
+            >
+              <div className="absolute bottom-0 right-0 w-44 h-44 bg-primary/5 rounded-full translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-[1.5s]" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Eye className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-light tracking-tight" style={{ fontFamily: "var(--font-heading)" }}><T>You're In Control</T></h3>
+                    <p className="text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>Choose who sees your content</T></p>
+                  </div>
+                </div>
+                {/* Privacy levels */}
+                <div className="space-y-3">
+                  {[
+                    { icon: Globe, label: "Public", desc: "Visible to everyone", active: true },
+                    { icon: Users, label: "Friends Only", desc: "Only your friends can see", active: false },
+                    { icon: Eye, label: "Only Me", desc: "Private — just for you", active: false },
+                  ].map((p, i) => (
+                    <motion.div
+                      key={p.label}
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.7 + i * 0.1, duration: 0.4 }}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 border transition-colors ${
+                        p.active ? "border-primary/40 bg-primary/5" : "border-border bg-card"
+                      }`}
+                    >
+                      <p.icon className={`h-4 w-4 shrink-0 ${p.active ? "text-primary" : "text-muted-foreground"}`} />
+                      <div className="min-w-0">
+                        <span className={`text-sm block ${p.active ? "text-primary font-medium" : ""}`} style={{ fontFamily: "var(--font-body)" }}>{p.label}</span>
+                        <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{p.desc}</span>
+                      </div>
+                      {p.active && (
+                        <div className="ml-auto w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                          <ArrowRight className="h-2.5 w-2.5 text-primary-foreground rotate-[-45deg]" />
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Bottom CTA */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4, duration: 1 }}
+            className="text-center mt-14"
+          >
+            <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto" style={{ fontFamily: "var(--font-body)" }}>
+              <T>More than a portfolio — it's a social platform built for photographers. React, comment, share, and grow together.</T>
+            </p>
+            <Link
+              to={user ? "/feed" : "/signup"}
+              className="group inline-flex items-center gap-3 text-[10px] tracking-[0.2em] uppercase text-primary hover:text-foreground transition-colors duration-500"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              <span className="w-10 h-10 rounded-full border border-primary flex items-center justify-center group-hover:bg-primary group-hover:scale-105 transition-all duration-700">
+                <ArrowRight className="h-4 w-4 text-primary group-hover:text-primary-foreground transition-colors duration-500" />
+              </span>
+              <T>{user ? "Explore Your Feed" : "Join the Community"}</T>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Quote */}
       <section className="relative py-32 md:py-40 overflow-hidden" aria-label="Photography quote">
