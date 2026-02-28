@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Copy, Check, Users, Gift, Share2, Link as LinkIcon, Loader2, UserPlus, DollarSign } from "lucide-react";
+import { Copy, Check, Users, Gift, Share2, Link as LinkIcon, Loader2, UserPlus, DollarSign, Mail, Send } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,9 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const fadeUp = {
@@ -38,6 +41,8 @@ const Referrals = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   const generateCode = useCallback(() => {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -123,6 +128,24 @@ const Referrals = () => {
     }
   };
 
+  const handleEmailInvite = () => {
+    if (!inviteEmail.trim() || !referralLink) return;
+    const emails = inviteEmail.split(",").map(e => e.trim()).filter(Boolean);
+    const invalidEmails = emails.filter(e => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    if (invalidEmails.length > 0) {
+      toast({ title: "Invalid email(s)", description: invalidEmails.join(", "), variant: "destructive" });
+      return;
+    }
+    const subject = encodeURIComponent("Join me on 50mm Retina!");
+    const body = encodeURIComponent(
+      `Hey!\n\nI'd love for you to join 50mm Retina — a photography community where you can showcase your work, enter competitions, and learn from others.\n\nSign up using my referral link and we both earn rewards:\n${referralLink}\n\nSee you there!`
+    );
+    const mailto = `mailto:${emails.join(",")}?subject=${subject}&body=${body}`;
+    window.open(mailto, "_blank");
+    toast({ title: "Email client opened!", description: `Invitation ready for ${emails.length} friend(s).` });
+    setInviteEmail("");
+  };
+
   const totalRewards = referrals.filter(r => r.status === "rewarded").reduce((sum, r) => sum + (r.reward_amount || 0), 0);
   const pendingCount = referrals.filter(r => r.status === "pending").length;
   const rewardedCount = referrals.filter(r => r.status === "rewarded").length;
@@ -177,6 +200,33 @@ const Referrals = () => {
               <p className="text-[11px] text-muted-foreground mt-3">
                 <T>Your code:</T> <span className="font-mono font-bold text-primary">{referralCode || "..."}</span>
               </p>
+
+              <Separator className="my-5" />
+
+              {/* Invite by Email */}
+              <div>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+                  <Mail className="h-3.5 w-3.5" />
+                  <T>Invite Friends via Email</T>
+                </Label>
+                <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                  <Input
+                    type="email"
+                    placeholder="friend@example.com (comma-separated for multiple)"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleEmailInvite()}
+                    className="flex-1"
+                  />
+                  <Button size="sm" onClick={handleEmailInvite} disabled={!inviteEmail.trim() || !referralCode || sendingInvite} className="gap-1.5">
+                    <Send className="h-4 w-4" />
+                    <span className="text-xs uppercase tracking-wider"><T>Send Invite</T></span>
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  <T>Enter one or more email addresses separated by commas. Opens your email client with a pre-filled invitation.</T>
+                </p>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
