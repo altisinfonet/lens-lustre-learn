@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
+import FacebookPhotoGrid from "@/components/FacebookPhotoGrid";
 import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
@@ -19,44 +20,7 @@ import {
 
 type Privacy = "public" | "friends" | "private";
 
-/** Facebook-style image display: landscape natural, portrait capped at 4:5, square 1:1 */
-const FacebookImage = ({ src, downloadUrl }: { src: string; downloadUrl: string }) => {
-  const [ratio, setRatio] = useState<number | null>(null);
-
-  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    if (img.naturalWidth && img.naturalHeight) {
-      setRatio(img.naturalWidth / img.naturalHeight);
-    }
-  };
-
-  // Compact wall images: cap portrait at 4:5 (0.8), landscape at 1.91:1, max-height 320px
-  const clampedRatio = ratio ? Math.max(0.8, Math.min(ratio, 1.91)) : 1;
-  const paddingTop = ratio ? `${(1 / clampedRatio) * 100}%` : "75%";
-
-  return (
-    <div className="mt-2 relative group/img bg-muted/30 max-h-80 overflow-hidden rounded-sm">
-      <div style={{ paddingTop, position: "relative", width: "100%", maxHeight: "320px" }}>
-        <img
-          src={src}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover cursor-pointer"
-          loading="lazy"
-          onLoad={handleLoad}
-        />
-      </div>
-      <a
-        href={downloadUrl}
-        download
-        onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-3 right-3 p-2 rounded-full bg-card/80 backdrop-blur-sm text-foreground opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-card shadow-sm"
-        title="Download JPEG"
-      >
-        <Download className="h-4 w-4" />
-      </a>
-    </div>
-  );
-};
+// FacebookImage replaced by FacebookPhotoGrid component
 
 import ReactionPicker, { ReactionType, REACTION_EMOJI_MAP, getReactionColor } from "@/components/ReactionPicker";
 
@@ -65,6 +29,7 @@ interface Post {
   user_id: string;
   content: string;
   image_url: string | null;
+  image_urls: string[];
   privacy: Privacy;
   created_at: string;
   updated_at: string;
@@ -118,8 +83,8 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
   const [newContent, setNewContent] = useState("");
   const [newPrivacy, setNewPrivacy] = useState<Privacy>("public");
   const [posting, setPosting] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
@@ -196,6 +161,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
           is_liked: !!userRx,
           user_reaction: userRx || null,
           top_reactions: topReactions,
+          image_urls: (p as any).image_urls || (p.image_url ? [p.image_url] : []),
         };
       })
     );
@@ -211,20 +177,25 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       toast({ title: "Only image files are allowed", variant: "destructive" });
       return;
     }
-    setSelectedImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    if (selectedImages.length >= 10) {
+      toast({ title: "Maximum 10 photos per post", variant: "destructive" });
+      return;
+    }
+    setSelectedImages(prev => [...prev, file]);
+    setImagePreviews(prev => [...prev, URL.createObjectURL(file)]);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) processFile(file);
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => processFile(file));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) processFile(file);
+    const files = Array.from(e.dataTransfer.files);
+    files.forEach(file => processFile(file));
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -232,45 +203,58 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
     setIsDragOver(true);
   };
 
-  const clearImage = () => {
-    setSelectedImage(null);
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(null);
+  const clearImage = (index: number) => {
+    URL.revokeObjectURL(imagePreviews[index]);
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearAllImages = () => {
+    imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    setSelectedImages([]);
+    setImagePreviews([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const createPost = async () => {
-    if (!user || !selectedImage) {
-      toast({ title: "Please attach a photo to your post", variant: "destructive" });
+    if (!user || selectedImages.length === 0) {
+      toast({ title: "Please attach at least one photo", variant: "destructive" });
       return;
     }
     setPosting(true);
     try {
-      const baseName = `${Date.now()}`;
-      const { webpFile, jpegFile } = await compressImageToFiles(selectedImage, baseName);
-      const webpPath = `${user.id}/${baseName}.webp`;
-      const jpegPath = `${user.id}/${baseName}.jpg`;
-      const [webpUpload, jpegUpload] = await Promise.all([
-        supabase.storage.from("post-images").upload(webpPath, webpFile, { cacheControl: "3600", upsert: false }),
-        supabase.storage.from("post-images").upload(jpegPath, jpegFile, { cacheControl: "3600", upsert: false }),
-      ]);
-      if (webpUpload.error) {
-        toast({ title: "Image upload failed", description: webpUpload.error.message, variant: "destructive" });
-        setPosting(false);
-        return;
+      const uploadedUrls: string[] = [];
+
+      for (let i = 0; i < selectedImages.length; i++) {
+        const baseName = `${Date.now()}_${i}`;
+        const { webpFile, jpegFile } = await compressImageToFiles(selectedImages[i], baseName);
+        const webpPath = `${user.id}/${baseName}.webp`;
+        const jpegPath = `${user.id}/${baseName}.jpg`;
+        const [webpUpload] = await Promise.all([
+          supabase.storage.from("post-images").upload(webpPath, webpFile, { cacheControl: "3600", upsert: false }),
+          supabase.storage.from("post-images").upload(jpegPath, jpegFile, { cacheControl: "3600", upsert: false }),
+        ]);
+        if (webpUpload.error) {
+          toast({ title: `Upload failed for photo ${i + 1}`, description: webpUpload.error.message, variant: "destructive" });
+          setPosting(false);
+          return;
+        }
+        const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(webpPath);
+        uploadedUrls.push(urlData.publicUrl);
       }
-      const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(webpPath);
+
       const { error } = await supabase.from("posts").insert({
         user_id: user.id,
         content: newContent.trim(),
         privacy: newPrivacy,
-        image_url: urlData.publicUrl,
-      });
+        image_url: uploadedUrls[0],
+        image_urls: uploadedUrls,
+      } as any);
       if (error) {
         toast({ title: "Failed to post", description: error.message, variant: "destructive" });
       } else {
         setNewContent("");
-        clearImage();
+        clearAllImages();
         await fetchPosts();
       }
     } catch (err: any) {
@@ -330,8 +314,9 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       user_id: user.id,
       content: sharedContent,
       image_url: post.image_url,
+      image_urls: post.image_urls,
       privacy: "public",
-    });
+    } as any);
     if (error) {
       toast({ title: "Failed to share", variant: "destructive" });
     } else {
@@ -464,22 +449,40 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
             />
           </div>
 
-          {/* Image preview */}
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
-          {imagePreview && (
-            <div className="relative mx-3 mt-3">
-              <img src={imagePreview} alt="Preview" className="w-full max-h-72 object-cover rounded-lg border border-border" />
-              <button
-                onClick={clearImage}
-                className="absolute top-2 right-2 p-1.5 bg-card/90 backdrop-blur-sm rounded-full text-muted-foreground hover:text-destructive hover:bg-card transition-all shadow-sm"
-              >
-                <X className="h-4 w-4" />
-              </button>
+          {/* Image previews */}
+          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageSelect} className="hidden" />
+          {imagePreviews.length > 0 && (
+            <div className="mx-3 mt-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{imagePreviews.length} photo{imagePreviews.length > 1 ? "s" : ""} selected</span>
+                <button onClick={clearAllImages} className="text-xs text-destructive hover:underline"><T>Remove all</T></button>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                {imagePreviews.map((preview, idx) => (
+                  <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-border">
+                    <img src={preview} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => clearImage(idx)}
+                      className="absolute top-1 right-1 p-1 bg-card/90 backdrop-blur-sm rounded-full text-muted-foreground hover:text-destructive hover:bg-card transition-all shadow-sm"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {imagePreviews.length < 10 && (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-square rounded-md border border-dashed border-border flex items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors"
+                  >
+                    <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* Drop zone when no image */}
-          {!imagePreview && (
+          {imagePreviews.length === 0 && (
             <div
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
@@ -545,7 +548,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
 
             <button
               onClick={createPost}
-              disabled={posting || !selectedImage}
+              disabled={posting || selectedImages.length === 0}
               className="px-5 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {posting ? <T>Posting...</T> : <T>Post</T>}
@@ -623,20 +626,25 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                 )}
               </div>
 
-              {/* ── Post Content ── */}
+              {/* ── Post Content with hashtag highlighting ── */}
               {post.content && (
                 <div className="px-3 pt-2 pb-1">
                   <p className="text-[15px] leading-[1.33] whitespace-pre-wrap text-foreground">
-                    {post.content}
+                    {post.content.split(/(#\w+)/g).map((part, i) =>
+                      part.startsWith("#") ? (
+                        <span key={i} className="text-primary font-medium">{part}</span>
+                      ) : (
+                        <span key={i}>{part}</span>
+                      )
+                    )}
                   </p>
                 </div>
               )}
 
-              {/* ── Post Image (Facebook-style ratio) ── */}
-              {post.image_url && (
-                <FacebookImage
-                  src={post.image_url}
-                  downloadUrl={getJpegDownloadUrl(post.image_url)}
+              {/* ── Post Photos (Facebook-style grid) ── */}
+              {(post.image_urls.length > 0 || post.image_url) && (
+                <FacebookPhotoGrid
+                  urls={post.image_urls.length > 0 ? post.image_urls : (post.image_url ? [post.image_url] : [])}
                 />
               )}
 
