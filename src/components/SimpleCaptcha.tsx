@@ -49,8 +49,11 @@ const SimpleCaptcha = ({ onVerified }: SimpleCaptchaProps) => {
           <RefreshCw className="h-3.5 w-3.5" />
         </button>
       </div>
-      <p className="text-sm text-foreground" style={{ fontFamily: "var(--font-body)" }}>
-        What is <strong className="text-primary">{challenge.question}</strong> ?
+      <p className="text-sm text-foreground flex items-center gap-2" style={{ fontFamily: "var(--font-body)" }}>
+        <span>What is <strong className="text-primary">{challenge.question}</strong> ?</span>
+        {status === "correct" && (
+          <span className="text-[10px] tracking-[0.15em] uppercase text-green-500" style={{ fontFamily: "var(--font-heading)" }}>✓ Verified</span>
+        )}
       </p>
       <input
         type="text"
@@ -63,9 +66,7 @@ const SimpleCaptcha = ({ onVerified }: SimpleCaptchaProps) => {
         }`}
         style={{ fontFamily: "var(--font-body)" }}
       />
-      {status === "correct" && (
-        <p className="text-[10px] tracking-[0.15em] uppercase text-green-500" style={{ fontFamily: "var(--font-heading)" }}>✓ Verified</p>
-      )}
+      
     </div>
   );
 };
