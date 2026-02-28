@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
 import FacebookPhotoGrid from "@/components/FacebookPhotoGrid";
 import { Textarea } from "@/components/ui/textarea";
-import { getAdminIds, resolveName } from "@/lib/adminBrand";
+import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -157,7 +157,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
           privacy: p.privacy as Privacy,
           author_name: resolveName(p.user_id, profileMap.get(p.user_id)?.full_name, adminIds),
           author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
-          author_badges: badgeMap.get(p.user_id) || [],
+          author_badges: resolveBadges(p.user_id, badgeMap.get(p.user_id) || [], adminIds),
           like_count: likeCounts[p.id] || 0,
           comment_count: commentCounts[p.id] || 0,
           is_liked: !!userRx,
@@ -360,7 +360,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
         ...c,
         author_name: resolveName(c.user_id, profileMap.get(c.user_id)?.full_name, adminIds),
         author_avatar: profileMap.get(c.user_id)?.avatar_url || null,
-        author_badges: badgeMap.get(c.user_id) || [],
+        author_badges: resolveBadges(c.user_id, badgeMap.get(c.user_id) || [], adminIds),
       })),
     }));
   };
