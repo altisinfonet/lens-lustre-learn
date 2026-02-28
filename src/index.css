@@ -6,101 +6,102 @@
 
 @layer base {
   :root {
-    --background: 30 10% 4%;
-    --foreground: 40 20% 92%;
+    /* Facebook-classic light theme as default */
+    --background: 220 2% 96%;
+    --foreground: 214 10% 10%;
 
-    --card: 30 8% 8%;
-    --card-foreground: 40 20% 92%;
+    --card: 0 0% 100%;
+    --card-foreground: 214 10% 10%;
 
-    --popover: 30 8% 8%;
-    --popover-foreground: 40 20% 92%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 214 10% 10%;
 
-    --primary: 32 95% 55%;
-    --primary-foreground: 30 10% 4%;
+    --primary: 214 89% 52%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 40% 45%;
-    --secondary-foreground: 40 20% 92%;
+    --secondary: 220 4% 93%;
+    --secondary-foreground: 214 10% 10%;
 
-    --muted: 30 6% 14%;
-    --muted-foreground: 30 10% 50%;
+    --muted: 220 6% 93%;
+    --muted-foreground: 215 8% 46%;
 
-    --accent: 350 65% 55%;
-    --accent-foreground: 40 20% 92%;
+    --accent: 214 89% 52%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 8% 16%;
-    --input: 30 8% 16%;
-    --ring: 32 95% 55%;
+    --border: 220 6% 87%;
+    --input: 220 6% 87%;
+    --ring: 214 89% 52%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 30 8% 6%;
-    --sidebar-foreground: 40 20% 92%;
-    --sidebar-primary: 32 95% 55%;
-    --sidebar-primary-foreground: 30 10% 4%;
-    --sidebar-accent: 30 6% 14%;
-    --sidebar-accent-foreground: 40 20% 92%;
-    --sidebar-border: 30 8% 16%;
-    --sidebar-ring: 32 95% 55%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 214 10% 10%;
+    --sidebar-primary: 214 89% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 6% 93%;
+    --sidebar-accent-foreground: 214 10% 10%;
+    --sidebar-border: 220 6% 87%;
+    --sidebar-ring: 214 89% 52%;
 
-    /* Scroll section backgrounds — 3 distinct eye-soothing tones */
-    --scroll-bg-1: 220 15% 6%;
-    --scroll-bg-2: 180 12% 8%;
-    --scroll-bg-3: 260 10% 7%;
-    --scroll-bg-4: 200 14% 9%;
-    --scroll-bg-5: 240 12% 6%;
+    /* Scroll section backgrounds — subtle light tones */
+    --scroll-bg-1: 220 6% 96%;
+    --scroll-bg-2: 210 8% 95%;
+    --scroll-bg-3: 220 4% 94%;
+    --scroll-bg-4: 215 8% 95%;
+    --scroll-bg-5: 220 6% 96%;
 
     --font-display: Helvetica, Arial, sans-serif;
     --font-heading: Helvetica, Arial, sans-serif;
     --font-body: Helvetica, Arial, sans-serif;
   }
 
-  .light {
-    --background: 40 30% 96%;
-    --foreground: 30 10% 10%;
+  .dark {
+    --background: 220 7% 13%;
+    --foreground: 220 10% 92%;
 
-    --card: 40 25% 98%;
-    --card-foreground: 30 10% 10%;
+    --card: 220 8% 17%;
+    --card-foreground: 220 10% 92%;
 
-    --popover: 40 25% 98%;
-    --popover-foreground: 30 10% 10%;
+    --popover: 220 8% 17%;
+    --popover-foreground: 220 10% 92%;
 
-    --primary: 32 95% 45%;
+    --primary: 214 89% 52%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 40% 40%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 220 6% 22%;
+    --secondary-foreground: 220 10% 92%;
 
-    --muted: 40 15% 90%;
-    --muted-foreground: 30 8% 45%;
+    --muted: 220 6% 20%;
+    --muted-foreground: 220 6% 55%;
 
-    --accent: 350 65% 50%;
+    --accent: 214 89% 52%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 15% 85%;
-    --input: 30 15% 85%;
-    --ring: 32 95% 45%;
+    --border: 220 6% 24%;
+    --input: 220 6% 24%;
+    --ring: 214 89% 52%;
 
-    --sidebar-background: 40 20% 94%;
-    --sidebar-foreground: 30 10% 10%;
-    --sidebar-primary: 32 95% 45%;
+    --sidebar-background: 220 8% 15%;
+    --sidebar-foreground: 220 10% 92%;
+    --sidebar-primary: 214 89% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 40 15% 90%;
-    --sidebar-accent-foreground: 30 10% 10%;
-    --sidebar-border: 30 15% 85%;
-    --sidebar-ring: 32 95% 45%;
+    --sidebar-accent: 220 6% 20%;
+    --sidebar-accent-foreground: 220 10% 92%;
+    --sidebar-border: 220 6% 24%;
+    --sidebar-ring: 214 89% 52%;
 
-    /* Scroll section backgrounds — light mode soothing tones */
-    --scroll-bg-1: 220 18% 95%;
-    --scroll-bg-2: 180 20% 93%;
-    --scroll-bg-3: 260 15% 94%;
-    --scroll-bg-4: 200 22% 92%;
-    --scroll-bg-5: 240 18% 95%;
+    /* Scroll section backgrounds — dark mode tones */
+    --scroll-bg-1: 220 7% 12%;
+    --scroll-bg-2: 215 8% 14%;
+    --scroll-bg-3: 220 6% 11%;
+    --scroll-bg-4: 218 8% 13%;
+    --scroll-bg-5: 220 7% 12%;
   }
 
   * {
