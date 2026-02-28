@@ -105,14 +105,23 @@ export default function AdminPhotoOfDay({ user }: { user: User | null }) {
 
   if (loading) return <div className="text-xs text-muted-foreground animate-pulse py-8 text-center">Loading...</div>;
 
+  const activeCount = items.filter(i => i.is_active).length;
+  const MAX_ACTIVE = 20;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-          {items.length} photo(s) of the day
+          {items.length} photo(s) of the day · {activeCount}/{MAX_ACTIVE} active
         </span>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            if (activeCount >= MAX_ACTIVE && !showForm) {
+              toast({ title: `Maximum ${MAX_ACTIVE} active photos allowed`, description: "Deactivate some photos first.", variant: "destructive" });
+              return;
+            }
+            setShowForm(!showForm);
+          }}
           className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity duration-500"
           style={{ fontFamily: "var(--font-heading)" }}
         >
