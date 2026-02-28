@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import SimpleCaptcha from "@/components/SimpleCaptcha";
 import T from "@/components/T";
+import { useCaptureReferral } from "@/hooks/useReferral";
 
 const signupSchema = z.object({
   fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -36,6 +37,7 @@ const Signup = () => {
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  useCaptureReferral();
 
   useEffect(() => {
     if (user) navigate("/dashboard");
