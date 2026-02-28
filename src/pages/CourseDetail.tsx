@@ -95,6 +95,14 @@ const CourseDetail = () => {
           console.warn("Could not assign student role:", roleErr.message);
         }
       });
+      // Trigger referral reward for paid course purchases
+      if (course.price && course.price > 0) {
+        supabase.rpc("process_referral_reward" as any, {
+          _referred_user_id: user.id,
+          _activity_type: "course purchase",
+          _txn_amount: course.price,
+        }).then(() => {});
+      }
     }
     setEnrolling(false);
   };
