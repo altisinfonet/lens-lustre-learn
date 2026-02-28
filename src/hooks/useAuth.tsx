@@ -49,8 +49,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        // Clear corrupted/stale session to stop refresh loops
-        supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        const lower = (error.message || "").toLowerCase();
+        const isNetwork =
+          lower.includes("failed to fetch") ||
+          lower.includes("networkerror") ||
+          lower.includes("load failed");
+
+        // Clear corrupted/stale session to stop refresh loops, but avoid wiping state on transient network issues.
+        if (!isNetwork) {
+          supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        }
         setSession(null);
         setUser(null);
         setLoading(false);
