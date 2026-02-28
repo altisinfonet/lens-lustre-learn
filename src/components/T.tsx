@@ -1,9 +1,11 @@
 import { useLanguage } from "@/hooks/useLanguage";
-import { useEffect, useState } from "react";
+import { createElement, forwardRef, useEffect, useState } from "react";
+
+type TagName = keyof JSX.IntrinsicElements;
 
 interface Props {
   children: string;
-  as?: keyof JSX.IntrinsicElements;
+  as?: TagName;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -12,7 +14,10 @@ interface Props {
  * Wraps text content and auto-translates it based on the user's preferred language.
  * Usage: <T>Hello World</T>
  */
-const T = ({ children, as: Tag = "span", className, style }: Props) => {
+const T = forwardRef<HTMLElement, Props>(function T(
+  { children, as = "span", className, style },
+  ref,
+) {
   const { language, translateBatch } = useLanguage();
   const [translated, setTranslated] = useState(children);
 
@@ -25,10 +30,12 @@ const T = ({ children, as: Tag = "span", className, style }: Props) => {
     translateBatch([children]).then(([result]) => {
       if (!cancelled && result) setTranslated(result);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [children, language, translateBatch]);
 
-  return <Tag className={className} style={style}>{translated}</Tag>;
-};
+  return createElement(as as any, { className, style, ref } as any, translated);
+});
 
 export default T;
