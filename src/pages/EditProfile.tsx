@@ -8,6 +8,7 @@ import { getCountries, getStatesForCountry, getCitiesForState } from "@/lib/loca
 import { SUPPORTED_LANGUAGES, useLanguage } from "@/hooks/useLanguage";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { compressAvatar } from "@/lib/imageCompression";
@@ -24,6 +25,7 @@ const sectionHeadCls = "text-[9px] tracking-[0.3em] uppercase text-muted-foregro
 
 const EditProfile = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { language: currentLang, setLanguage: setGlobalLanguage } = useLanguage();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -187,7 +189,8 @@ const EditProfile = () => {
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
-  }, [user, authLoading, navigate]);
+    if (!authLoading && isAdmin) navigate("/admin");
+  }, [user, authLoading, isAdmin, navigate]);
 
   useEffect(() => {
     if (!user) return;

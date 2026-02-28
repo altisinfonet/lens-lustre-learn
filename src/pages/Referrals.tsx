@@ -4,6 +4,7 @@ import { Copy, Check, Users, Gift, Share2, Link as LinkIcon, Loader2, UserPlus, 
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -35,6 +36,7 @@ interface Referral {
 
 const Referrals = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
@@ -102,8 +104,9 @@ const Referrals = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/login"); return; }
+    if (isAdmin) { navigate("/admin"); return; }
     fetchData();
-  }, [user, authLoading, navigate, fetchData]);
+  }, [user, authLoading, isAdmin, navigate, fetchData]);
 
   const referralLink = referralCode
     ? `${window.location.origin}/signup?ref=${referralCode}`

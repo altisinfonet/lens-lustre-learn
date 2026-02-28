@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Users, Heart, UserMinus, UserX, UserCheck, Search, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { toast } from "@/hooks/use-toast";
@@ -54,6 +55,7 @@ const fadeUp = {
 
 const Friends = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
 
   const [friends, setFriends] = useState<FriendRow[]>([]);
@@ -66,7 +68,8 @@ const Friends = () => {
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
-  }, [user, authLoading, navigate]);
+    if (!authLoading && isAdmin) navigate("/admin");
+  }, [user, authLoading, isAdmin, navigate]);
 
   const fetchAll = useCallback(async () => {
     if (!user) return;

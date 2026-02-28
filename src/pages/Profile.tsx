@@ -6,6 +6,7 @@ import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { BADGES, type BadgeType } from "@/lib/badgeConfig";
@@ -22,6 +23,7 @@ interface ProfileData {
 
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,10 +46,9 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/login");
-    }
-  }, [user, authLoading, navigate]);
+    if (!authLoading && !user) navigate("/login");
+    if (!authLoading && isAdmin) navigate("/admin");
+  }, [user, authLoading, isAdmin, navigate]);
 
   useEffect(() => {
     if (!user) return;

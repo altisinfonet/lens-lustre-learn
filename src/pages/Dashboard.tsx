@@ -5,6 +5,7 @@ import T from "@/components/T";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { motion } from "framer-motion";
@@ -66,6 +67,7 @@ interface FriendRequest {
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
@@ -88,10 +90,9 @@ const Dashboard = () => {
   const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/login");
-    }
-  }, [user, authLoading, navigate]);
+    if (!authLoading && !user) navigate("/login");
+    if (!authLoading && isAdmin) navigate("/admin");
+  }, [user, authLoading, isAdmin, navigate]);
 
   useEffect(() => {
     if (!user) return;
