@@ -1210,8 +1210,162 @@ const AdminWalletTab = ({ user }: { user: User | null }) => {
 
   const [wNotes, setWNotes] = useState<Record<string, string>>({});
 
+  // Payment Gateway Config
+  const [gateways, setGateways] = useState<{
+    stripe: { enabled: boolean; publishable_key: string; secret_key: string };
+    paypal: { enabled: boolean; client_id: string; secret: string; mode: string };
+    razorpay: { enabled: boolean; key_id: string; key_secret: string };
+    upi: { enabled: boolean; upi_id: string; merchant_name: string };
+    bank: { enabled: boolean; account_name: string; account_number: string; ifsc: string; bank_name: string };
+  }>({
+    stripe: { enabled: false, publishable_key: "", secret_key: "" },
+    paypal: { enabled: false, client_id: "", secret: "", mode: "sandbox" },
+    razorpay: { enabled: false, key_id: "", key_secret: "" },
+    upi: { enabled: false, upi_id: "", merchant_name: "" },
+    bank: { enabled: false, account_name: "", account_number: "", ifsc: "", bank_name: "" },
+  });
+  const [gatewaySaving, setGatewaySaving] = useState(false);
+
+  const fetchGateways = async () => {
+    const { data } = await supabase.from("site_settings").select("value").eq("key", "payment_gateways").maybeSingle();
+    if (data?.value) {
+      const v = data.value as any;
+      setGateways(prev => ({
+        stripe: { ...prev.stripe, ...v.stripe },
+        paypal: { ...prev.paypal, ...v.paypal },
+        razorpay: { ...prev.razorpay, ...v.razorpay },
+        upi: { ...prev.upi, ...v.upi },
+        bank: { ...prev.bank, ...v.bank },
+      }));
+    }
+  };
+
+  const saveGateways = async () => {
+    setGatewaySaving(true);
+    await supabase.from("site_settings").upsert({
+      key: "payment_gateways",
+      value: gateways as any,
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id,
+    });
+    setGatewaySaving(false);
+    toast({ title: "Payment gateway settings saved" });
+  };
+
+  useState(() => { fetchWithdrawals(); fetchRate(); fetchGateways(); });
+
+  const GatewayField = ({ label, value, onChange, placeholder, type = "text" }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) => (
+    <div className="flex-1 min-w-[180px]">
+      <label className="block text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>{label}</label>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full bg-transparent border-b border-border focus:border-primary outline-none py-2 text-xs" style={{ fontFamily: "var(--font-body)" }} />
+    </div>
+  );
+
   return (
     <div className="space-y-10">
+      {/* Payment Gateway Configuration */}
+      <div className="border border-border p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+            <Settings className="h-3.5 w-3.5 inline mr-2" />Payment Gateway Configuration
+          </span>
+          <button onClick={saveGateways} disabled={gatewaySaving}
+            className="px-5 py-2 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+            style={{ fontFamily: "var(--font-heading)" }}>
+            {gatewaySaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save All"}
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+          Configure payment methods below. Only enabled gateways with valid keys will appear for users on the Add Money page.
+        </p>
+
+        {/* Stripe */}
+        <div className={`border p-4 space-y-3 transition-colors ${gateways.stripe.enabled ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={gateways.stripe.enabled} onChange={e => setGateways(g => ({ ...g, stripe: { ...g.stripe, enabled: e.target.checked } }))} className="accent-primary" />
+            <span className="text-xs tracking-[0.15em] uppercase font-medium" style={{ fontFamily: "var(--font-heading)" }}>Stripe</span>
+            <span className="text-[9px] text-muted-foreground ml-auto" style={{ fontFamily: "var(--font-body)" }}>Cards, Apple Pay, Google Pay</span>
+          </label>
+          {gateways.stripe.enabled && (
+            <div className="flex flex-wrap gap-4">
+              <GatewayField label="Publishable Key" value={gateways.stripe.publishable_key} onChange={v => setGateways(g => ({ ...g, stripe: { ...g.stripe, publishable_key: v } }))} placeholder="pk_test_..." />
+              <GatewayField label="Secret Key" value={gateways.stripe.secret_key} onChange={v => setGateways(g => ({ ...g, stripe: { ...g.stripe, secret_key: v } }))} placeholder="sk_test_..." type="password" />
+            </div>
+          )}
+        </div>
+
+        {/* PayPal */}
+        <div className={`border p-4 space-y-3 transition-colors ${gateways.paypal.enabled ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={gateways.paypal.enabled} onChange={e => setGateways(g => ({ ...g, paypal: { ...g.paypal, enabled: e.target.checked } }))} className="accent-primary" />
+            <span className="text-xs tracking-[0.15em] uppercase font-medium" style={{ fontFamily: "var(--font-heading)" }}>PayPal</span>
+            <span className="text-[9px] text-muted-foreground ml-auto" style={{ fontFamily: "var(--font-body)" }}>PayPal Checkout</span>
+          </label>
+          {gateways.paypal.enabled && (
+            <div className="flex flex-wrap gap-4">
+              <GatewayField label="Client ID" value={gateways.paypal.client_id} onChange={v => setGateways(g => ({ ...g, paypal: { ...g.paypal, client_id: v } }))} placeholder="Client ID" />
+              <GatewayField label="Secret" value={gateways.paypal.secret} onChange={v => setGateways(g => ({ ...g, paypal: { ...g.paypal, secret: v } }))} placeholder="Secret" type="password" />
+              <div className="min-w-[120px]">
+                <label className="block text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>Mode</label>
+                <select value={gateways.paypal.mode} onChange={e => setGateways(g => ({ ...g, paypal: { ...g.paypal, mode: e.target.value } }))}
+                  className="bg-transparent border-b border-border focus:border-primary outline-none py-2 text-xs" style={{ fontFamily: "var(--font-body)" }}>
+                  <option value="sandbox">Sandbox</option>
+                  <option value="live">Live</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Razorpay */}
+        <div className={`border p-4 space-y-3 transition-colors ${gateways.razorpay.enabled ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={gateways.razorpay.enabled} onChange={e => setGateways(g => ({ ...g, razorpay: { ...g.razorpay, enabled: e.target.checked } }))} className="accent-primary" />
+            <span className="text-xs tracking-[0.15em] uppercase font-medium" style={{ fontFamily: "var(--font-heading)" }}>Razorpay</span>
+            <span className="text-[9px] text-muted-foreground ml-auto" style={{ fontFamily: "var(--font-body)" }}>UPI, Cards, NetBanking (India)</span>
+          </label>
+          {gateways.razorpay.enabled && (
+            <div className="flex flex-wrap gap-4">
+              <GatewayField label="Key ID" value={gateways.razorpay.key_id} onChange={v => setGateways(g => ({ ...g, razorpay: { ...g.razorpay, key_id: v } }))} placeholder="rzp_test_..." />
+              <GatewayField label="Key Secret" value={gateways.razorpay.key_secret} onChange={v => setGateways(g => ({ ...g, razorpay: { ...g.razorpay, key_secret: v } }))} placeholder="Secret" type="password" />
+            </div>
+          )}
+        </div>
+
+        {/* UPI Direct */}
+        <div className={`border p-4 space-y-3 transition-colors ${gateways.upi.enabled ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={gateways.upi.enabled} onChange={e => setGateways(g => ({ ...g, upi: { ...g.upi, enabled: e.target.checked } }))} className="accent-primary" />
+            <span className="text-xs tracking-[0.15em] uppercase font-medium" style={{ fontFamily: "var(--font-heading)" }}>UPI Direct</span>
+            <span className="text-[9px] text-muted-foreground ml-auto" style={{ fontFamily: "var(--font-body)" }}>Manual UPI payment with QR</span>
+          </label>
+          {gateways.upi.enabled && (
+            <div className="flex flex-wrap gap-4">
+              <GatewayField label="UPI ID" value={gateways.upi.upi_id} onChange={v => setGateways(g => ({ ...g, upi: { ...g.upi, upi_id: v } }))} placeholder="merchant@upi" />
+              <GatewayField label="Merchant Name" value={gateways.upi.merchant_name} onChange={v => setGateways(g => ({ ...g, upi: { ...g.upi, merchant_name: v } }))} placeholder="Business Name" />
+            </div>
+          )}
+        </div>
+
+        {/* Bank Transfer */}
+        <div className={`border p-4 space-y-3 transition-colors ${gateways.bank.enabled ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" checked={gateways.bank.enabled} onChange={e => setGateways(g => ({ ...g, bank: { ...g.bank, enabled: e.target.checked } }))} className="accent-primary" />
+            <span className="text-xs tracking-[0.15em] uppercase font-medium" style={{ fontFamily: "var(--font-heading)" }}>Bank Transfer</span>
+            <span className="text-[9px] text-muted-foreground ml-auto" style={{ fontFamily: "var(--font-body)" }}>Manual NEFT/IMPS/Wire</span>
+          </label>
+          {gateways.bank.enabled && (
+            <div className="flex flex-wrap gap-4">
+              <GatewayField label="Account Name" value={gateways.bank.account_name} onChange={v => setGateways(g => ({ ...g, bank: { ...g.bank, account_name: v } }))} placeholder="Account holder name" />
+              <GatewayField label="Account Number" value={gateways.bank.account_number} onChange={v => setGateways(g => ({ ...g, bank: { ...g.bank, account_number: v } }))} placeholder="Account number" />
+              <GatewayField label="IFSC Code" value={gateways.bank.ifsc} onChange={v => setGateways(g => ({ ...g, bank: { ...g.bank, ifsc: v } }))} placeholder="IFSC code" />
+              <GatewayField label="Bank Name" value={gateways.bank.bank_name} onChange={v => setGateways(g => ({ ...g, bank: { ...g.bank, bank_name: v } }))} placeholder="Bank name" />
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Exchange Rate */}
       <div className="border border-border p-6 space-y-4">
         <span className="text-xs tracking-[0.2em] uppercase text-primary block" style={{ fontFamily: "var(--font-heading)" }}>

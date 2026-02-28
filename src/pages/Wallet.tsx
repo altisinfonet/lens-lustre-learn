@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Wallet as WalletIcon, Plus, ArrowDownLeft, ArrowUpRight, Download, CreditCard, Loader2, Banknote, IndianRupee, AlertTriangle, Clock } from "lucide-react";
+import { Wallet as WalletIcon, Plus, ArrowDownLeft, ArrowUpRight, Download, CreditCard, Loader2, Banknote, IndianRupee, AlertTriangle, Clock, ExternalLink } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,7 +48,7 @@ const Wallet = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
-  const { balance, transactions, exchangeRate, loading, toINR, addFunds, refresh } = useWallet();
+  const { balance, transactions, exchangeRate, loading, toINR, refresh } = useWallet();
 
   const [showAddMoney, setShowAddMoney] = useState(false);
   const [addAmount, setAddAmount] = useState("");
@@ -59,6 +59,7 @@ const Wallet = () => {
   const [currencyDisplay, setCurrencyDisplay] = useState<"usd" | "inr">("usd");
   const [ledgerYears, setLedgerYears] = useState(1);
   const [expiringBalance, setExpiringBalance] = useState<{ amount: number; soonest: string | null; count: number }>({ amount: 0, soonest: null, count: 0 });
+  const [paymentGateways, setPaymentGateways] = useState<any>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -80,6 +81,15 @@ const Wallet = () => {
       }
     };
     fetchExpiring();
+
+    // Fetch payment gateway config
+    const fetchGateways = async () => {
+      const { data } = await supabase.from("site_settings").select("value").eq("key", "payment_gateways").maybeSingle();
+      if (data?.value) {
+        setPaymentGateways(data.value);
+      }
+    };
+    fetchGateways();
   }, [user]);
 
   if (authLoading || loading) {
@@ -100,19 +110,26 @@ const Wallet = () => {
     return `$${Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const handleManualDeposit = async () => {
+  // Check which gateways are enabled
+  const hasAnyGateway = paymentGateways && (
+    paymentGateways.stripe?.enabled ||
+    paymentGateways.paypal?.enabled ||
+    paymentGateways.razorpay?.enabled ||
+    paymentGateways.upi?.enabled ||
+    paymentGateways.bank?.enabled
+  );
+
+  const handleGatewayPayment = (gateway: string) => {
     const amt = parseFloat(addAmount);
-    if (!amt || amt <= 0) { toast({ title: "Enter a valid amount", variant: "destructive" }); return; }
-    setProcessing(true);
-    try {
-      await addFunds(amt, "Manual wallet top-up");
-      toast({ title: `${formatCurrency(amt)} added to wallet` });
-      setShowAddMoney(false);
-      setAddAmount("");
-    } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" });
+    if (!amt || amt <= 0) {
+      toast({ title: "Enter a valid amount", variant: "destructive" });
+      return;
     }
-    setProcessing(false);
+    // Gateway-specific handling will be implemented when API keys are configured
+    toast({
+      title: `${gateway} payment — Coming soon`,
+      description: `Payment of ${formatCurrency(amt)} via ${gateway} will be processed once the integration is fully activated by the admin.`,
+    });
   };
 
   const handleWithdraw = async () => {
@@ -284,21 +301,82 @@ const Wallet = () => {
                 ≈ ₹{toINR(parseFloat(addAmount)).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </p>
             )}
-            <div className="flex gap-3">
-              <button onClick={handleManualDeposit} disabled={processing}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                {processing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                <T>Confirm (Manual)</T>
-              </button>
-              <button onClick={() => toast({ title: "Stripe checkout coming soon", description: "Payment gateway integration is in progress." })}
-                className="inline-flex items-center gap-2 px-6 py-3 border border-border text-xs tracking-[0.2em] uppercase hover:border-primary/50 transition-all duration-500"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                <CreditCard className="h-3.5 w-3.5" /> <T>Pay with Stripe</T>
-              </button>
-            </div>
+            {/* Payment Methods */}
+            {!hasAnyGateway ? (
+              <div className="border border-dashed border-border p-4 text-center">
+                <AlertTriangle className="h-5 w-5 text-muted-foreground/40 mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                  <T>No payment methods configured yet. Please contact the administrator.</T>
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground block" style={{ fontFamily: "var(--font-heading)" }}>
+                  <T>Choose Payment Method</T>
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {paymentGateways?.stripe?.enabled && (
+                    <button onClick={() => handleGatewayPayment("Stripe")}
+                      className="flex items-center gap-3 px-4 py-3 border border-border hover:border-primary/50 transition-all duration-300 text-left"
+                      style={{ fontFamily: "var(--font-heading)" }}>
+                      <CreditCard className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <span className="text-xs tracking-[0.1em] uppercase block"><T>Stripe</T></span>
+                        <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>Cards, Apple Pay, Google Pay</span>
+                      </div>
+                    </button>
+                  )}
+                  {paymentGateways?.paypal?.enabled && (
+                    <button onClick={() => handleGatewayPayment("PayPal")}
+                      className="flex items-center gap-3 px-4 py-3 border border-border hover:border-primary/50 transition-all duration-300 text-left"
+                      style={{ fontFamily: "var(--font-heading)" }}>
+                      <ExternalLink className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <span className="text-xs tracking-[0.1em] uppercase block"><T>PayPal</T></span>
+                        <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>PayPal Checkout</span>
+                      </div>
+                    </button>
+                  )}
+                  {paymentGateways?.razorpay?.enabled && (
+                    <button onClick={() => handleGatewayPayment("Razorpay")}
+                      className="flex items-center gap-3 px-4 py-3 border border-border hover:border-primary/50 transition-all duration-300 text-left"
+                      style={{ fontFamily: "var(--font-heading)" }}>
+                      <IndianRupee className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <span className="text-xs tracking-[0.1em] uppercase block"><T>Razorpay</T></span>
+                        <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>UPI, Cards, NetBanking</span>
+                      </div>
+                    </button>
+                  )}
+                  {paymentGateways?.upi?.enabled && (
+                    <button onClick={() => handleGatewayPayment("UPI")}
+                      className="flex items-center gap-3 px-4 py-3 border border-border hover:border-primary/50 transition-all duration-300 text-left"
+                      style={{ fontFamily: "var(--font-heading)" }}>
+                      <Banknote className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <span className="text-xs tracking-[0.1em] uppercase block"><T>UPI</T></span>
+                        <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                          {paymentGateways.upi.upi_id || "Direct UPI Payment"}
+                        </span>
+                      </div>
+                    </button>
+                  )}
+                  {paymentGateways?.bank?.enabled && (
+                    <button onClick={() => handleGatewayPayment("Bank Transfer")}
+                      className="flex items-center gap-3 px-4 py-3 border border-border hover:border-primary/50 transition-all duration-300 text-left sm:col-span-2"
+                      style={{ fontFamily: "var(--font-heading)" }}>
+                      <Banknote className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <span className="text-xs tracking-[0.1em] uppercase block"><T>Bank Transfer</T></span>
+                        <span className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                          {paymentGateways.bank.bank_name ? `${paymentGateways.bank.bank_name} — NEFT/IMPS` : "Manual Bank Transfer"}
+                        </span>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
