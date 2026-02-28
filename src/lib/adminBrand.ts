@@ -39,6 +39,20 @@ export function resolveName(
 }
 
 /**
+ * Ensures admin users always have a "verified" badge in their badge list.
+ */
+export function resolveBadges(
+  userId: string,
+  originalBadges: string[],
+  adminIds: Set<string>
+): string[] {
+  if (adminIds.has(userId)) {
+    return originalBadges.includes("verified") ? originalBadges : ["verified", ...originalBadges];
+  }
+  return originalBadges;
+}
+
+/**
  * Check if a single user ID is admin (uses cached set).
  */
 export function isAdminUser(userId: string, adminIds: Set<string>): boolean {

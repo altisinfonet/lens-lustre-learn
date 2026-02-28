@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { BADGES, type BadgeType } from "@/lib/badgeConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
+import { getAdminIds, resolveName, resolveBadges, isAdminUser } from "@/lib/adminBrand";
 
 /* ── Mini Carousel on hover ── */
 const MiniCarousel = ({
@@ -157,12 +158,13 @@ const PublicProfile = () => {
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
-      const [profileRes, entriesRes, certsRes, rolesRes, badgesRes] = await Promise.all([
+      const [profileRes, entriesRes, certsRes, rolesRes, badgesRes, adminIds] = await Promise.all([
         profilesPublic().select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url").eq("id", userId).maybeSingle(),
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
         supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["registered_photographer", "student"] as any),
         supabase.from("user_badges").select("badge_type").eq("user_id", userId),
+        getAdminIds(),
       ]);
 
       if (!profileRes.data) {
@@ -171,13 +173,20 @@ const PublicProfile = () => {
         return;
       }
 
+      // If admin, override name to brand name
+      const isAdmin = isAdminUser(userId, adminIds);
+      if (isAdmin) {
+        profileRes.data.full_name = resolveName(userId, profileRes.data.full_name, adminIds);
+      }
+
       setProfile(profileRes.data);
       setEntries((entriesRes.data as any) || []);
       setCertificates(certsRes.data || []);
       const userRoles = rolesRes.data?.map((r: any) => r.role) || [];
       setIsVerifiedPhotographer(userRoles.includes("registered_photographer"));
       setIsStudent(userRoles.includes("student"));
-      setUserBadges((badgesRes.data as any[])?.map((b: any) => b.badge_type) || []);
+      const rawBadges = (badgesRes.data as any[])?.map((b: any) => b.badge_type) || [];
+      setUserBadges(resolveBadges(userId, rawBadges, adminIds));
       setLoading(false);
     };
     load();

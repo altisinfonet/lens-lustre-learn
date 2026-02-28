@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
+import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
@@ -114,12 +115,13 @@ const Feed = () => {
     const authorIds = [...new Set(postsData.map((p) => p.user_id))];
     const postIds = postsData.map((p) => p.id);
 
-    const [profilesRes, badgesRes, reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
+    const [profilesRes, badgesRes, reactionsRes, userReactionsRes, commentsCountRes, adminIds] = await Promise.all([
       profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
       supabase.from("user_badges").select("user_id, badge_type").in("user_id", authorIds),
       supabase.from("post_reactions").select("post_id, reaction_type").in("post_id", postIds),
       supabase.from("post_reactions").select("post_id, reaction_type").in("post_id", postIds).eq("user_id", user.id),
       supabase.from("post_comments").select("post_id").in("post_id", postIds),
+      getAdminIds(),
     ]);
 
     const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
@@ -150,9 +152,9 @@ const Feed = () => {
         .map(([type]) => type);
       return {
         ...p,
-        author_name: profileMap.get(p.user_id)?.full_name || null,
+        author_name: resolveName(p.user_id, profileMap.get(p.user_id)?.full_name ?? null, adminIds),
         author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
-        author_badges: badgeMap.get(p.user_id) || [],
+        author_badges: resolveBadges(p.user_id, badgeMap.get(p.user_id) || [], adminIds),
         like_count: likeCounts[p.id] || 0,
         comment_count: commentCounts[p.id] || 0,
         is_liked: !!userRx,
@@ -347,9 +349,10 @@ const Feed = () => {
       .limit(30);
     if (!data) return;
     const authorIds = [...new Set(data.map((c) => c.user_id))];
-    const [profilesRes, badgesRes] = await Promise.all([
+    const [profilesRes, badgesRes, adminIds] = await Promise.all([
       profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
       supabase.from("user_badges").select("user_id, badge_type").in("user_id", authorIds),
+      getAdminIds(),
     ]);
     const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
     const badgeMap = new Map<string, string[]>();
@@ -362,9 +365,9 @@ const Feed = () => {
       ...prev,
       [postId]: data.map((c) => ({
         ...c,
-        author_name: profileMap.get(c.user_id)?.full_name || null,
+        author_name: resolveName(c.user_id, profileMap.get(c.user_id)?.full_name ?? null, adminIds),
         author_avatar: profileMap.get(c.user_id)?.avatar_url || null,
-        author_badges: badgeMap.get(c.user_id) || [],
+        author_badges: resolveBadges(c.user_id, badgeMap.get(c.user_id) || [], adminIds),
       })),
     }));
   };

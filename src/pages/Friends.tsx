@@ -10,6 +10,7 @@ import T from "@/components/T";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getAdminIds, resolveName } from "@/lib/adminBrand";
 
 interface FriendProfile {
   id: string;
@@ -100,11 +101,15 @@ const Friends = () => {
 
     // Batch fetch all profiles
     const profileMap = new Map<string, FriendProfile>();
+    const adminIds = await getAdminIds();
     if (userIds.size > 0) {
       const { data: profiles } = await profilesPublic()
         .select("id, full_name, avatar_url, bio")
         .in("id", Array.from(userIds));
-      profiles?.forEach((p) => profileMap.set(p.id, p));
+      profiles?.forEach((p) => {
+        const resolved = { ...p, full_name: resolveName(p.id, p.full_name, adminIds) };
+        profileMap.set(p.id, resolved);
+      });
     }
 
     const fallback: FriendProfile = { id: "", full_name: "Unknown", avatar_url: null, bio: null, city: null, country: null };

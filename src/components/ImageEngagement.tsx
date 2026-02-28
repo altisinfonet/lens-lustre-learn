@@ -7,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { moderateComment } from "@/lib/commentModeration";
 import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
-import { getAdminIds, resolveName } from "@/lib/adminBrand";
+import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
 
 interface Props {
   imageType: "portfolio" | "competition_entry";
@@ -106,7 +106,7 @@ const ImageEngagement = ({ imageType, imageId, compact }: Props) => {
       ...c,
       profile_name: resolveName(c.user_id, profileMap.get(c.user_id)?.full_name ?? null, adminIds),
       avatar_url: profileMap.get(c.user_id)?.avatar_url || null,
-      badges: badgeMap.get(c.user_id) || [],
+      badges: resolveBadges(c.user_id, badgeMap.get(c.user_id) || [], adminIds),
     }));
 
     // Build thread tree

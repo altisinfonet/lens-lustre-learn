@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import UserBadgeInline from "@/components/UserBadgeInline";
-import { getAdminIds, resolveName } from "@/lib/adminBrand";
+import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
 
 interface Comment {
   id: string;
@@ -78,7 +78,7 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
         full_name: resolveName(c.user_id, profileMap.get(c.user_id)?.full_name ?? null, adminIds),
         avatar_url: profileMap.get(c.user_id)?.avatar_url ?? null,
       },
-      badges: badgeMap.get(c.user_id) || [],
+      badges: resolveBadges(c.user_id, badgeMap.get(c.user_id) || [], adminIds),
       replies: [] as Comment[],
     }));
 
