@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { AnimatePresence, motion } from "framer-motion";
 import T from "@/components/T";
+import { getAdminIds, resolveName } from "@/lib/adminBrand";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
@@ -60,6 +61,7 @@ const NotificationBell = () => {
     // Get requester profiles
     const requesterIds = (friendsRes.data || []).map((f) => f.requester_id);
     let profileMap = new Map<string, { full_name: string | null; avatar_url: string | null }>();
+    const adminIds = await getAdminIds();
     if (requesterIds.length > 0) {
       const { data: profiles } = await profilesPublic()
         .select("id, full_name, avatar_url")
@@ -70,7 +72,7 @@ const NotificationBell = () => {
     setFriendRequests(
       (friendsRes.data || []).map((f) => ({
         ...f,
-        requester_name: profileMap.get(f.requester_id)?.full_name || null,
+        requester_name: resolveName(f.requester_id, profileMap.get(f.requester_id)?.full_name ?? null, adminIds),
         requester_avatar: profileMap.get(f.requester_id)?.avatar_url || null,
       }))
     );

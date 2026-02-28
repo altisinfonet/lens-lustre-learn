@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import UserBadgeInline from "@/components/UserBadgeInline";
+import { getAdminIds, resolveName } from "@/lib/adminBrand";
 
 interface Comment {
   id: string;
@@ -57,9 +58,10 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
     if (!data) { setLoading(false); return; }
 
     const userIds = [...new Set(data.map((c) => c.user_id))];
-    const [profilesRes, badgesRes] = await Promise.all([
+    const [profilesRes, badgesRes, adminIds] = await Promise.all([
       profilesPublic().select("id, full_name, avatar_url").in("id", userIds),
       supabase.from("user_badges").select("user_id, badge_type").in("user_id", userIds),
+      getAdminIds(),
     ]);
 
     const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
@@ -72,7 +74,10 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
 
     const allComments = data.map((c) => ({
       ...c,
-      profile: profileMap.get(c.user_id) || null,
+      profile: {
+        full_name: resolveName(c.user_id, profileMap.get(c.user_id)?.full_name ?? null, adminIds),
+        avatar_url: profileMap.get(c.user_id)?.avatar_url ?? null,
+      },
       badges: badgeMap.get(c.user_id) || [],
       replies: [] as Comment[],
     }));

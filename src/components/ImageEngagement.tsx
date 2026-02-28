@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { moderateComment } from "@/lib/commentModeration";
 import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
+import { getAdminIds, resolveName } from "@/lib/adminBrand";
 
 interface Props {
   imageType: "portfolio" | "competition_entry";
@@ -88,9 +89,10 @@ const ImageEngagement = ({ imageType, imageId, compact }: Props) => {
     }
 
     const userIds = [...new Set(data.map(c => c.user_id))];
-    const [profilesRes, badgesRes] = await Promise.all([
+    const [profilesRes, badgesRes, adminIds] = await Promise.all([
       profilesPublic().select("id, full_name, avatar_url").in("id", userIds),
       supabase.from("user_badges").select("user_id, badge_type").in("user_id", userIds),
+      getAdminIds(),
     ]);
     const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
     const badgeMap = new Map<string, string[]>();
@@ -102,7 +104,7 @@ const ImageEngagement = ({ imageType, imageId, compact }: Props) => {
 
     const withProfiles = data.map(c => ({
       ...c,
-      profile_name: profileMap.get(c.user_id)?.full_name || "Anonymous",
+      profile_name: resolveName(c.user_id, profileMap.get(c.user_id)?.full_name ?? null, adminIds),
       avatar_url: profileMap.get(c.user_id)?.avatar_url || null,
       badges: badgeMap.get(c.user_id) || [],
     }));
