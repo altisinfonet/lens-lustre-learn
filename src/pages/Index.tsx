@@ -463,6 +463,17 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    let isActive = true;
+    const loadingSafetyTimeout = window.setTimeout(() => {
+      if (!isActive) return;
+      setCompetitions((prev) => (prev.length > 0 ? prev : fallbackCompetitions));
+      setCourses((prev) => (prev.length > 0 ? prev : fallbackCourses));
+      setWinners((prev) => (prev.length > 0 ? prev : fallbackWinners));
+      setCertificates((prev) => (prev.length > 0 ? prev : fallbackCertificates));
+      setJournalArticles((prev) => (prev.length > 0 ? prev : fallbackJournalArticles));
+      setDataLoading(false);
+    }, 12000);
+
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
       try {
@@ -694,17 +705,24 @@ const Index = () => {
       }
       } catch (err) {
         console.error("Failed to load showcase data:", err);
+      } finally {
+        window.clearTimeout(loadingSafetyTimeout);
+        if (!isActive) return;
         setCompetitions((prev) => (prev.length > 0 ? prev : fallbackCompetitions));
         setCourses((prev) => (prev.length > 0 ? prev : fallbackCourses));
         setWinners((prev) => (prev.length > 0 ? prev : fallbackWinners));
         setCertificates((prev) => (prev.length > 0 ? prev : fallbackCertificates));
         setJournalArticles((prev) => (prev.length > 0 ? prev : fallbackJournalArticles));
-      } finally {
         setDataLoading(false);
       }
     };
 
     fetchShowcaseData();
+
+    return () => {
+      isActive = false;
+      window.clearTimeout(loadingSafetyTimeout);
+    };
   }, []);
 
   return (
