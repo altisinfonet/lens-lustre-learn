@@ -174,6 +174,203 @@ interface CoursePreview {
   labels: string[];
 }
 
+const fallbackCompetitions: CompetitionPreview[] = [
+  {
+    id: "fallback-comp-1",
+    title: "Monsoon Street Stories",
+    category: "Street",
+    cover_image_url: "/images/after-prayer.jpg",
+    status: "open",
+    starts_at: "2026-03-01T00:00:00.000Z",
+    ends_at: "2026-03-21T23:59:59.000Z",
+    prize_info: "$1,500",
+  },
+  {
+    id: "fallback-comp-2",
+    title: "Faces of Devotion",
+    category: "Portrait",
+    cover_image_url: "/images/devotion.jpg",
+    status: "upcoming",
+    starts_at: "2026-03-25T00:00:00.000Z",
+    ends_at: "2026-04-20T23:59:59.000Z",
+    prize_info: "$2,000",
+  },
+  {
+    id: "fallback-comp-3",
+    title: "Twilight River Frames",
+    category: "Landscape",
+    cover_image_url: "/images/twilight-boats.jpg",
+    status: "closed",
+    starts_at: "2026-01-01T00:00:00.000Z",
+    ends_at: "2026-01-31T23:59:59.000Z",
+    prize_info: "$1,000",
+  },
+  {
+    id: "fallback-comp-4",
+    title: "Artisan Hands",
+    category: "Documentary",
+    cover_image_url: "/images/the-craftsman.jpg",
+    status: "judging",
+    starts_at: "2026-02-01T00:00:00.000Z",
+    ends_at: "2026-02-28T23:59:59.000Z",
+    prize_info: "$1,250",
+  },
+];
+
+const fallbackCourses: CoursePreview[] = [
+  {
+    id: "fallback-course-1",
+    title: "Street Light Composition",
+    slug: "street-light-composition",
+    category: "Street",
+    difficulty: "Beginner",
+    cover_image_url: "/images/wall-art.jpg",
+    is_free: true,
+    author_name: "Lens Academy",
+    is_featured: true,
+    labels: ["Most Demand"],
+  },
+  {
+    id: "fallback-course-2",
+    title: "Portrait Storytelling",
+    slug: "portrait-storytelling",
+    category: "Portrait",
+    difficulty: "Intermediate",
+    cover_image_url: "/images/portrait-1.jpg",
+    is_free: false,
+    author_name: "Editorial Team",
+    is_featured: false,
+    labels: ["Few Seats Left"],
+  },
+  {
+    id: "fallback-course-3",
+    title: "Wildlife Timing Masterclass",
+    slug: "wildlife-timing-masterclass",
+    category: "Wildlife",
+    difficulty: "Advanced",
+    cover_image_url: "/images/hero-4.jpg",
+    is_free: false,
+    author_name: "Field Mentors",
+    is_featured: true,
+    labels: ["Early Bird Offer"],
+  },
+  {
+    id: "fallback-course-4",
+    title: "Documentary Mood & Tone",
+    slug: "documentary-mood-tone",
+    category: "Documentary",
+    difficulty: "Beginner",
+    cover_image_url: "/images/the-hand.jpg",
+    is_free: true,
+    author_name: "Community Studio",
+    is_featured: false,
+    labels: [],
+  },
+];
+
+const fallbackWinners: WinnerShowcase[] = [
+  {
+    id: "fallback-winner-1",
+    title: "Silent Prayer",
+    photos: ["/images/after-prayer.jpg"],
+    competition_title: "Monsoon Street Stories",
+    photographer_name: "Community Winner",
+    photographer_avatar: null,
+  },
+  {
+    id: "fallback-winner-2",
+    title: "Twilight Departure",
+    photos: ["/images/twilight-boats.jpg"],
+    competition_title: "River Light Awards",
+    photographer_name: "Featured Member",
+    photographer_avatar: null,
+  },
+  {
+    id: "fallback-winner-3",
+    title: "Maker's Focus",
+    photos: ["/images/the-craftsman.jpg"],
+    competition_title: "Human Stories",
+    photographer_name: "Creative Circle",
+    photographer_avatar: null,
+  },
+];
+
+const fallbackCertificates: CertificateShowcase[] = [
+  {
+    id: "fallback-cert-1",
+    title: "Advanced Composition Excellence",
+    type: "course_completion",
+    issued_at: "2026-02-14T00:00:00.000Z",
+    recipient_name: "Certified Member",
+    recipient_avatar: null,
+    is_featured: true,
+    featured_quote: "Precision in framing creates emotional impact.",
+  },
+  {
+    id: "fallback-cert-2",
+    title: "Documentary Storytelling Certification",
+    type: "achievement",
+    issued_at: "2026-01-20T00:00:00.000Z",
+    recipient_name: "Editorial Graduate",
+    recipient_avatar: null,
+    is_featured: false,
+    featured_quote: null,
+  },
+  {
+    id: "fallback-cert-3",
+    title: "Portrait Light Mastery",
+    type: "course_completion",
+    issued_at: "2026-01-05T00:00:00.000Z",
+    recipient_name: "Studio Artist",
+    recipient_avatar: null,
+    is_featured: false,
+    featured_quote: null,
+  },
+];
+
+const fallbackJournalArticles: JournalPreview[] = [
+  {
+    id: "fallback-article-1",
+    title: "Mastering Black & White: More Than Just Desaturation",
+    slug: "mastering-black-white",
+    excerpt: "Learn how contrast, texture and intention shape compelling monochrome stories.",
+    cover_image_url: "/images/behind-the-veil.jpg",
+    tags: ["Editing", "B&W"],
+    published_at: "2026-02-10T00:00:00.000Z",
+    author_name: "Editorial Desk",
+  },
+  {
+    id: "fallback-article-2",
+    title: "Reading Light Before You Lift the Camera",
+    slug: "reading-light-before-shooting",
+    excerpt: "A practical field guide to predict mood and contrast before your first frame.",
+    cover_image_url: "/images/lives-on-life.jpg",
+    tags: ["Technique"],
+    published_at: "2026-01-22T00:00:00.000Z",
+    author_name: "Journal Team",
+  },
+  {
+    id: "fallback-article-3",
+    title: "From Frame to Narrative in Documentary Work",
+    slug: "frame-to-narrative-documentary",
+    excerpt: "Transform single strong images into coherent visual essays that keep attention.",
+    cover_image_url: "/images/devotion.jpg",
+    tags: ["Documentary"],
+    published_at: "2026-01-09T00:00:00.000Z",
+    author_name: "Lens Notes",
+  },
+  {
+    id: "fallback-article-4",
+    title: "Travel Photography Without Visual Clichés",
+    slug: "travel-photography-without-cliches",
+    excerpt: "Simple methods to create fresh perspectives in heavily photographed places.",
+    cover_image_url: "/images/twilight-boats.jpg",
+    tags: ["Travel"],
+    published_at: "2025-12-28T00:00:00.000Z",
+    author_name: "Stories Desk",
+  },
+];
+
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -350,33 +547,27 @@ const Index = () => {
       const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
       const compMap = new Map((compsRes.data || []).map((c) => [c.id, c.title]));
 
-      if (winnerData.length > 0) {
-        setWinners(winnerData.map((e) => ({
-          id: e.id,
-          title: e.title,
-          photos: e.photos || [],
-          competition_title: compMap.get(e.competition_id) || "Competition",
-          photographer_name: profileMap.get(e.user_id)?.full_name || null,
-          photographer_avatar: profileMap.get(e.user_id)?.avatar_url || null,
-        })));
-      }
+      const mappedWinners = winnerData.map((e) => ({
+        id: e.id,
+        title: e.title,
+        photos: e.photos || [],
+        competition_title: compMap.get(e.competition_id) || "Competition",
+        photographer_name: profileMap.get(e.user_id)?.full_name || null,
+        photographer_avatar: profileMap.get(e.user_id)?.avatar_url || null,
+      }));
+      setWinners(mappedWinners.length > 0 ? mappedWinners : fallbackWinners);
 
-      if (certData.length > 0) {
-        setCertificates(certData.map((c) => ({
-          id: c.id,
-          title: c.title,
-          type: c.type,
-          issued_at: c.issued_at,
-          recipient_name: profileMap.get(c.user_id)?.full_name || null,
-          recipient_avatar: profileMap.get(c.user_id)?.avatar_url || null,
-          is_featured: c.is_featured,
-          featured_quote: c.featured_quote,
-        })));
-
-        // Build mini leaderboard from cert data
-        const countMap = new Map<string, number>();
-        certData.forEach((c) => countMap.set(c.user_id, (countMap.get(c.user_id) || 0) + 1));
-      }
+      const mappedCertificates = certData.map((c) => ({
+        id: c.id,
+        title: c.title,
+        type: c.type,
+        issued_at: c.issued_at,
+        recipient_name: profileMap.get(c.user_id)?.full_name || null,
+        recipient_avatar: profileMap.get(c.user_id)?.avatar_url || null,
+        is_featured: c.is_featured,
+        featured_quote: c.featured_quote,
+      }));
+      setCertificates(mappedCertificates.length > 0 ? mappedCertificates : fallbackCertificates);
 
       // Fetch testimonials and tier config
       const [{ data: testData }, { data: tierSetting }] = await Promise.all([
@@ -399,7 +590,7 @@ const Index = () => {
         })));
       }
 
-      if (tierSetting?.value) {
+      if (Array.isArray(tierSetting?.value)) {
         const tiersArr = tierSetting.value as unknown as TierConfig[];
         setCertTiers(tiersArr);
         // Build leaderboard
@@ -417,48 +608,43 @@ const Index = () => {
         }
       }
 
-      if (articleData.length > 0) {
-        setJournalArticles(articleData.map((a) => ({
-          id: a.id,
-          title: a.title,
-          slug: a.slug,
-          excerpt: a.excerpt,
-          cover_image_url: a.cover_image_url,
-          tags: a.tags || [],
-          published_at: a.published_at,
-          author_name: profileMap.get(a.author_id)?.full_name || null,
-        })));
-      }
+      const mappedArticles = articleData.map((a) => ({
+        id: a.id,
+        title: a.title,
+        slug: a.slug,
+        excerpt: a.excerpt,
+        cover_image_url: a.cover_image_url,
+        tags: a.tags || [],
+        published_at: a.published_at,
+        author_name: profileMap.get(a.author_id)?.full_name || null,
+      }));
+      setJournalArticles(mappedArticles.length > 0 ? mappedArticles : fallbackJournalArticles);
 
-      // Set competitions
-      if (compsListData.length > 0) {
-        setCompetitions(compsListData.map((c) => ({
-          id: c.id,
-          title: c.title,
-          category: c.category,
-          cover_image_url: c.cover_image_url,
-          status: c.status,
-          starts_at: c.starts_at,
-          ends_at: c.ends_at,
-          prize_info: c.prize_info,
-        })));
-      }
+      const mappedCompetitions = compsListData.map((c) => ({
+        id: c.id,
+        title: c.title,
+        category: c.category,
+        cover_image_url: c.cover_image_url,
+        status: c.status,
+        starts_at: c.starts_at,
+        ends_at: c.ends_at,
+        prize_info: c.prize_info,
+      }));
+      setCompetitions(mappedCompetitions.length > 0 ? mappedCompetitions : fallbackCompetitions);
 
-      // Set courses
-      if (coursesData.length > 0) {
-        setCourses(coursesData.map((c) => ({
-          id: c.id,
-          title: c.title,
-          slug: c.slug,
-          category: c.category,
-          difficulty: c.difficulty,
-          cover_image_url: c.cover_image_url,
-          is_free: c.is_free,
-          author_name: profileMap.get(c.author_id)?.full_name || null,
-          is_featured: c.is_featured,
-          labels: c.labels || [],
-        })));
-      }
+      const mappedCourses = coursesData.map((c) => ({
+        id: c.id,
+        title: c.title,
+        slug: c.slug,
+        category: c.category,
+        difficulty: c.difficulty,
+        cover_image_url: c.cover_image_url,
+        is_free: c.is_free,
+        author_name: profileMap.get(c.author_id)?.full_name || null,
+        is_featured: c.is_featured,
+        labels: c.labels || [],
+      }));
+      setCourses(mappedCourses.length > 0 ? mappedCourses : fallbackCourses);
 
       // Set portfolio images from database (fallback to hardcoded if empty)
       const portfolioData = portfolioRes.data || [];
@@ -490,7 +676,7 @@ const Index = () => {
         .eq("is_featured", true)
         .eq("status", "published")
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (featData) {
         const authorName = profileMap.get(featData.author_id)?.full_name || null;
@@ -508,6 +694,11 @@ const Index = () => {
       }
       } catch (err) {
         console.error("Failed to load showcase data:", err);
+        setCompetitions((prev) => (prev.length > 0 ? prev : fallbackCompetitions));
+        setCourses((prev) => (prev.length > 0 ? prev : fallbackCourses));
+        setWinners((prev) => (prev.length > 0 ? prev : fallbackWinners));
+        setCertificates((prev) => (prev.length > 0 ? prev : fallbackCertificates));
+        setJournalArticles((prev) => (prev.length > 0 ? prev : fallbackJournalArticles));
       } finally {
         setDataLoading(false);
       }
