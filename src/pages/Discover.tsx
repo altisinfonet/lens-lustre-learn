@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Compass, UserPlus, Heart, Clock, UserCheck, UserMinus, X, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { useFriendFollow } from "@/hooks/useFriendFollow";
@@ -80,6 +81,7 @@ const DiscoverActions = ({ targetUserId }: { targetUserId: string }) => {
 
 const Discover = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState<DiscoverProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +92,8 @@ const Discover = () => {
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
-  }, [user, authLoading, navigate]);
+    if (!authLoading && isAdmin) navigate("/admin");
+  }, [user, authLoading, isAdmin, navigate]);
 
   const fetchProfiles = useCallback(async () => {
     if (!user) return;

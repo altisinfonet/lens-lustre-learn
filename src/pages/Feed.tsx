@@ -4,6 +4,7 @@ import { MessageCircle, Send, Globe, Users, Rss, RefreshCw, Loader2, ArrowUp, Do
 import { getJpegDownloadUrl } from "@/lib/imageCompression";
 import ReactionPicker, { ReactionType, REACTION_EMOJI_MAP } from "@/components/ReactionPicker";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { profilesPublic } from "@/lib/profilesPublic";
@@ -83,6 +84,7 @@ interface PostComment {
 
 const Feed = () => {
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,8 @@ const Feed = () => {
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
-  }, [user, authLoading, navigate]);
+    if (!authLoading && isAdmin) navigate("/admin");
+  }, [user, authLoading, isAdmin, navigate]);
 
   // Enrich raw posts with profiles, likes, comments
   const enrichPosts = useCallback(async (postsData: any[]): Promise<FeedPost[]> => {

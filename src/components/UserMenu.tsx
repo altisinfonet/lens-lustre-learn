@@ -96,7 +96,10 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
     navigate("/");
   };
 
-  const menuItems = [
+  const menuItems = isAdmin ? [
+    { icon: Shield, label: "Admin Panel", to: "/admin", show: true },
+    { icon: Scale, label: "Judge Panel", to: "/judge", show: true },
+  ] : [
     { icon: User, label: "Profile", to: "/profile", show: true },
     { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard", show: true },
     { icon: Rss, label: "Feed", to: "/feed", show: true },
@@ -107,7 +110,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
       icon: Wallet,
       label: "Wallet",
       to: "/wallet",
-      show: !isAdmin,
+      show: true,
       extra: walletBalance !== null ? (
         <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-primary/15 text-primary rounded-full" style={{ fontFamily: "var(--font-heading)" }}>
           ${Number(walletBalance).toFixed(2)}
@@ -116,8 +119,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
     },
     { icon: UserPlus, label: "Referrals", to: "/referrals", show: true },
     { icon: ImageIcon, label: "My Submissions", to: "/dashboard?tab=submissions", show: true },
-    { icon: Shield, label: "Admin Panel", to: "/admin", show: isAdmin },
-    { icon: Scale, label: "Judge Panel", to: "/judge", show: hasRole("judge") || isAdmin },
+    { icon: Scale, label: "Judge Panel", to: "/judge", show: hasRole("judge") },
   ];
 
   return (
