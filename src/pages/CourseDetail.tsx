@@ -7,6 +7,7 @@ import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { useAuth } from "@/hooks/useAuth";
+import { useWallet } from "@/hooks/useWallet";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
@@ -33,6 +34,7 @@ interface Lesson {
 const CourseDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const { balance, deductFunds, refresh: refreshWallet } = useWallet();
   const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -83,10 +85,39 @@ const CourseDetail = () => {
   const handleEnroll = async () => {
     if (!user) { navigate("/login"); return; }
     if (!course) return;
-    setEnrolling(true);
+
+    // For paid courses, deduct wallet balance first
+    if (!course.is_free && course.price && course.price > 0) {
+      if (balance < course.price) {
+        toast({ title: "Insufficient balance", description: `You need $${course.price.toFixed(2)} but your wallet has $${balance.toFixed(2)}. Please top up first.`, variant: "destructive" });
+        return;
+      }
+      setEnrolling(true);
+      try {
+        await deductFunds(course.price, "course_purchase", `Enrollment: ${course.title}`, course.id, "course");
+      } catch (err: any) {
+        toast({ title: "Payment failed", description: err.message || "Could not process payment", variant: "destructive" });
+        setEnrolling(false);
+        return;
+      }
+    } else {
+      setEnrolling(true);
+    }
+
     const { error } = await supabase.from("course_enrollments").insert({ user_id: user.id, course_id: course.id });
     if (error) {
       toast({ title: "Enrollment failed", description: error.message, variant: "destructive" });
+      // Refund if enrollment insert fails after payment
+      if (!course.is_free && course.price && course.price > 0) {
+        try {
+          await supabase.rpc("wallet_transaction", {
+            _user_id: user.id, _type: "refund", _amount: course.price,
+            _description: `Refund: enrollment failed for ${course.title}`,
+            _reference_id: course.id, _reference_type: "course",
+          });
+          await refreshWallet();
+        } catch {}
+      }
     } else {
       setEnrolled(true);
       toast({ title: "Enrolled successfully!" });
@@ -270,10 +301,17 @@ const CourseDetail = () => {
               )}
 
               {!enrolled ? (
-                <Button onClick={handleEnroll} disabled={enrolling} className="w-full bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase py-6" style={{ fontFamily: "var(--font-heading)" }}>
-                  <GraduationCap className="h-4 w-4 mr-2" />
-                  {enrolling ? <T>Enrolling…</T> : course.is_free ? <T>Enroll for Free</T> : <T>Enroll Now</T>}
-                </Button>
+                <>
+                  <Button onClick={handleEnroll} disabled={enrolling} className="w-full bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase py-6" style={{ fontFamily: "var(--font-heading)" }}>
+                    <GraduationCap className="h-4 w-4 mr-2" />
+                    {enrolling ? <T>Enrolling…</T> : course.is_free ? <T>Enroll for Free</T> : <T>Pay & Enroll</T>}
+                  </Button>
+                  {!course.is_free && course.price && (
+                    <p className="text-[10px] text-muted-foreground text-center mt-2" style={{ fontFamily: "var(--font-body)" }}>
+                      <T>Wallet balance</T>: ${balance.toFixed(2)}
+                    </p>
+                  )}
+                </>
               ) : (
                 <div className="text-center">
                   <span className="text-xs text-primary flex items-center justify-center gap-2" style={{ fontFamily: "var(--font-heading)" }}>
