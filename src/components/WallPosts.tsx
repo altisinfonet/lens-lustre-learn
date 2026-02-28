@@ -30,13 +30,13 @@ const FacebookImage = ({ src, downloadUrl }: { src: string; downloadUrl: string 
     }
   };
 
-  // Facebook caps portrait at 4:5 (0.8), landscape shown naturally, very wide capped ~1.91:1
+  // Compact wall images: cap portrait at 4:5 (0.8), landscape at 1.91:1, max-height 320px
   const clampedRatio = ratio ? Math.max(0.8, Math.min(ratio, 1.91)) : 1;
-  const paddingTop = ratio ? `${(1 / clampedRatio) * 100}%` : "100%";
+  const paddingTop = ratio ? `${(1 / clampedRatio) * 100}%` : "75%";
 
   return (
-    <div className="mt-2 relative group/img bg-muted/30">
-      <div style={{ paddingTop, position: "relative", width: "100%" }}>
+    <div className="mt-2 relative group/img bg-muted/30 max-h-80 overflow-hidden rounded-sm">
+      <div style={{ paddingTop, position: "relative", width: "100%", maxHeight: "320px" }}>
         <img
           src={src}
           alt=""
