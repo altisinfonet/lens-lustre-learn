@@ -19,6 +19,24 @@ const isNetworkError = (msg: string): boolean => {
   return lower.includes("failed to fetch") || lower.includes("networkerror") || lower.includes("load failed");
 };
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const withNetworkRetry = async <T,>(operation: () => Promise<T>, retries = 2): Promise<T> => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      const message = error?.message || "";
+      if (!isNetworkError(message) || attempt === retries) {
+        throw error;
+      }
+      await wait(800 * (attempt + 1));
+    }
+  }
+
+  throw new Error("Network retry exhausted");
+};
+
 const friendlyError = (raw: string): string => {
   const lower = raw.toLowerCase();
   if (isNetworkError(raw))
@@ -113,21 +131,30 @@ const Login = () => {
     }
 
     try {
-      const res = await supabase.auth.signInWithPassword({
-        email: result.data.email,
-        password: result.data.password,
-      });
+      const res = await withNetworkRetry(
+        () =>
+          supabase.auth.signInWithPassword({
+            email: result.data.email,
+            password: result.data.password,
+          }),
+        2
+      );
 
       if (res.error) {
-        const attempts = failedAttempts + 1;
-        setFailedAttempts(attempts);
-        setCaptchaVerified(false);
+        if (!isNetworkError(res.error.message)) {
+          const attempts = failedAttempts + 1;
+          setFailedAttempts(attempts);
+          setCaptchaVerified(false);
+        }
         setError(friendlyError(res.error.message));
       }
     } catch (err: any) {
-      setError(friendlyError(err?.message || "Something went wrong."));
-      setFailedAttempts((p) => p + 1);
-      setCaptchaVerified(false);
+      const message = err?.message || "Something went wrong.";
+      setError(friendlyError(message));
+      if (!isNetworkError(message)) {
+        setFailedAttempts((p) => p + 1);
+        setCaptchaVerified(false);
+      }
     }
     setLoading(null);
   };
