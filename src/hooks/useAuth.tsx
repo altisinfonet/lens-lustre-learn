@@ -24,16 +24,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const fullName = meta.full_name || meta.name || null;
       const avatarUrl = meta.avatar_url || meta.picture || null;
 
-      if (fullName || avatarUrl) {
-        await supabase.from("profiles").upsert(
-          {
-            id: user.id,
-            full_name: fullName,
-            avatar_url: avatarUrl,
-          },
-          { onConflict: "id" }
-        );
-      }
+      const payload: { id: string; full_name?: string; avatar_url?: string } = {
+        id: user.id,
+      };
+
+      if (fullName) payload.full_name = fullName;
+      if (avatarUrl) payload.avatar_url = avatarUrl;
+
+      // Prevent wiping existing profile fields (especially avatar_url) with null values.
+      if (!payload.full_name && !payload.avatar_url) return;
+
+      await supabase.from("profiles").upsert(payload, { onConflict: "id" });
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
