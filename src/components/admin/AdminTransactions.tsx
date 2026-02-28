@@ -32,7 +32,8 @@ const txnTypeLabel: Record<string, string> = {
   prize_winning: "Prize Winnings",
   refund: "Refund",
   withdrawal: "Withdrawal",
-  referral_earning: "Referral Earning",
+  referral_earning: "Referral Reward",
+  referral_bonus: "Referral Welcome Bonus",
   honorarium: "Judging Honorarium",
   gift: "Gift from Admin",
   gift_expiry: "Gift Expired",
@@ -40,7 +41,7 @@ const txnTypeLabel: Record<string, string> = {
   promo_credit: "Promo Credit",
 };
 
-const creditTypes = ["deposit", "prize_winning", "refund", "referral_earning", "honorarium", "gift", "promo_credit", "vote_reward"];
+const creditTypes = ["deposit", "prize_winning", "refund", "referral_earning", "referral_bonus", "honorarium", "gift", "promo_credit", "vote_reward"];
 
 const PRESETS = [
   { label: "Last 7 days", days: 7 },
