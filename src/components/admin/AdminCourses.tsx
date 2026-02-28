@@ -106,7 +106,7 @@ const AdminCourses = () => {
         <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
           {courses.length} course{courses.length !== 1 ? "s" : ""}
         </span>
-        <button onClick={() => navigate("/courses/editor/new")}
+        <button onClick={() => navigate("/courses/new")}
           className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-sm"
           style={{ fontFamily: "var(--font-heading)" }}>
           <Plus className="h-3 w-3" /> New Course
@@ -160,7 +160,7 @@ const AdminCourses = () => {
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => navigate(`/courses/${c.slug}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="View"><Eye className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => navigate(`/courses/editor/${c.id}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => navigate(`/courses/edit/${c.id}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                   <button onClick={() => deleteCourse(c.id)} className="p-1.5 hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               </div>
