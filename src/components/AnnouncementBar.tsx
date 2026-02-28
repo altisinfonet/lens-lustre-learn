@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Announcement {
   id: string;
@@ -59,36 +60,46 @@ const AnnouncementBar = () => {
   if (visible.length === 0) return null;
 
   return (
-    <div className="w-full z-50">
-      {visible.map((a) => (
-        <div
-          key={a.id}
-          className="relative flex items-center justify-center gap-3 px-4 py-2 text-sm text-center"
-          style={{ backgroundColor: a.bg_color, color: a.text_color }}
-        >
-          <span>{a.message}</span>
-          {a.link_url && (
-            a.link_url.startsWith("/") ? (
-              <Link to={a.link_url} className="underline font-medium whitespace-nowrap" style={{ color: a.text_color }}>
-                {a.link_text || "Learn More"}
-              </Link>
-            ) : (
-              <a href={a.link_url} target="_blank" rel="noopener noreferrer" className="underline font-medium whitespace-nowrap" style={{ color: a.text_color }}>
-                {a.link_text || "Learn More"}
-              </a>
-            )
-          )}
-          {a.is_dismissible && (
-            <button
-              onClick={() => dismiss(a.id)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition-opacity"
-              aria-label="Dismiss"
+    <div className="w-full z-50 overflow-hidden">
+      <AnimatePresence>
+        {visible.map((a) => (
+          <motion.div
+            key={a.id}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div
+              className="relative flex items-center justify-center gap-3 px-4 py-2 text-sm text-center"
+              style={{ backgroundColor: a.bg_color, color: a.text_color }}
             >
-              <X className="h-4 w-4" style={{ color: a.text_color }} />
-            </button>
-          )}
-        </div>
-      ))}
+              <span>{a.message}</span>
+              {a.link_url && (
+                a.link_url.startsWith("/") ? (
+                  <Link to={a.link_url} className="underline font-medium whitespace-nowrap" style={{ color: a.text_color }}>
+                    {a.link_text || "Learn More"}
+                  </Link>
+                ) : (
+                  <a href={a.link_url} target="_blank" rel="noopener noreferrer" className="underline font-medium whitespace-nowrap" style={{ color: a.text_color }}>
+                    {a.link_text || "Learn More"}
+                  </a>
+                )
+              )}
+              {a.is_dismissible && (
+                <button
+                  onClick={() => dismiss(a.id)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100 transition-opacity"
+                  aria-label="Dismiss"
+                >
+                  <X className="h-4 w-4" style={{ color: a.text_color }} />
+                </button>
+              )}
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
