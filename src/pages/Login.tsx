@@ -69,6 +69,12 @@ const Login = () => {
     setError(null);
     setLoading(provider);
     try {
+      // Clear stale session before OAuth to prevent refresh token loops
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch {
+        // Ignore
+      }
       const { error } = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: window.location.origin,
       });
@@ -98,19 +104,19 @@ const Login = () => {
     }
 
     setLoading("email");
-    const attemptLogin = () =>
-      supabase.auth.signInWithPassword({
+
+    // Clear any stale session before attempting login to prevent refresh token loops
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      // Ignore signOut errors — we just want to clear stale tokens
+    }
+
+    try {
+      const res = await supabase.auth.signInWithPassword({
         email: result.data.email,
         password: result.data.password,
       });
-
-    try {
-      let res = await attemptLogin();
-
-      if (res.error && isNetworkError(res.error.message)) {
-        await new Promise((r) => setTimeout(r, 1500));
-        res = await attemptLogin();
-      }
 
       if (res.error) {
         const attempts = failedAttempts + 1;
@@ -119,21 +125,7 @@ const Login = () => {
         setError(friendlyError(res.error.message));
       }
     } catch (err: any) {
-      if (isNetworkError(err?.message || "")) {
-        try {
-          await new Promise((r) => setTimeout(r, 1500));
-          const res = await attemptLogin();
-          if (!res.error) {
-            setLoading(null);
-            return;
-          }
-          setError(friendlyError(res.error.message));
-        } catch {
-          setError(friendlyError(err?.message || "Something went wrong."));
-        }
-      } else {
-        setError(friendlyError(err?.message || "Something went wrong."));
-      }
+      setError(friendlyError(err?.message || "Something went wrong."));
       setFailedAttempts((p) => p + 1);
       setCaptchaVerified(false);
     }
