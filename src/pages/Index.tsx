@@ -487,10 +487,8 @@ const Index = () => {
         supabase
           .from("certificates")
           .select("id, title, type, issued_at, user_id, is_featured, featured_quote")
-          .order("is_featured", { ascending: false })
-          .order("featured_order")
-          .order("issued_at", { ascending: false })
-          .limit(12),
+          .order("updated_at", { ascending: false })
+          .limit(6),
         supabase
           .from("journal_articles")
           .select("id, title, slug, excerpt, cover_image_url, tags, published_at, author_id")
@@ -1699,68 +1697,21 @@ const Index = () => {
             </div>
           ) : certificates.length > 0 ? (
             <>
-              {/* Featured certificates first */}
-              {certificates.filter((c) => c.is_featured).length > 0 && (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                  {certificates.filter((c) => c.is_featured).slice(0, 6).map((cert, i) => (
-                    <motion.div
-                      key={cert.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
-                      className="border-2 border-primary/30 p-6 hover:border-primary transition-all duration-700 group relative"
-                    >
-                      <div className="absolute top-3 right-3">
-                        <span className="text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 bg-yellow-500 text-yellow-950 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>★ Featured</span>
-                      </div>
-                      <div className="flex items-start justify-between mb-5">
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Award className="h-5 w-5 text-primary" />
-                        </div>
-                        <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                          {cert.type === "competition_winner" ? "Competition" : cert.type === "course_completion" ? "Course" : "Achievement"}
-                        </span>
-                      </div>
-                      <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
-                        {cert.title}
-                      </h3>
-                      {cert.featured_quote && (
-                        <p className="text-xs italic text-muted-foreground leading-relaxed mb-3 border-l-2 border-primary/30 pl-3" style={{ fontFamily: "var(--font-body)" }}>
-                          "{cert.featured_quote}"
-                        </p>
-                      )}
-                      <p className="text-[10px] text-muted-foreground mb-5" style={{ fontFamily: "var(--font-body)" }}>
-                        Issued {new Date(cert.issued_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                      </p>
-                      <div className="flex items-center gap-2.5 pt-4 border-t border-border">
-                        {cert.recipient_avatar ? (
-                          <img src={cert.recipient_avatar} alt="" className="h-7 w-7 rounded-full object-cover border border-border" />
-                        ) : (
-                          <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center border border-border">
-                            <User className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        )}
-                        <span className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                          {cert.recipient_name || "Photographer"}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-
-              {/* Recent certificates */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {certificates.filter((c) => !c.is_featured).slice(0, 6).map((cert, i) => (
+                {certificates.slice(0, 6).map((cert, i) => (
                   <motion.div
                     key={cert.id}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
-                    className="border border-border p-6 hover:border-primary/40 transition-all duration-700 group"
+                    className={`border p-6 transition-all duration-700 group relative ${cert.is_featured ? "border-2 border-primary/30 hover:border-primary" : "border-border hover:border-primary/40"}`}
                   >
+                    {cert.is_featured && (
+                      <div className="absolute top-3 right-3">
+                        <span className="text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 bg-primary/10 text-primary font-semibold" style={{ fontFamily: "var(--font-heading)" }}>★ Featured</span>
+                      </div>
+                    )}
                     <div className="flex items-start justify-between mb-5">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                         <Award className="h-5 w-5 text-primary" />
@@ -1772,6 +1723,11 @@ const Index = () => {
                     <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
                       {cert.title}
                     </h3>
+                    {cert.featured_quote && (
+                      <p className="text-xs italic text-muted-foreground leading-relaxed mb-3 border-l-2 border-primary/30 pl-3" style={{ fontFamily: "var(--font-body)" }}>
+                        "{cert.featured_quote}"
+                      </p>
+                    )}
                     <p className="text-[10px] text-muted-foreground mb-5" style={{ fontFamily: "var(--font-body)" }}>
                       Issued {new Date(cert.issued_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                     </p>
