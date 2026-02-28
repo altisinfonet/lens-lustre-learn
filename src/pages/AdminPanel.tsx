@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
@@ -13,6 +13,7 @@ import AdminPhotoOfDay from "@/components/admin/AdminPhotoOfDay";
 import AdminExcellence from "@/components/admin/AdminExcellence";
 import AdminFeaturedArtist from "@/components/admin/AdminFeaturedArtist";
 import AdminSettings from "@/components/admin/AdminSettings";
+import AdminSEO from "@/components/admin/AdminSEO";
 import AdminEngagement from "@/components/admin/AdminEngagement";
 import AdminTransactions from "@/components/admin/AdminTransactions";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -80,7 +81,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -512,7 +513,7 @@ const AdminPanel = () => {
       ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["transactions", "Transactions", FileText],
     ] as const },
     { label: "Settings", items: [
-      ["settings", "Integrations", Settings],
+      ["seo", "SEO", Globe], ["settings", "Integrations", Settings],
     ] as const },
   ];
 
@@ -594,6 +595,9 @@ const AdminPanel = () => {
 
         {/* Featured Artist Tab */}
         {tab === "featured_artist" && <AdminFeaturedArtist user={user} />}
+
+        {/* SEO Tab */}
+        {tab === "seo" && <AdminSEO user={user} />}
 
         {/* Settings Tab */}
         {tab === "settings" && <AdminSettings user={user} />}
