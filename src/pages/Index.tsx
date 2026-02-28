@@ -482,7 +482,7 @@ const Index = () => {
           .from("competition_entries")
           .select("id, title, photos, competition_id, user_id")
           .eq("status", "winner")
-          .order("created_at", { ascending: false })
+          .order("updated_at", { ascending: false })
           .limit(6),
         supabase
           .from("certificates")
@@ -1576,7 +1576,7 @@ const Index = () => {
             </div>
           ) : winners.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {winners.map((winner, i) => (
+              {winners.slice(0, 6).map((winner, i) => (
                 <motion.div
                   key={winner.id}
                   initial={{ opacity: 0, y: 20 }}
