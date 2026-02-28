@@ -189,6 +189,7 @@ const Index = () => {
   const [featuredArticle, setFeaturedArticle] = useState<(JournalPreview & { cover_image_url: string | null; body?: string }) | null>(null);
   const [courses, setCourses] = useState<CoursePreview[]>([]);
   const [galleryWorks, setGalleryWorks] = useState<PortfolioImage[]>(fallbackGalleryWorks);
+  const [dataLoading, setDataLoading] = useState(true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -267,6 +268,7 @@ const Index = () => {
   useEffect(() => {
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
+      try {
       const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes, bannersRes, heroContentRes] = await Promise.all([
         supabase
           .from("competition_entries")
@@ -504,6 +506,11 @@ const Index = () => {
           body: featData.body,
         });
       }
+      } catch (err) {
+        console.error("Failed to load showcase data:", err);
+      } finally {
+        setDataLoading(false);
+      }
     };
 
     fetchShowcaseData();
@@ -721,7 +728,19 @@ const Index = () => {
                   ))}
                 </div>
 
-                {filtered.length > 0 ? (
+                {dataLoading ? (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="border border-border overflow-hidden animate-pulse">
+                        <div className="aspect-square bg-muted" />
+                        <div className="p-4 space-y-2">
+                          <div className="h-3 bg-muted rounded w-1/3" />
+                          <div className="h-4 bg-muted rounded w-2/3" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : filtered.length > 0 ? (
                   <motion.div layout className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <AnimatePresence mode="popLayout">
                       {filtered.map((comp, i) => (
@@ -1222,7 +1241,20 @@ const Index = () => {
             </motion.div>
           </motion.header>
 
-          {courses.length > 0 ? (
+          {dataLoading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="border border-border rounded-sm overflow-hidden animate-pulse">
+                  <div className="h-48 bg-muted" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-3 bg-muted rounded w-1/2" />
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                    <div className="h-3 bg-muted rounded w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : courses.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {courses.map((course, i) => (
                 <motion.div
@@ -1231,51 +1263,46 @@ const Index = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.8, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                  className="group border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden"
                 >
-                  <Link to={`/courses/${course.slug}`} className="group block border border-border hover:border-primary/40 transition-all duration-700 overflow-hidden">
+                  <Link to={`/courses/${course.slug}`} className="block">
                     <div className="relative h-48 overflow-hidden bg-muted">
                       {course.cover_image_url ? (
-                        <img src={course.cover_image_url} alt={course.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[1.5s]" loading="lazy" />
+                        <img src={course.cover_image_url} alt={course.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[2s]" loading="lazy" />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-secondary/10 to-muted flex items-center justify-center">
-                          <BookOpen className="h-10 w-10 text-secondary/30" />
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="h-12 w-12 text-muted-foreground/20" />
                         </div>
                       )}
-                      <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/10 to-transparent" />
+                      {/* Labels */}
+                      <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                         {course.is_featured && (
-                          <span className="text-[8px] tracking-[0.15em] uppercase px-2.5 py-1 bg-yellow-500 text-yellow-950 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>★ Featured</span>
+                          <span className="text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 bg-primary text-primary-foreground rounded-sm" style={{ fontFamily: "var(--font-heading)" }}>
+                            <T>Filling Up 1st</T>
+                          </span>
                         )}
-                        {course.labels.map((label) => (
-                          <span key={label} className={`text-[8px] tracking-[0.1em] uppercase px-2.5 py-1 font-semibold ${
-                            label === "Few Seats Left" ? "bg-red-500 text-white" :
-                            label === "Filling Up 1st" ? "bg-orange-500 text-white" :
-                            label === "Early Bird Offer" ? "bg-green-500 text-white" :
-                            label === "Most Demand" ? "bg-blue-500 text-white" :
-                            "bg-primary text-primary-foreground"
-                          }`} style={{ fontFamily: "var(--font-heading)" }}>{label}</span>
+                        {course.labels?.map((label) => (
+                          <span key={label} className="text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 bg-accent text-accent-foreground rounded-sm" style={{ fontFamily: "var(--font-heading)" }}>
+                            {label}
+                          </span>
                         ))}
-                        <span className={`text-[9px] tracking-[0.2em] uppercase px-3 py-1 ${course.is_free ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground"}`} style={{ fontFamily: "var(--font-heading)" }}>
-                          {course.is_free ? "Free" : "Premium"}
+                        <span className={`text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 rounded-sm ${course.is_free ? "bg-green-600 text-white" : "bg-blue-600 text-white"}`} style={{ fontFamily: "var(--font-heading)" }}>
+                          {course.is_free ? <T>Free</T> : <T>Premium</T>}
                         </span>
                       </div>
                     </div>
-                    <div className="p-5">
+                    <div className="p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[9px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                          {course.category}
-                        </span>
-                        <span className="text-muted-foreground/30">·</span>
-                        <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                          {course.difficulty}
-                        </span>
+                        <span className="text-[9px] tracking-[0.15em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>{course.category}</span>
+                        <span className="text-[9px] text-muted-foreground">·</span>
+                        <span className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>{course.difficulty}</span>
                       </div>
-                      <h3 className="text-base font-light tracking-tight mb-2 group-hover:text-primary transition-colors duration-500 line-clamp-2" style={{ fontFamily: "var(--font-display)" }}>
-                        {course.title}
-                      </h3>
+                      <h3 className="text-base font-light leading-snug mb-1 group-hover:text-primary transition-colors duration-500" style={{ fontFamily: "var(--font-heading)" }}>{course.title}</h3>
                       {course.author_name && (
-                        <span className="text-[9px] tracking-[0.1em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                          by {course.author_name}
-                        </span>
+                        <p className="text-[11px] text-muted-foreground uppercase tracking-[0.1em]" style={{ fontFamily: "var(--font-heading)" }}>
+                          <T>by</T> {course.author_name}
+                        </p>
                       )}
                     </div>
                   </Link>
@@ -1325,7 +1352,20 @@ const Index = () => {
               </motion.div>
             </motion.header>
 
-          {winners.length > 0 ? (
+          {dataLoading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="border border-border overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-muted" />
+                  <div className="p-5 space-y-2">
+                    <div className="h-3 bg-muted rounded w-1/3" />
+                    <div className="h-4 bg-muted rounded w-2/3" />
+                    <div className="flex items-center gap-2 mt-3"><div className="w-7 h-7 rounded-full bg-muted" /><div className="h-3 bg-muted rounded w-20" /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : winners.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {winners.map((winner, i) => (
                 <motion.div
@@ -1437,7 +1477,18 @@ const Index = () => {
               </motion.div>
             )}
 
-          {certificates.length > 0 ? (
+          {dataLoading ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="border border-border p-6 animate-pulse">
+                  <div className="h-3 bg-muted rounded w-1/4 mb-3" />
+                  <div className="h-5 bg-muted rounded w-2/3 mb-2" />
+                  <div className="h-3 bg-muted rounded w-1/2 mb-4" />
+                  <div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full bg-muted" /><div className="h-3 bg-muted rounded w-20" /></div>
+                </div>
+              ))}
+            </div>
+          ) : certificates.length > 0 ? (
             <>
               {/* Featured certificates first */}
               {certificates.filter((c) => c.is_featured).length > 0 && (
@@ -1638,7 +1689,31 @@ const Index = () => {
               </motion.div>
             </motion.header>
 
-          {journalArticles.length > 0 ? (
+          {dataLoading ? (
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="md:row-span-2 border border-border overflow-hidden animate-pulse">
+                <div className="h-64 md:h-80 bg-muted" />
+                <div className="p-6 space-y-3">
+                  <div className="flex gap-2"><div className="h-5 bg-muted rounded w-16" /><div className="h-5 bg-muted rounded w-20" /></div>
+                  <div className="h-6 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-full" />
+                  <div className="h-3 bg-muted rounded w-1/3" />
+                </div>
+              </div>
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex gap-4 border border-border p-3 animate-pulse">
+                    <div className="w-24 h-20 bg-muted shrink-0 rounded" />
+                    <div className="flex-1 space-y-2 py-1">
+                      <div className="h-3 bg-muted rounded w-16" />
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-3 bg-muted rounded w-1/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : journalArticles.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-6">
               {/* Featured / first article — large card */}
               <motion.article
