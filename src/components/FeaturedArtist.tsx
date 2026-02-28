@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Palette, ArrowRight } from "lucide-react";
+import { Palette, ArrowRight, ImageOff } from "lucide-react";
 import T from "@/components/T";
 
 interface FeaturedArtistData {
@@ -19,22 +19,69 @@ const slowEase = [0.25, 0.1, 0.25, 1] as const;
 
 export default function FeaturedArtist() {
   const [artist, setArtist] = useState<FeaturedArtistData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from("featured_artists")
-        .select("id, title, slug, excerpt, cover_image_url, artist_name, artist_avatar_url")
-        .eq("is_active", true)
-        .order("published_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) setArtist(data as any);
+    const fetchData = async () => {
+      try {
+        const { data } = await supabase
+          .from("featured_artists")
+          .select("id, title, slug, excerpt, cover_image_url, artist_name, artist_avatar_url")
+          .eq("is_active", true)
+          .order("published_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data) setArtist(data as any);
+      } catch (err) {
+        console.error("Failed to load Featured Artist:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetch();
+    fetchData();
   }, []);
 
-  if (!artist) return null;
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className="flex flex-col animate-pulse">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-4 w-4 rounded bg-muted" />
+          <div className="h-3 w-32 rounded bg-muted" />
+        </div>
+        <div className="aspect-square bg-muted rounded-sm mb-4" />
+      </div>
+    );
+  }
+
+  // Empty state fallback
+  if (!artist) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1, delay: 0.15, ease: slowEase }}
+        className="flex flex-col"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <Palette className="h-4 w-4 text-primary" />
+          <span
+            className="text-[10px] tracking-[0.35em] uppercase text-primary"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            <T>Featured Artist</T>
+          </span>
+        </div>
+        <div className="aspect-square bg-muted/30 rounded-sm mb-4 flex flex-col items-center justify-center border border-border/50">
+          <ImageOff className="h-10 w-10 text-muted-foreground/30 mb-3" />
+          <span className="text-xs text-muted-foreground/50" style={{ fontFamily: "var(--font-body)" }}>
+            <T>Coming Soon</T>
+          </span>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
