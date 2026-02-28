@@ -487,7 +487,7 @@ const Index = () => {
         supabase
           .from("certificates")
           .select("id, title, type, issued_at, user_id, is_featured, featured_quote")
-          .order("updated_at", { ascending: false })
+          .order("issued_at", { ascending: false })
           .limit(6),
         supabase
           .from("journal_articles")
