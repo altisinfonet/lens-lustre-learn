@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Star, Camera, Calendar } from "lucide-react";
+import { Star, Camera, Calendar, ImageOff } from "lucide-react";
+import T from "@/components/T";
 
 interface POTD {
   id: string;
@@ -16,22 +17,69 @@ const slowEase = [0.25, 0.1, 0.25, 1] as const;
 
 export default function PhotoOfTheDay() {
   const [potd, setPotd] = useState<POTD | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from("photo_of_the_day")
-        .select("id, image_url, title, photographer_name, description, featured_date")
-        .eq("is_active", true)
-        .order("featured_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) setPotd(data as any);
+    const fetchData = async () => {
+      try {
+        const { data } = await supabase
+          .from("photo_of_the_day")
+          .select("id, image_url, title, photographer_name, description, featured_date")
+          .eq("is_active", true)
+          .order("featured_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data) setPotd(data as any);
+      } catch (err) {
+        console.error("Failed to load Photo of the Day:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetch();
+    fetchData();
   }, []);
 
-  if (!potd) return null;
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className="flex flex-col animate-pulse">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-4 w-4 rounded bg-muted" />
+          <div className="h-3 w-32 rounded bg-muted" />
+        </div>
+        <div className="aspect-square bg-muted rounded-sm mb-4" />
+      </div>
+    );
+  }
+
+  // Empty state fallback
+  if (!potd) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1, ease: slowEase }}
+        className="flex flex-col"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <Star className="h-4 w-4 text-primary fill-primary" />
+          <span
+            className="text-[10px] tracking-[0.35em] uppercase text-primary"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            <T>Photo of the Day</T>
+          </span>
+        </div>
+        <div className="aspect-square bg-muted/30 rounded-sm mb-4 flex flex-col items-center justify-center border border-border/50">
+          <ImageOff className="h-10 w-10 text-muted-foreground/30 mb-3" />
+          <span className="text-xs text-muted-foreground/50" style={{ fontFamily: "var(--font-body)" }}>
+            <T>Coming Soon</T>
+          </span>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -48,7 +96,7 @@ export default function PhotoOfTheDay() {
           className="text-[10px] tracking-[0.35em] uppercase text-primary"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          Photo of the Day
+          <T>Photo of the Day</T>
         </span>
       </div>
 
