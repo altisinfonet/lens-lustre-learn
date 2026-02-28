@@ -1680,10 +1680,19 @@ export type Database = {
         }
         Returns: boolean
       }
-      process_referral_reward: {
-        Args: { _activity_type: string; _referred_user_id: string }
-        Returns: undefined
-      }
+      process_referral_reward:
+        | {
+            Args: { _activity_type: string; _referred_user_id: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _activity_type: string
+              _referred_user_id: string
+              _txn_amount?: number
+            }
+            Returns: undefined
+          }
       search_certificates: {
         Args: { _course_title?: string; _issued_date?: string; _name?: string }
         Returns: {
