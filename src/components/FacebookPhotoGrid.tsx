@@ -1,28 +1,27 @@
-import { useState } from "react";
-import { Download } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { Download, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { getJpegDownloadUrl } from "@/lib/imageCompression";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FacebookPhotoGridProps {
   urls: string[];
   onPhotoClick?: (index: number) => void;
 }
 
-/**
- * Facebook-style photo grid layouts:
- * 1 photo  → full width, capped height
- * 2 photos → side by side
- * 3 photos → 1 big left + 2 stacked right
- * 4 photos → 2×2 grid
- * 5+ photos → 2 top + 3 bottom, with "+N" overlay on last
- */
 const FacebookPhotoGrid = ({ urls, onPhotoClick }: FacebookPhotoGridProps) => {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const count = urls.length;
   if (count === 0) return null;
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    onPhotoClick?.(index);
+  };
 
   const Photo = ({ src, index, className = "", overlay }: { src: string; index: number; className?: string; overlay?: string }) => (
     <div
       className={`relative group/photo overflow-hidden cursor-pointer bg-muted/30 ${className}`}
-      onClick={() => onPhotoClick?.(index)}
+      onClick={() => openLightbox(index)}
     >
       <img
         src={src}
@@ -47,47 +46,29 @@ const FacebookPhotoGrid = ({ urls, onPhotoClick }: FacebookPhotoGridProps) => {
     </div>
   );
 
-  if (count === 1) {
-    return (
-      <div className="mt-2 max-h-[480px] overflow-hidden">
-        <Photo src={urls[0]} index={0} className="max-h-[480px]" />
-      </div>
-    );
-  }
-
-  if (count === 2) {
-    return (
-      <div className="mt-2 grid grid-cols-2 gap-0.5 max-h-[400px] overflow-hidden">
-        <Photo src={urls[0]} index={0} className="h-[400px]" />
-        <Photo src={urls[1]} index={1} className="h-[400px]" />
-      </div>
-    );
-  }
-
-  if (count === 3) {
-    return (
-      <div className="mt-2 grid grid-cols-2 gap-0.5 max-h-[400px] overflow-hidden">
-        <Photo src={urls[0]} index={0} className="row-span-2 h-[400px]" />
-        <Photo src={urls[1]} index={1} className="h-[199px]" />
-        <Photo src={urls[2]} index={2} className="h-[199px]" />
-      </div>
-    );
-  }
-
-  if (count === 4) {
-    return (
-      <div className="mt-2 grid grid-cols-2 gap-0.5 max-h-[400px] overflow-hidden">
-        <Photo src={urls[0]} index={0} className="h-[199px]" />
-        <Photo src={urls[1]} index={1} className="h-[199px]" />
-        <Photo src={urls[2]} index={2} className="h-[199px]" />
-        <Photo src={urls[3]} index={3} className="h-[199px]" />
-      </div>
-    );
-  }
-
-  // 5+ photos: show 5, overlay remaining count on last
-  const remaining = count - 5;
-  return (
+  const grid = count === 1 ? (
+    <div className="mt-2 max-h-[480px] overflow-hidden">
+      <Photo src={urls[0]} index={0} className="max-h-[480px]" />
+    </div>
+  ) : count === 2 ? (
+    <div className="mt-2 grid grid-cols-2 gap-0.5 max-h-[400px] overflow-hidden">
+      <Photo src={urls[0]} index={0} className="h-[400px]" />
+      <Photo src={urls[1]} index={1} className="h-[400px]" />
+    </div>
+  ) : count === 3 ? (
+    <div className="mt-2 grid grid-cols-2 gap-0.5 max-h-[400px] overflow-hidden">
+      <Photo src={urls[0]} index={0} className="row-span-2 h-[400px]" />
+      <Photo src={urls[1]} index={1} className="h-[199px]" />
+      <Photo src={urls[2]} index={2} className="h-[199px]" />
+    </div>
+  ) : count === 4 ? (
+    <div className="mt-2 grid grid-cols-2 gap-0.5 max-h-[400px] overflow-hidden">
+      <Photo src={urls[0]} index={0} className="h-[199px]" />
+      <Photo src={urls[1]} index={1} className="h-[199px]" />
+      <Photo src={urls[2]} index={2} className="h-[199px]" />
+      <Photo src={urls[3]} index={3} className="h-[199px]" />
+    </div>
+  ) : (
     <div className="mt-2 grid grid-cols-6 gap-0.5 max-h-[400px] overflow-hidden">
       <Photo src={urls[0]} index={0} className="col-span-3 h-[266px]" />
       <Photo src={urls[1]} index={1} className="col-span-3 h-[266px]" />
@@ -97,9 +78,128 @@ const FacebookPhotoGrid = ({ urls, onPhotoClick }: FacebookPhotoGridProps) => {
         src={urls[4]}
         index={4}
         className="col-span-2 h-[132px]"
-        overlay={remaining > 0 ? String(remaining) : undefined}
+        overlay={count - 5 > 0 ? String(count - 5) : undefined}
       />
     </div>
+  );
+
+  return (
+    <>
+      {grid}
+      <PostLightbox
+        urls={urls}
+        currentIndex={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onNavigate={setLightboxIndex}
+      />
+    </>
+  );
+};
+
+/* ── Full-screen Lightbox ── */
+interface PostLightboxProps {
+  urls: string[];
+  currentIndex: number | null;
+  onClose: () => void;
+  onNavigate: (index: number) => void;
+}
+
+const PostLightbox = ({ urls, currentIndex, onClose, onNavigate }: PostLightboxProps) => {
+  const isOpen = currentIndex !== null;
+
+  const goPrev = useCallback(() => {
+    if (currentIndex === null) return;
+    onNavigate(currentIndex > 0 ? currentIndex - 1 : urls.length - 1);
+  }, [currentIndex, urls.length, onNavigate]);
+
+  const goNext = useCallback(() => {
+    if (currentIndex === null) return;
+    onNavigate(currentIndex < urls.length - 1 ? currentIndex + 1 : 0);
+  }, [currentIndex, urls.length, onNavigate]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [isOpen, onClose, goPrev, goNext]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && currentIndex !== null && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm"
+          onClick={onClose}
+        >
+          {/* Top bar */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <span className="text-sm text-white/60 mr-2">
+              {currentIndex + 1} / {urls.length}
+            </span>
+            <a
+              href={getJpegDownloadUrl(urls[currentIndex])}
+              download
+              onClick={(e) => e.stopPropagation()}
+              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+              title="Download JPEG"
+            >
+              <Download className="h-5 w-5" />
+            </a>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Nav arrows */}
+          {urls.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+
+          {/* Image */}
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={currentIndex}
+              src={urls[currentIndex]}
+              alt=""
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="max-w-[90vw] max-h-[85vh] object-contain rounded-sm shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
