@@ -3,6 +3,7 @@ import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, 
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import T from "@/components/T";
+import PrivacyToggle, { DEFAULT_PRIVACY, type PrivacyLevel } from "@/components/PrivacyToggle";
 import { COUNTRIES } from "@/lib/profileCompletion";
 import { getCountries, getStatesForCountry, getCitiesForState } from "@/lib/locationData";
 import { SUPPORTED_LANGUAGES, useLanguage } from "@/hooks/useLanguage";
@@ -83,6 +84,11 @@ const EditProfile = () => {
   const [nationalIdUrl, setNationalIdUrl] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState(false);
   const idFileRef = useRef<HTMLInputElement>(null);
+  const [privacySettings, setPrivacySettings] = useState<Record<string, PrivacyLevel>>({ ...DEFAULT_PRIVACY });
+
+  const setFieldPrivacy = (field: string, value: PrivacyLevel) => {
+    setPrivacySettings((prev) => ({ ...prev, [field]: value }));
+  };
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -226,6 +232,9 @@ const EditProfile = () => {
         // Bank details loaded separately below
         setNationalIdUrl((data as any).national_id_url || null);
         setPreferredLanguage((data as any).preferred_language || "English");
+        if ((data as any).privacy_settings) {
+          setPrivacySettings({ ...DEFAULT_PRIVACY, ...(data as any).privacy_settings });
+        }
       }
       // Fetch bank details from separate table
       const { data: bankData } = await supabase
@@ -330,14 +339,6 @@ const EditProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!fullName.trim()) {
-      toast({ title: "Name is required", variant: "destructive" });
-      return;
-    }
-    if (!avatarUrl) {
-      toast({ title: "Profile picture is required", variant: "destructive" });
-      return;
-    }
     // Validate phone/whatsapp/postal/social
     const phoneErr = validatePhone(phone);
     const whatsappErr = validatePhone(whatsapp);
@@ -374,6 +375,7 @@ const EditProfile = () => {
         whatsapp: whatsapp.trim() || null,
         national_id_url: nationalIdUrl || null,
         preferred_language: preferredLanguage,
+        privacy_settings: privacySettings,
         updated_at: new Date().toISOString(),
       } as any)
       .eq("id", user.id);
@@ -441,12 +443,15 @@ const EditProfile = () => {
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </div>
             <div>
-              <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Profile Picture</T> *</span>
+              <div className="flex items-center gap-2 mb-1">
+                <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Profile Picture</T></span>
+                <PrivacyToggle value={privacySettings.avatar || "public"} onChange={(v) => setFieldPrivacy("avatar", v)} />
+              </div>
               <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}
                 className="text-xs text-primary hover:underline transition-all duration-300" style={{ fontFamily: "var(--font-body)" }}>
                 {uploadingAvatar ? <T>Uploading…</T> : <T>Change photo</T>}
               </button>
-              <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}><T>JPG, PNG or WebP. Max 5MB. Required.</T></p>
+              <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}><T>JPG, PNG or WebP. Max 5MB.</T></p>
             </div>
           </div>
 
@@ -472,14 +477,17 @@ const EditProfile = () => {
 
           {/* Full Name */}
           <div>
-            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Full Name</T> *</label>
+            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Full Name</T></label>
             <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100}
               className={inputCls} placeholder="Your full name" style={{ fontFamily: "var(--font-body)" }} />
           </div>
 
           {/* Bio */}
           <div>
-            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Bio</T></label>
+            <div className="flex items-center gap-2 mb-0">
+              <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Bio</T></label>
+              <PrivacyToggle value={privacySettings.bio || "public"} onChange={(v) => setFieldPrivacy("bio", v)} />
+            </div>
             <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={500} rows={4}
               className="w-full bg-transparent border border-border focus:border-primary outline-none p-4 text-sm transition-colors duration-500 resize-none"
               placeholder="Tell us about yourself..." style={{ fontFamily: "var(--font-body)" }} />
@@ -488,16 +496,22 @@ const EditProfile = () => {
 
           {/* Portfolio URL */}
           <div>
-            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Portfolio URL</T></label>
+            <div className="flex items-center gap-2">
+              <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Portfolio URL</T></label>
+              <PrivacyToggle value={privacySettings.portfolio || "public"} onChange={(v) => setFieldPrivacy("portfolio", v)} />
+            </div>
             <input type="url" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} maxLength={255}
               className={inputCls} placeholder="https://your-portfolio.com" style={{ fontFamily: "var(--font-body)" }} />
           </div>
 
           {/* Communication Address */}
           <div className="border border-border p-8">
-            <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>
-              <MapPin className="inline h-3 w-3 mr-2" /><T>Communication Address</T>
-            </span>
+            <div className="flex items-center gap-2 mb-6">
+              <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>
+                <MapPin className="inline h-3 w-3 mr-2" /><T>Communication Address</T>
+              </span>
+              <PrivacyToggle value={privacySettings.city_country || "public"} onChange={(v) => setFieldPrivacy("city_country", v)} />
+            </div>
             <div className="space-y-5">
               <div>
                 <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Address Line 1</T></label>
@@ -564,9 +578,12 @@ const EditProfile = () => {
 
           {/* Contact Numbers */}
           <div className="border border-border p-8">
-            <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>
-              <Phone className="inline h-3 w-3 mr-2" /><T>Contact Numbers</T>
-            </span>
+            <div className="flex items-center gap-2 mb-6">
+              <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>
+                <Phone className="inline h-3 w-3 mr-2" /><T>Contact Numbers</T>
+              </span>
+              <PrivacyToggle value={privacySettings.phone || "only_me"} onChange={(v) => setFieldPrivacy("phone", v)} />
+            </div>
             <div className="space-y-5">
               <div>
                 <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Phone Number</T></label>
@@ -651,7 +668,10 @@ const EditProfile = () => {
 
           {/* Social Media Links */}
           <div className="border border-border p-8">
-            <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}><T>Social Media Links</T></span>
+            <div className="flex items-center gap-2 mb-6">
+              <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}><T>Social Media Links</T></span>
+              <PrivacyToggle value={privacySettings.social_links || "public"} onChange={(v) => setFieldPrivacy("social_links", v)} />
+            </div>
             <div className="space-y-5">
               {/* Facebook */}
               <div>
@@ -858,7 +878,10 @@ const EditProfile = () => {
 
           {/* Photography Interests */}
           <div>
-            <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Photography Interests</T></label>
+            <div className="flex items-center gap-2">
+              <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Photography Interests</T></label>
+              <PrivacyToggle value={privacySettings.interests || "public"} onChange={(v) => setFieldPrivacy("interests", v)} />
+            </div>
             <div className="flex flex-wrap gap-2">
               {INTEREST_OPTIONS.map((interest) => {
                 const selected = interests.includes(interest);
@@ -879,7 +902,10 @@ const EditProfile = () => {
           <div className="border border-border p-8">
             <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}><T>Account Settings</T></span>
             <div className="mb-6">
-              <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Email Address</T></span>
+              <div className="flex items-center gap-2">
+                <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Email Address</T></span>
+                <PrivacyToggle value={privacySettings.email || "only_me"} onChange={(v) => setFieldPrivacy("email", v)} />
+              </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-3.5 w-3.5" />
                 <span style={{ fontFamily: "var(--font-body)" }}>{user?.email}</span>
