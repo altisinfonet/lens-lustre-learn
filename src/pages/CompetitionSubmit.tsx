@@ -127,7 +127,7 @@ const CompetitionSubmit = () => {
       try {
         await deductFunds(entryFee, "competition_fee", `Entry fee for "${compTitle}"`, id, "competition");
         // Trigger referral reward for first paid activity
-        supabase.rpc("process_referral_reward" as any, { _referred_user_id: user.id, _activity_type: "competition entry" }).then(() => {});
+        supabase.rpc("process_referral_reward" as any, { _referred_user_id: user.id, _activity_type: "competition entry", _txn_amount: entryFee }).then(() => {});
       } catch (err: any) {
         toast({ title: "Payment failed", description: err.message, variant: "destructive" });
         return;
