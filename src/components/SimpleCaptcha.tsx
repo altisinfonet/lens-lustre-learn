@@ -49,23 +49,25 @@ const SimpleCaptcha = ({ onVerified }: SimpleCaptchaProps) => {
           <RefreshCw className="h-3.5 w-3.5" />
         </button>
       </div>
-      <p className="text-sm text-foreground flex items-center gap-2" style={{ fontFamily: "var(--font-body)" }}>
-        <span>What is <strong className="text-primary">{challenge.question}</strong> ?</span>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-foreground whitespace-nowrap" style={{ fontFamily: "var(--font-body)" }}>
+          What is <strong className="text-primary">{challenge.question}</strong> ?
+        </span>
         {status === "correct" && (
-          <span className="text-[10px] tracking-[0.15em] uppercase text-green-500" style={{ fontFamily: "var(--font-heading)" }}>✓ Verified</span>
+          <span className="text-[10px] tracking-[0.15em] uppercase text-green-500 whitespace-nowrap" style={{ fontFamily: "var(--font-heading)" }}>✓ Verified</span>
         )}
-      </p>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Your answer"
-        className={`w-full py-2.5 px-3 bg-transparent border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none transition-colors ${
-          status === "correct" ? "border-green-500" : status === "wrong" && input ? "border-destructive" : "border-border focus:border-primary"
-        }`}
-        style={{ fontFamily: "var(--font-body)" }}
-      />
+        <input
+          type="text"
+          inputMode="numeric"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Answer"
+          className={`flex-1 min-w-0 py-2 px-3 bg-transparent border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none transition-colors ${
+            status === "correct" ? "border-green-500" : status === "wrong" && input ? "border-destructive" : "border-border focus:border-primary"
+          }`}
+          style={{ fontFamily: "var(--font-body)" }}
+        />
+      </div>
       
     </div>
   );
