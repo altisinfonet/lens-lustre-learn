@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { moderateComment } from "@/lib/commentModeration";
 import { motion, AnimatePresence } from "framer-motion";
+import UserBadgeInline from "@/components/UserBadgeInline";
 
 interface Props {
   imageType: "portfolio" | "competition_entry";
@@ -27,6 +28,7 @@ interface Comment {
   created_at: string;
   profile_name: string | null;
   avatar_url: string | null;
+  badges: string[];
   is_pinned?: boolean;
   is_admin_seed?: boolean;
   replies?: Comment[];
@@ -86,15 +88,23 @@ const ImageEngagement = ({ imageType, imageId, compact }: Props) => {
     }
 
     const userIds = [...new Set(data.map(c => c.user_id))];
-    const { data: profiles } = await profilesPublic()
-      .select("id, full_name, avatar_url")
-      .in("id", userIds);
-    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
+    const [profilesRes, badgesRes] = await Promise.all([
+      profilesPublic().select("id, full_name, avatar_url").in("id", userIds),
+      supabase.from("user_badges").select("user_id, badge_type").in("user_id", userIds),
+    ]);
+    const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
+    const badgeMap = new Map<string, string[]>();
+    (badgesRes.data as any[] || []).forEach((b: any) => {
+      const existing = badgeMap.get(b.user_id) || [];
+      existing.push(b.badge_type);
+      badgeMap.set(b.user_id, existing);
+    });
 
     const withProfiles = data.map(c => ({
       ...c,
       profile_name: profileMap.get(c.user_id)?.full_name || "Anonymous",
       avatar_url: profileMap.get(c.user_id)?.avatar_url || null,
+      badges: badgeMap.get(c.user_id) || [],
     }));
 
     // Build thread tree
@@ -244,6 +254,7 @@ const ImageEngagement = ({ imageType, imageId, compact }: Props) => {
             <span className="text-[10px] font-medium" style={{ fontFamily: "var(--font-heading)" }}>
               {comment.profile_name}
             </span>
+            {comment.badges.length > 0 && <UserBadgeInline badges={comment.badges} />}
             <span className="text-[9px] text-muted-foreground">{timeAgo(comment.created_at)}</span>
             {comment.is_pinned && <span className="text-[8px] text-primary">📌</span>}
             {comment.is_admin_seed && <span className="text-[8px] text-primary/70">★</span>}

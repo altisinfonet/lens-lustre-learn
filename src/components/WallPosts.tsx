@@ -8,6 +8,7 @@ import { profilesPublic } from "@/lib/profilesPublic";
 import { toast } from "@/hooks/use-toast";
 import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
+import UserBadgeInline from "@/components/UserBadgeInline";
 import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
@@ -69,6 +70,7 @@ interface Post {
   updated_at: string;
   author_name: string | null;
   author_avatar: string | null;
+  author_badges: string[];
   like_count: number;
   comment_count: number;
   is_liked: boolean;
@@ -83,6 +85,7 @@ interface PostComment {
   created_at: string;
   author_name: string | null;
   author_avatar: string | null;
+  author_badges: string[];
 }
 
 interface WallPostsProps {
@@ -139,10 +142,17 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
     }
 
     const authorIds = [...new Set(postsData.map((p) => p.user_id))];
-    const { data: profiles } = await profilesPublic()
-      .select("id, full_name, avatar_url")
-      .in("id", authorIds);
-    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
+    const [profilesRes, badgesRes] = await Promise.all([
+      profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
+      supabase.from("user_badges").select("user_id, badge_type").in("user_id", authorIds),
+    ]);
+    const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
+    const badgeMap = new Map<string, string[]>();
+    (badgesRes.data as any[] || []).forEach((b: any) => {
+      const existing = badgeMap.get(b.user_id) || [];
+      existing.push(b.badge_type);
+      badgeMap.set(b.user_id, existing);
+    });
 
     const postIds = postsData.map((p) => p.id);
     const [reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
@@ -180,6 +190,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
           privacy: p.privacy as Privacy,
           author_name: profileMap.get(p.user_id)?.full_name || null,
           author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
+          author_badges: badgeMap.get(p.user_id) || [],
           like_count: likeCounts[p.id] || 0,
           comment_count: commentCounts[p.id] || 0,
           is_liked: !!userRx,
@@ -344,16 +355,24 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       .limit(50);
     if (!data) return;
     const authorIds = [...new Set(data.map((c) => c.user_id))];
-    const { data: profiles } = await profilesPublic()
-      .select("id, full_name, avatar_url")
-      .in("id", authorIds);
-    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
+    const [profilesRes, badgesRes] = await Promise.all([
+      profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
+      supabase.from("user_badges").select("user_id, badge_type").in("user_id", authorIds),
+    ]);
+    const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
+    const badgeMap = new Map<string, string[]>();
+    (badgesRes.data as any[] || []).forEach((b: any) => {
+      const existing = badgeMap.get(b.user_id) || [];
+      existing.push(b.badge_type);
+      badgeMap.set(b.user_id, existing);
+    });
     setCommentsByPost((prev) => ({
       ...prev,
       [postId]: data.map((c) => ({
         ...c,
         author_name: profileMap.get(c.user_id)?.full_name || null,
         author_avatar: profileMap.get(c.user_id)?.avatar_url || null,
+        author_badges: badgeMap.get(c.user_id) || [],
       })),
     }));
   };
@@ -568,12 +587,15 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                   <Avatar src={post.author_avatar} name={post.author_name} size="md" />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link
-                    to={`/profile/${post.user_id}`}
-                    className="text-[15px] font-semibold text-foreground hover:underline leading-tight"
-                  >
-                    {post.author_name || "User"}
-                  </Link>
+                  <span className="flex items-center gap-1">
+                    <Link
+                      to={`/profile/${post.user_id}`}
+                      className="text-[15px] font-semibold text-foreground hover:underline leading-tight"
+                    >
+                      {post.author_name || "User"}
+                    </Link>
+                    {post.author_badges.length > 0 && <UserBadgeInline badges={post.author_badges} />}
+                  </span>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                     <span>{timeAgo(post.created_at)}</span>
                     <span>·</span>
@@ -699,12 +721,15 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                           </Link>
                           <div className="flex-1 min-w-0">
                             <div className="bg-muted rounded-2xl px-3 py-2 inline-block max-w-full">
-                              <Link
-                                to={`/profile/${c.user_id}`}
-                                className="text-[13px] font-semibold text-foreground hover:underline block leading-tight"
-                              >
-                                {c.author_name || "User"}
-                              </Link>
+                              <span className="flex items-center gap-1">
+                                <Link
+                                  to={`/profile/${c.user_id}`}
+                                  className="text-[13px] font-semibold text-foreground hover:underline leading-tight"
+                                >
+                                  {c.author_name || "User"}
+                                </Link>
+                                {c.author_badges.length > 0 && <UserBadgeInline badges={c.author_badges} />}
+                              </span>
                               <p className="text-[15px] text-foreground leading-[1.33] break-words">
                                 {c.content}
                               </p>

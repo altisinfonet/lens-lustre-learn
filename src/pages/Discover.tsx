@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { useFriendFollow } from "@/hooks/useFriendFollow";
+import { useUserBadgesBatch } from "@/hooks/useUserBadges";
+import UserBadgeInline from "@/components/UserBadgeInline";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
@@ -314,74 +316,88 @@ const Discover = () => {
             <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-5" style={headingFont}>
               {profiles.length} <T>{profiles.length !== 1 ? "photographers found" : "photographer found"}</T>
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <AnimatePresence mode="popLayout">
-                {profiles.map((profile, i) => (
-                  <motion.div
-                    key={profile.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(i, 8) * 0.04 }}
-                    className="border border-border p-5 hover:border-primary/30 transition-colors duration-500 group"
-                  >
-                    <div className="flex items-start gap-3.5">
-                      <Link to={`/profile/${profile.id}`} className="shrink-0">
-                        {profile.avatar_url ? (
-                          <img src={profile.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-sm text-primary" style={displayFont}>
-                              {(profile.full_name || "?")[0]?.toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                      </Link>
-                      <div className="flex-1 min-w-0">
-                        <Link
-                          to={`/profile/${profile.id}`}
-                          className="text-sm font-light hover:text-primary transition-colors block truncate"
-                          style={headingFont}
-                        >
-                          {profile.full_name || "Photographer"}
-                        </Link>
-                        {profile.bio && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed" style={bodyFont}>
-                            {profile.bio}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Interests tags */}
-                    {profile.photography_interests && profile.photography_interests.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        {profile.photography_interests.slice(0, 4).map((interest) => (
-                          <span
-                            key={interest}
-                            className="text-[8px] tracking-[0.08em] uppercase px-2 py-0.5 border border-border text-muted-foreground"
-                            style={headingFont}
-                          >
-                            {interest}
-                          </span>
-                        ))}
-                        {profile.photography_interests.length > 4 && (
-                          <span className="text-[8px] text-muted-foreground/50" style={headingFont}>
-                            +{profile.photography_interests.length - 4}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <DiscoverActions targetUserId={profile.id} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+            <DiscoverGrid profiles={profiles} />
           </>
         )}
       </div>
     </main>
+  );
+};
+
+// Extracted grid to use batch badge hook
+const DiscoverGrid = ({ profiles }: { profiles: DiscoverProfile[] }) => {
+  const badgeMap = useUserBadgesBatch(profiles.map((p) => p.id));
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <AnimatePresence mode="popLayout">
+        {profiles.map((profile, i) => (
+          <motion.div
+            key={profile.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: Math.min(i, 8) * 0.04 }}
+            className="border border-border p-5 hover:border-primary/30 transition-colors duration-500 group"
+          >
+            <div className="flex items-start gap-3.5">
+              <Link to={`/profile/${profile.id}`} className="shrink-0">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm text-primary" style={displayFont}>
+                      {(profile.full_name || "?")[0]?.toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </Link>
+              <div className="flex-1 min-w-0">
+                <span className="flex items-center gap-1">
+                  <Link
+                    to={`/profile/${profile.id}`}
+                    className="text-sm font-light hover:text-primary transition-colors truncate"
+                    style={headingFont}
+                  >
+                    {profile.full_name || "Photographer"}
+                  </Link>
+                  {(badgeMap.get(profile.id) || []).length > 0 && (
+                    <UserBadgeInline badges={badgeMap.get(profile.id) || []} />
+                  )}
+                </span>
+                {profile.bio && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed" style={bodyFont}>
+                    {profile.bio}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Interests tags */}
+            {profile.photography_interests && profile.photography_interests.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {profile.photography_interests.slice(0, 4).map((interest) => (
+                  <span
+                    key={interest}
+                    className="text-[8px] tracking-[0.08em] uppercase px-2 py-0.5 border border-border text-muted-foreground"
+                    style={headingFont}
+                  >
+                    {interest}
+                  </span>
+                ))}
+                {profile.photography_interests.length > 4 && (
+                  <span className="text-[8px] text-muted-foreground/50" style={headingFont}>
+                    +{profile.photography_interests.length - 4}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Actions */}
+            <DiscoverActions targetUserId={profile.id} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
   );
 };
 

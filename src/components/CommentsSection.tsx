@@ -5,6 +5,7 @@ import { profilesPublic } from "@/lib/profilesPublic";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import UserBadgeInline from "@/components/UserBadgeInline";
 
 interface Comment {
   id: string;
@@ -13,6 +14,7 @@ interface Comment {
   parent_id: string | null;
   created_at: string;
   profile: { full_name: string | null; avatar_url: string | null } | null;
+  badges: string[];
   replies: Comment[];
 }
 
@@ -55,15 +57,23 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
     if (!data) { setLoading(false); return; }
 
     const userIds = [...new Set(data.map((c) => c.user_id))];
-    const { data: profiles } = await profilesPublic()
-      .select("id, full_name, avatar_url")
-      .in("id", userIds);
+    const [profilesRes, badgesRes] = await Promise.all([
+      profilesPublic().select("id, full_name, avatar_url").in("id", userIds),
+      supabase.from("user_badges").select("user_id, badge_type").in("user_id", userIds),
+    ]);
 
-    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
+    const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
+    const badgeMap = new Map<string, string[]>();
+    (badgesRes.data as any[] || []).forEach((b: any) => {
+      const existing = badgeMap.get(b.user_id) || [];
+      existing.push(b.badge_type);
+      badgeMap.set(b.user_id, existing);
+    });
 
     const allComments = data.map((c) => ({
       ...c,
       profile: profileMap.get(c.user_id) || null,
+      badges: badgeMap.get(c.user_id) || [],
       replies: [] as Comment[],
     }));
 
@@ -148,10 +158,13 @@ const CommentsSection = ({ articleId, entryId }: Props) => {
           <div className="bg-muted rounded-2xl px-3 py-2 inline-block max-w-full">
             <Link
               to={`/profile/${comment.user_id}`}
-              className="text-[13px] font-semibold text-foreground hover:underline block leading-tight"
+              className="text-[13px] font-semibold text-foreground hover:underline leading-tight inline"
             >
               {comment.profile?.full_name || "Anonymous"}
             </Link>
+            {comment.badges.length > 0 && (
+              <span className="ml-1"><UserBadgeInline badges={comment.badges} /></span>
+            )}
             <p className="text-[15px] text-foreground leading-[1.33] break-words">
               {comment.content}
             </p>
