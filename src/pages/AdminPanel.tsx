@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell, HeartPulse } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
@@ -18,6 +18,7 @@ import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminAdvertisements from "@/components/admin/AdminAdvertisements";
 import AdminPerformance from "@/components/admin/AdminPerformance";
 import AdminAnnouncements from "@/components/admin/AdminAnnouncements";
+import AdminHealth from "@/components/admin/AdminHealth";
 import AdminEngagement from "@/components/admin/AdminEngagement";
 import AdminTransactions from "@/components/admin/AdminTransactions";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -85,7 +86,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements" | "health";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -517,7 +518,7 @@ const AdminPanel = () => {
       ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["transactions", "Transactions", FileText],
     ] as const },
     { label: "Settings", items: [
-      ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["settings", "Integrations", Settings],
+      ["health", "Site Health", HeartPulse], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["settings", "Integrations", Settings],
     ] as const },
   ];
 
@@ -614,6 +615,9 @@ const AdminPanel = () => {
 
         {/* Announcements Tab */}
         {tab === "announcements" && <AdminAnnouncements user={user} />}
+
+        {/* Site Health Tab */}
+        {tab === "health" && <AdminHealth user={user} />}
 
         {/* Settings Tab */}
         {tab === "settings" && <AdminSettings user={user} />}
