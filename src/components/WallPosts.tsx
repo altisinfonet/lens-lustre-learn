@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
 import FacebookPhotoGrid from "@/components/FacebookPhotoGrid";
 import { Textarea } from "@/components/ui/textarea";
+import { getAdminIds, resolveName } from "@/lib/adminBrand";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -107,9 +108,10 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
     }
 
     const authorIds = [...new Set(postsData.map((p) => p.user_id))];
-    const [profilesRes, badgesRes] = await Promise.all([
+    const [profilesRes, badgesRes, adminIds] = await Promise.all([
       profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
       supabase.from("user_badges").select("user_id, badge_type").in("user_id", authorIds),
+      getAdminIds(),
     ]);
     const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
     const badgeMap = new Map<string, string[]>();
@@ -153,7 +155,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
         return {
           ...p,
           privacy: p.privacy as Privacy,
-          author_name: profileMap.get(p.user_id)?.full_name || null,
+          author_name: resolveName(p.user_id, profileMap.get(p.user_id)?.full_name, adminIds),
           author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
           author_badges: badgeMap.get(p.user_id) || [],
           like_count: likeCounts[p.id] || 0,
@@ -340,9 +342,10 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       .limit(50);
     if (!data) return;
     const authorIds = [...new Set(data.map((c) => c.user_id))];
-    const [profilesRes, badgesRes] = await Promise.all([
+    const [profilesRes, badgesRes, adminIds] = await Promise.all([
       profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
       supabase.from("user_badges").select("user_id, badge_type").in("user_id", authorIds),
+      getAdminIds(),
     ]);
     const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
     const badgeMap = new Map<string, string[]>();
@@ -355,7 +358,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       ...prev,
       [postId]: data.map((c) => ({
         ...c,
-        author_name: profileMap.get(c.user_id)?.full_name || null,
+        author_name: resolveName(c.user_id, profileMap.get(c.user_id)?.full_name, adminIds),
         author_avatar: profileMap.get(c.user_id)?.avatar_url || null,
         author_badges: badgeMap.get(c.user_id) || [],
       })),

@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { toast } from "@/hooks/use-toast";
+import { getAdminIds, resolveName } from "@/lib/adminBrand";
 
 /* Classic easing — gentle, cinematic transitions */
 const classicEase = [0.4, 0, 0.2, 1] as const;
@@ -544,13 +545,14 @@ const Index = () => {
       ])];
       const compIds = [...new Set(winnerData.map((e) => e.competition_id))];
 
-      const [profilesRes, compsRes] = await Promise.all([
+      const [profilesRes, compsRes, adminIds] = await Promise.all([
         allUserIds.length > 0
           ? profilesPublic().select("id, full_name, avatar_url").in("id", allUserIds)
           : Promise.resolve({ data: [] }),
         compIds.length > 0
           ? supabase.from("competitions").select("id, title").in("id", compIds)
           : Promise.resolve({ data: [] }),
+        getAdminIds(),
       ]);
 
       const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
@@ -561,7 +563,7 @@ const Index = () => {
         title: e.title,
         photos: e.photos || [],
         competition_title: compMap.get(e.competition_id) || "Competition",
-        photographer_name: profileMap.get(e.user_id)?.full_name || null,
+        photographer_name: resolveName(e.user_id, profileMap.get(e.user_id)?.full_name ?? null, adminIds),
         photographer_avatar: profileMap.get(e.user_id)?.avatar_url || null,
       }));
       setWinners(mappedWinners.length > 0 ? mappedWinners : fallbackWinners);
@@ -571,7 +573,7 @@ const Index = () => {
         title: c.title,
         type: c.type,
         issued_at: c.issued_at,
-        recipient_name: profileMap.get(c.user_id)?.full_name || null,
+        recipient_name: resolveName(c.user_id, profileMap.get(c.user_id)?.full_name ?? null, adminIds),
         recipient_avatar: profileMap.get(c.user_id)?.avatar_url || null,
         is_featured: c.is_featured,
         featured_quote: c.featured_quote,
@@ -594,7 +596,8 @@ const Index = () => {
         const tpMap = new Map((tProfiles as any[] || []).map((p: any) => [p.id, p.full_name]) || []);
         const tcMap = new Map(tCerts?.map((c) => [c.id, c.title]) || []);
         setTestimonials(testData.map((t) => ({
-          id: t.id, testimonial: t.testimonial, user_name: tpMap.get(t.user_id) || null,
+          id: t.id, testimonial: t.testimonial, 
+          user_name: resolveName(t.user_id, tpMap.get(t.user_id) || null, adminIds),
           cert_title: tcMap.get(t.certificate_id) || null, photo_url: t.photo_url,
         })));
       }
