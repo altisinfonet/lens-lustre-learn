@@ -501,7 +501,7 @@ const Index = () => {
           .from("competitions")
           .select("id, title, category, cover_image_url, status, starts_at, ends_at, prize_info, updated_at")
           .order("updated_at", { ascending: false })
-          .limit(8),
+          .limit(4),
         supabase
           .from("courses")
           .select("id, title, slug, category, difficulty, cover_image_url, is_free, author_id, is_featured, labels")
@@ -916,7 +916,7 @@ const Index = () => {
               Ongoing: ["open", "active", "judging"],
               Closed: ["closed"],
             };
-            const filtered = (compFilter === "All" ? competitions : competitions.filter(c => statusMap[compFilter]?.includes(c.status))).slice(0, 8);
+            const filtered = (compFilter === "All" ? competitions : competitions.filter(c => statusMap[compFilter]?.includes(c.status))).slice(0, 4);
 
             return (
               <>
