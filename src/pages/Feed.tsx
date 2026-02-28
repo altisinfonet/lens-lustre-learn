@@ -11,6 +11,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
+import UserBadgeInline from "@/components/UserBadgeInline";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
@@ -61,6 +62,7 @@ interface FeedPost {
   created_at: string;
   author_name: string | null;
   author_avatar: string | null;
+  author_badges: string[];
   like_count: number;
   comment_count: number;
   is_liked: boolean;
@@ -75,6 +77,7 @@ interface PostComment {
   created_at: string;
   author_name: string | null;
   author_avatar: string | null;
+  author_badges: string[];
 }
 
 const Feed = () => {
@@ -111,14 +114,21 @@ const Feed = () => {
     const authorIds = [...new Set(postsData.map((p) => p.user_id))];
     const postIds = postsData.map((p) => p.id);
 
-    const [profilesRes, reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
+    const [profilesRes, badgesRes, reactionsRes, userReactionsRes, commentsCountRes] = await Promise.all([
       profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
+      supabase.from("user_badges").select("user_id, badge_type").in("user_id", authorIds),
       supabase.from("post_reactions").select("post_id, reaction_type").in("post_id", postIds),
       supabase.from("post_reactions").select("post_id, reaction_type").in("post_id", postIds).eq("user_id", user.id),
       supabase.from("post_comments").select("post_id").in("post_id", postIds),
     ]);
 
     const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
+    const badgeMap = new Map<string, string[]>();
+    (badgesRes.data as any[] || []).forEach((b: any) => {
+      const existing = badgeMap.get(b.user_id) || [];
+      existing.push(b.badge_type);
+      badgeMap.set(b.user_id, existing);
+    });
     const likeCounts: Record<string, number> = {};
     const reactionTypeCounts: Record<string, Record<string, number>> = {};
     (reactionsRes.data || []).forEach((r: any) => {
@@ -142,6 +152,7 @@ const Feed = () => {
         ...p,
         author_name: profileMap.get(p.user_id)?.full_name || null,
         author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
+        author_badges: badgeMap.get(p.user_id) || [],
         like_count: likeCounts[p.id] || 0,
         comment_count: commentCounts[p.id] || 0,
         is_liked: !!userRx,
@@ -336,14 +347,24 @@ const Feed = () => {
       .limit(30);
     if (!data) return;
     const authorIds = [...new Set(data.map((c) => c.user_id))];
-    const { data: profiles } = await profilesPublic().select("id, full_name, avatar_url").in("id", authorIds);
-    const profileMap = new Map((profiles as any[] || []).map((p: any) => [p.id, p]));
+    const [profilesRes, badgesRes] = await Promise.all([
+      profilesPublic().select("id, full_name, avatar_url").in("id", authorIds),
+      supabase.from("user_badges").select("user_id, badge_type").in("user_id", authorIds),
+    ]);
+    const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p]));
+    const badgeMap = new Map<string, string[]>();
+    (badgesRes.data as any[] || []).forEach((b: any) => {
+      const existing = badgeMap.get(b.user_id) || [];
+      existing.push(b.badge_type);
+      badgeMap.set(b.user_id, existing);
+    });
     setCommentsByPost((prev) => ({
       ...prev,
       [postId]: data.map((c) => ({
         ...c,
         author_name: profileMap.get(c.user_id)?.full_name || null,
         author_avatar: profileMap.get(c.user_id)?.avatar_url || null,
+        author_badges: badgeMap.get(c.user_id) || [],
       })),
     }));
   };
@@ -456,9 +477,12 @@ const Feed = () => {
                       )}
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <Link to={`/profile/${post.user_id}`} className="text-sm font-light hover:text-primary transition-colors block truncate" style={headingFont}>
-                        {post.author_name || "User"}
-                      </Link>
+                      <span className="flex items-center gap-1">
+                        <Link to={`/profile/${post.user_id}`} className="text-sm font-light hover:text-primary transition-colors truncate" style={headingFont}>
+                          {post.author_name || "User"}
+                        </Link>
+                        {post.author_badges.length > 0 && <UserBadgeInline badges={post.author_badges} />}
+                      </span>
                       <div className="flex items-center gap-2 text-[9px] text-muted-foreground" style={headingFont}>
                         <span>{timeAgo(post.created_at)}</span>
                         <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
@@ -537,9 +561,12 @@ const Feed = () => {
                           </Link>
                           <div className="flex-1 min-w-0">
                             <div className="bg-muted/50 px-3 py-2 rounded-sm">
-                              <Link to={`/profile/${c.user_id}`} className="text-[11px] font-medium hover:text-primary transition-colors" style={headingFont}>
-                                {c.author_name || "User"}
-                              </Link>
+                              <span className="flex items-center gap-1">
+                                <Link to={`/profile/${c.user_id}`} className="text-[11px] font-medium hover:text-primary transition-colors" style={headingFont}>
+                                  {c.author_name || "User"}
+                                </Link>
+                                {c.author_badges.length > 0 && <UserBadgeInline badges={c.author_badges} />}
+                              </span>
                               <p className="text-xs leading-relaxed" style={bodyFont}>{c.content}</p>
                             </div>
                             <span className="text-[9px] text-muted-foreground ml-3" style={headingFont}>{timeAgo(c.created_at)}</span>
