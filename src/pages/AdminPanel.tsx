@@ -90,7 +90,14 @@ const AdminPanel = () => {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState<Tab>("banners");
+  const [tab, setTab] = useState<Tab>(() => {
+    const saved = localStorage.getItem("admin-active-tab");
+    return (saved as Tab) || "banners";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("admin-active-tab", tab);
+  }, [tab]);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [roleApps, setRoleApps] = useState<RoleApp[]>([]);
