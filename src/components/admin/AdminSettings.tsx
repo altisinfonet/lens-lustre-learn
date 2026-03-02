@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
 interface Props {
@@ -54,6 +54,9 @@ export default function AdminSettings({ user }: Props) {
   const [savingWa, setSavingWa] = useState(false);
   const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [showWaSecret, setShowWaSecret] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [testingSmtp, setTestingSmtp] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -95,6 +98,35 @@ export default function AdminSettings({ user }: Props) {
     } else {
       toast({ title: "SMTP settings saved" });
     }
+  };
+
+  const testSmtp = async () => {
+    if (!testEmail.trim()) {
+      toast({ title: "Enter a test email address", variant: "destructive" });
+      return;
+    }
+    if (!smtp.host || !smtp.username || !smtp.password) {
+      toast({ title: "Please fill in SMTP host, username, and password first", variant: "destructive" });
+      return;
+    }
+    setTestingSmtp(true);
+    setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("test-smtp", {
+        body: {
+          to_email: testEmail.trim(),
+          smtp_config: smtp,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setTestResult({ success: true, message: data?.message || `Test email sent to ${testEmail}` });
+      toast({ title: "Test email sent successfully!" });
+    } catch (err: any) {
+      setTestResult({ success: false, message: err.message || "Failed to send test email" });
+      toast({ title: "SMTP test failed", description: err.message, variant: "destructive" });
+    }
+    setTestingSmtp(false);
   };
 
   const saveWhatsApp = async () => {
@@ -200,6 +232,48 @@ export default function AdminSettings({ user }: Props) {
               {savingSmtp ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
               Save SMTP Settings
             </button>
+          </div>
+
+          {/* Test SMTP Section */}
+          <div className="border-t border-border pt-5 mt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <TestTube className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                Test SMTP Connection
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
+              Send a test email to verify your SMTP configuration is working correctly.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="email"
+                value={testEmail}
+                onChange={(e) => { setTestEmail(e.target.value); setTestResult(null); }}
+                placeholder="Enter test email address"
+                className={inputClass + " sm:max-w-xs"}
+                style={{ fontFamily: "var(--font-body)" }}
+              />
+              <button
+                onClick={testSmtp}
+                disabled={testingSmtp || !testEmail.trim()}
+                className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {testingSmtp ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                Send Test Email
+              </button>
+            </div>
+            {testResult && (
+              <div className={`mt-3 flex items-start gap-2 px-4 py-3 border rounded-sm text-xs ${
+                testResult.success
+                  ? "border-primary/40 bg-primary/5 text-primary"
+                  : "border-destructive/40 bg-destructive/5 text-destructive"
+              }`} style={{ fontFamily: "var(--font-body)" }}>
+                {testResult.success ? <CheckCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> : <XCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />}
+                <span>{testResult.message}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
