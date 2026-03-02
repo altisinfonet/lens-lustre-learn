@@ -1,34 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.97.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getSecureHeaders } from "../_shared/secureHeaders.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const headers = getSecureHeaders(req);
+
+  if (req.method === "OPTIONS") return new Response(null, { headers });
+  if (req.method === "TRACE") return new Response("Method Not Allowed", { status: 405, headers });
 
   try {
     const { comment_id, content } = await req.json();
 
     if (!comment_id || !content) {
-      return new Response(
-        JSON.stringify({ flagged: false }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ flagged: false }), { headers });
     }
 
-    // Use Lovable AI gateway for content moderation
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableApiKey) {
       console.log("No AI key configured, skipping AI moderation");
-      return new Response(
-        JSON.stringify({ flagged: false }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ flagged: false }), { headers });
     }
 
     const aiResponse = await fetch("https://ai-gateway.lovable.dev/v1/chat/completions", {
@@ -56,16 +45,12 @@ Respond with JSON only: {"flagged": true/false, "reason": "brief reason if flagg
 
     if (!aiResponse.ok) {
       console.error("AI moderation failed:", await aiResponse.text());
-      return new Response(
-        JSON.stringify({ flagged: false }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ flagged: false }), { headers });
     }
 
     const aiData = await aiResponse.json();
     const aiText = aiData.choices?.[0]?.message?.content || "";
 
-    // Parse AI response
     let result = { flagged: false, reason: "", category: "clean" };
     try {
       const cleaned = aiText.replace(/```json\n?/g, "").replace(/```/g, "").trim();
@@ -74,7 +59,6 @@ Respond with JSON only: {"flagged": true/false, "reason": "brief reason if flagg
       console.log("Could not parse AI response:", aiText);
     }
 
-    // If AI flagged it, update the comment in DB
     if (result.flagged) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -91,15 +75,12 @@ Respond with JSON only: {"flagged": true/false, "reason": "brief reason if flagg
       console.log(`Comment ${comment_id} flagged: ${result.category}`);
     }
 
-    return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify(result), { headers });
   } catch (err: any) {
     console.error("Moderation error:", err);
     return new Response(
       JSON.stringify({ flagged: false, error: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers }
     );
   }
 });
