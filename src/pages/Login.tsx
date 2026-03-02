@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Mail, Eye, EyeOff, ShieldCheck, ShieldX } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, Eye, EyeOff, ShieldCheck, ShieldX, Timer } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
@@ -8,6 +8,12 @@ import { z } from "zod";
 import SimpleCaptcha from "@/components/SimpleCaptcha";
 import { useTrustedDevice } from "@/hooks/useTrustedDevice";
 import T from "@/components/T";
+import {
+  getLockedOutSeconds,
+  getFailedAttempts,
+  recordFailedAttempt,
+  resetLockout,
+} from "@/lib/passwordSecurity";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Please enter a valid email").max(255),
@@ -33,7 +39,6 @@ const withNetworkRetry = async <T,>(operation: () => Promise<T>, retries = 2): P
       await wait(800 * (attempt + 1));
     }
   }
-
   throw new Error("Network retry exhausted");
 };
 
@@ -56,14 +61,26 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [failedAttempts, setFailedAttempts] = useState(() => getFailedAttempts());
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [showTrustPrompt, setShowTrustPrompt] = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState(() => getLockedOutSeconds());
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isDeviceTrusted, trustDevice } = useTrustedDevice();
 
   const needsCaptcha = failedAttempts >= 3;
+
+  // Countdown timer for lockout
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const interval = setInterval(() => {
+      const remaining = getLockedOutSeconds();
+      setLockoutSeconds(remaining);
+      if (remaining <= 0) clearInterval(interval);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutSeconds]);
 
   useEffect(() => {
     if (user && !showTrustPrompt) {
@@ -87,7 +104,6 @@ const Login = () => {
     setError(null);
     setLoading(provider);
     try {
-      // Clear stale session before OAuth to prevent refresh token loops
       try {
         await supabase.auth.signOut({ scope: 'local' });
       } catch {
@@ -110,6 +126,14 @@ const Login = () => {
     e.preventDefault();
     setError(null);
 
+    // Check lockout
+    const remaining = getLockedOutSeconds();
+    if (remaining > 0) {
+      setLockoutSeconds(remaining);
+      setError(`Account temporarily locked. Please wait ${formatTime(remaining)} before trying again.`);
+      return;
+    }
+
     const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
       setError(result.error.errors[0].message);
@@ -123,11 +147,10 @@ const Login = () => {
 
     setLoading("email");
 
-    // Clear any stale session before attempting login to prevent refresh token loops
     try {
       await supabase.auth.signOut({ scope: 'local' });
     } catch {
-      // Ignore signOut errors — we just want to clear stale tokens
+      // Ignore
     }
 
     try {
@@ -142,24 +165,41 @@ const Login = () => {
 
       if (res.error) {
         if (!isNetworkError(res.error.message)) {
-          const attempts = failedAttempts + 1;
+          const lockoutDuration = recordFailedAttempt();
+          const attempts = getFailedAttempts();
           setFailedAttempts(attempts);
           setCaptchaVerified(false);
+
+          if (lockoutDuration > 0) {
+            setLockoutSeconds(lockoutDuration);
+            setError(`Too many failed attempts. Account locked for ${formatTime(lockoutDuration)}. Please try again later.`);
+          } else {
+            setError(friendlyError(res.error.message));
+          }
+        } else {
+          setError(friendlyError(res.error.message));
         }
-        setError(friendlyError(res.error.message));
+      } else {
+        // Success — reset lockout
+        resetLockout();
+        setFailedAttempts(0);
       }
     } catch (err: any) {
       const message = err?.message || "Something went wrong.";
       setError(friendlyError(message));
       if (!isNetworkError(message)) {
-        setFailedAttempts((p) => p + 1);
+        const lockoutDuration = recordFailedAttempt();
+        setFailedAttempts(getFailedAttempts());
         setCaptchaVerified(false);
+        if (lockoutDuration > 0) setLockoutSeconds(lockoutDuration);
       }
     }
     setLoading(null);
   };
 
   const onCaptchaVerified = useCallback((v: boolean) => setCaptchaVerified(v), []);
+
+  const isLockedOut = lockoutSeconds > 0;
 
   // Trust this device prompt
   if (showTrustPrompt) {
@@ -227,7 +267,20 @@ const Login = () => {
           </div>
         )}
 
-        {failedAttempts > 0 && failedAttempts < 3 && (
+        {/* Lockout timer */}
+        {isLockedOut && (
+          <div className="mb-6 flex items-center gap-3 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
+            <Timer className="h-5 w-5 flex-shrink-0 animate-pulse" />
+            <div>
+              <span className="font-medium"><T>Account locked</T></span>
+              <span className="block text-xs text-muted-foreground mt-0.5">
+                <T>Try again in</T> {formatTime(lockoutSeconds)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {!isLockedOut && failedAttempts > 0 && failedAttempts < 3 && (
           <div className="mb-4 text-[10px] tracking-[0.15em] uppercase text-muted-foreground max-w-sm" style={{ fontFamily: "var(--font-heading)" }}>
             {3 - failedAttempts} <T>{`attempt${3 - failedAttempts > 1 ? "s" : ""} remaining before security check`}</T>
           </div>
@@ -237,7 +290,7 @@ const Login = () => {
           {/* OAuth buttons */}
           <button
             onClick={() => handleOAuth("google")}
-            disabled={!!loading}
+            disabled={!!loading || isLockedOut}
             className="w-full py-3.5 bg-foreground text-background text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50 flex items-center justify-center gap-3"
             style={{ fontFamily: "var(--font-heading)" }}
           >
@@ -256,7 +309,7 @@ const Login = () => {
 
           <button
             onClick={() => handleOAuth("apple")}
-            disabled={!!loading}
+            disabled={!!loading || isLockedOut}
             className="w-full py-3.5 border border-foreground/30 text-foreground text-xs tracking-[0.15em] uppercase hover:bg-foreground hover:text-background transition-all duration-500 disabled:opacity-50 flex items-center justify-center gap-3"
             style={{ fontFamily: "var(--font-heading)" }}
           >
@@ -292,7 +345,8 @@ const Login = () => {
                 placeholder="you@example.com"
                 required
                 maxLength={255}
-                className="w-full py-3 px-4 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors"
+                disabled={isLockedOut}
+                className="w-full py-3 px-4 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors disabled:opacity-50"
                 style={{ fontFamily: "var(--font-body)" }}
               />
             </div>
@@ -313,7 +367,8 @@ const Login = () => {
                   placeholder="Your password"
                   required
                   maxLength={72}
-                  className="w-full py-3 px-4 pr-12 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors"
+                  disabled={isLockedOut}
+                  className="w-full py-3 px-4 pr-12 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors disabled:opacity-50"
                   style={{ fontFamily: "var(--font-body)" }}
                 />
                 <button
@@ -327,18 +382,18 @@ const Login = () => {
               </div>
             </div>
 
-            {needsCaptcha && (
+            {needsCaptcha && !isLockedOut && (
               <SimpleCaptcha onVerified={onCaptchaVerified} />
             )}
 
             <button
               type="submit"
-              disabled={!!loading || (needsCaptcha && !captchaVerified)}
+              disabled={!!loading || (needsCaptcha && !captchaVerified) || isLockedOut}
               className="w-full py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50 flex items-center justify-center gap-3"
               style={{ fontFamily: "var(--font-heading)" }}
             >
               {loading === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-              <T>Sign In</T>
+              {isLockedOut ? <T>Locked</T> : <T>Sign In</T>}
             </button>
           </form>
         </div>
@@ -355,5 +410,12 @@ const Login = () => {
     </main>
   );
 };
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
 
 export default Login;

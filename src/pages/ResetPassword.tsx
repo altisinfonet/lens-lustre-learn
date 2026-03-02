@@ -1,9 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
-import { CheckCircle, Loader2, Lock } from "lucide-react";
+import { CheckCircle, Loader2, Lock, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import T from "@/components/T";
+import {
+  validatePasswordStrength,
+  isPasswordReused,
+  recordPasswordUsage,
+} from "@/lib/passwordSecurity";
 
 const passwordSchema = z.string().min(8, "Password must be at least 8 characters").max(72);
 
@@ -14,38 +19,69 @@ const ResetPassword = () => {
   const [error, setError] = useState<string | null>(null);
   const [isRecovery, setIsRecovery] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsRecovery(true);
+        if (session?.user?.id) setUserId(session.user.id);
       }
     });
     const hash = window.location.hash;
     if (hash.includes("type=recovery")) {
       setIsRecovery(true);
     }
+    // Try to get current user id
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.id) setUserId(data.user.id);
+    });
     return () => subscription.unsubscribe();
   }, []);
+
+  const passwordValidation = password.length > 0 ? validatePasswordStrength(password) : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
     const result = passwordSchema.safeParse(password);
     if (!result.success) {
       setError(result.error.errors[0].message);
       return;
     }
+
+    // Validate password strength
+    const strength = validatePasswordStrength(password);
+    if (!strength.valid) {
+      setError(strength.errors[0]);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+
+    // Check password reuse
+    if (userId) {
+      const reused = await isPasswordReused(userId, password);
+      if (reused) {
+        setError("You cannot reuse a recent password. Please choose a new one.");
+        return;
+      }
+    }
+
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
       setError(error.message);
     } else {
+      // Record the password in history
+      if (userId) {
+        await recordPasswordUsage(userId, password);
+      }
       setSuccess(true);
     }
     setLoading(false);
@@ -137,6 +173,42 @@ const ResetPassword = () => {
               className="w-full py-3 px-4 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors"
               style={{ fontFamily: "var(--font-body)" }}
             />
+            {/* Password requirements */}
+            {passwordValidation && (
+              <div className="mt-2 space-y-1.5">
+                {/* Strength bar */}
+                <div className="flex gap-1">
+                  {Array.from({ length: 5 }).map((_, i) => {
+                    const colors = ["bg-destructive", "bg-destructive", "bg-yellow-500", "bg-primary", "bg-green-500"];
+                    return (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-all duration-500 ${
+                          i < passwordValidation.score ? colors[passwordValidation.score - 1] : "bg-border"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+                {/* Requirements list */}
+                {!passwordValidation.valid && (
+                  <div className="space-y-0.5">
+                    {passwordValidation.errors.map((err, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-[9px] text-destructive" style={{ fontFamily: "var(--font-heading)" }}>
+                        <AlertTriangle className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                        <span>{err}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {passwordValidation.valid && (
+                  <div className="flex items-center gap-1.5 text-[9px] text-green-500" style={{ fontFamily: "var(--font-heading)" }}>
+                    <CheckCircle className="h-3 w-3" />
+                    <span><T>Strong password</T></span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
@@ -152,10 +224,22 @@ const ResetPassword = () => {
               className="w-full py-3 px-4 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary transition-colors"
               style={{ fontFamily: "var(--font-body)" }}
             />
+            {confirmPassword.length > 0 && password !== confirmPassword && (
+              <p className="mt-1.5 text-[9px] text-destructive" style={{ fontFamily: "var(--font-heading)" }}>
+                <T>Passwords do not match</T>
+              </p>
+            )}
           </div>
+
+          {/* Reuse warning */}
+          <div className="flex items-start gap-2 text-[10px] text-muted-foreground px-3 py-2 border border-border rounded" style={{ fontFamily: "var(--font-body)" }}>
+            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-yellow-500" />
+            <span><T>You cannot reuse any of your last 5 passwords.</T></span>
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (passwordValidation !== null && !passwordValidation.valid)}
             className="w-full py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.15em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50 flex items-center justify-center gap-3"
             style={{ fontFamily: "var(--font-heading)" }}
           >
