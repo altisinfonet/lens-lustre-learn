@@ -106,6 +106,20 @@ const AdminPanel = () => {
   useEffect(() => {
     localStorage.setItem("admin-active-tab", tab);
   }, [tab]);
+
+  // Fetch unresolved support ticket count
+  useEffect(() => {
+    if (!user) return;
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("support_tickets")
+        .select("*", { count: "exact", head: true })
+        .in("status", ["open", "replied"]);
+      setUnresolvedTicketCount(count ?? 0);
+    };
+    fetchCount();
+  }, [user, tab]);
+  const [unresolvedTicketCount, setUnresolvedTicketCount] = useState(0);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [roleApps, setRoleApps] = useState<RoleApp[]>([]);
@@ -566,6 +580,11 @@ const AdminPanel = () => {
                       >
                         <Icon className="h-4 w-4 shrink-0" />
                         {label}
+                        {key === "support_tickets" && unresolvedTicketCount > 0 && (
+                          <span className="ml-auto bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                            {unresolvedTicketCount}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
