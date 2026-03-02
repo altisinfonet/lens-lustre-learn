@@ -81,33 +81,56 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
     const editor = editorRef.current;
     if (!editor) return;
 
+    // Style all images to be selectable
+    const styleImages = () => {
+      editor.querySelectorAll("img").forEach((img) => {
+        (img as HTMLElement).style.cursor = "pointer";
+      });
+    };
+    styleImages();
+
+    const observer = new MutationObserver(styleImages);
+    observer.observe(editor, { childList: true, subtree: true });
+
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === "IMG") {
         const img = target as HTMLImageElement;
-        // Highlight selected image
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Clear previous selection highlights
         editor.querySelectorAll("img").forEach(i => {
           (i as HTMLElement).style.outline = "";
           (i as HTMLElement).style.outlineOffset = "";
+          (i as HTMLElement).style.boxShadow = "";
         });
+
+        // Highlight selected
         img.style.outline = "2px solid hsl(var(--primary))";
-        img.style.outlineOffset = "2px";
+        img.style.outlineOffset = "3px";
+        img.style.boxShadow = "0 0 0 6px hsl(var(--primary) / 0.1)";
+
         setResizeTarget(img);
         const w = parseInt(img.style.maxWidth || img.style.width || "100");
         setResizeWidth(isNaN(w) ? 100 : w);
-        e.preventDefault();
       } else {
-        // Deselect
+        // Deselect all
         editor.querySelectorAll("img").forEach(i => {
           (i as HTMLElement).style.outline = "";
           (i as HTMLElement).style.outlineOffset = "";
+          (i as HTMLElement).style.boxShadow = "";
         });
         setResizeTarget(null);
       }
     };
 
-    editor.addEventListener("click", handleClick);
-    return () => editor.removeEventListener("click", handleClick);
+    // Use mousedown for more reliable capture before contentEditable focus
+    editor.addEventListener("mousedown", handleClick);
+    return () => {
+      editor.removeEventListener("mousedown", handleClick);
+      observer.disconnect();
+    };
   }, [editorRef]);
 
   // ========== Image resize ==========
@@ -553,26 +576,35 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
 
       {/* Image resize bar — shows below toolbar when an image is clicked */}
       {resizeTarget && (
-        <div className="border border-border border-t-0 bg-muted/30 px-3 py-2 flex flex-wrap items-center gap-3">
-          <span className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-            Image Selected
+        <div className="border border-primary/30 border-t-0 bg-primary/5 px-3 py-2 flex flex-wrap items-center gap-2.5 rounded-b-sm">
+          <span className="text-[9px] uppercase tracking-[0.15em] text-primary font-medium flex items-center gap-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+            <Maximize2 className="h-3 w-3" /> Resize Image
           </span>
           <div className={sepClass} />
 
-          {/* Resize slider */}
-          <div className="flex items-center gap-2">
-            <button type="button" className={btnClass} onClick={() => applyResize(resizeWidth - 10)} title="Shrink">
+          {/* Shrink / Slider / Enlarge */}
+          <div className="flex items-center gap-1.5">
+            <button type="button" className={btnClass} onClick={() => applyResize(resizeWidth - 5)} title="Shrink 5%">
               <Minimize2 className="h-3.5 w-3.5" />
             </button>
             <input
-              type="range" min="10" max="100" value={resizeWidth}
+              type="range" min="10" max="100" step="1" value={resizeWidth}
               onChange={e => applyResize(parseInt(e.target.value))}
-              className="w-24 h-1.5 accent-primary cursor-pointer"
+              className="w-28 h-1.5 accent-primary cursor-pointer"
             />
-            <button type="button" className={btnClass} onClick={() => applyResize(resizeWidth + 10)} title="Enlarge">
+            <button type="button" className={btnClass} onClick={() => applyResize(resizeWidth + 5)} title="Enlarge 5%">
               <Maximize2 className="h-3.5 w-3.5" />
             </button>
-            <span className="text-[10px] font-mono text-muted-foreground w-8 text-center">{resizeWidth}%</span>
+          </div>
+
+          {/* Width input */}
+          <div className="flex items-center gap-1">
+            <input
+              type="number" min="10" max="100" value={resizeWidth}
+              onChange={e => applyResize(parseInt(e.target.value) || 10)}
+              className="w-12 text-[10px] font-mono text-center bg-background border border-border rounded-sm px-1 py-0.5 focus:outline-none focus:border-primary"
+            />
+            <span className="text-[9px] text-muted-foreground">%</span>
           </div>
           <div className={sepClass} />
 
@@ -594,6 +626,23 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
           {/* Delete */}
           <button type="button" className="p-1.5 rounded-sm text-destructive hover:bg-destructive/10 transition-colors" onClick={deleteSelectedImage} title="Remove Image">
             <Trash2 className="h-3.5 w-3.5" />
+          </button>
+
+          {/* Deselect */}
+          <button type="button" className="ml-auto p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors" 
+            onClick={() => {
+              const editor = editorRef.current;
+              if (editor) {
+                editor.querySelectorAll("img").forEach(i => {
+                  (i as HTMLElement).style.outline = "";
+                  (i as HTMLElement).style.outlineOffset = "";
+                  (i as HTMLElement).style.boxShadow = "";
+                });
+              }
+              setResizeTarget(null);
+            }} 
+            title="Deselect">
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}

@@ -288,13 +288,13 @@ export default function AdminEmailTemplates({ user }: Props) {
                 {editorMode === "visual" ? (
                   <div>
                     <EmailRichTextToolbar editorRef={editorRef} onInput={handleVisualInput} />
-                    <div
+                     <div
                       ref={editorRef}
                       contentEditable
                       suppressContentEditableWarning
                       onInput={handleVisualInput}
                       dangerouslySetInnerHTML={{ __html: editing.body_html }}
-                      className="min-h-[300px] border border-border border-t-0 rounded-b-sm p-4 bg-background focus:outline-none focus:border-primary transition-colors prose prose-sm max-w-none"
+                      className="min-h-[300px] border border-border border-t-0 p-4 bg-background focus:outline-none focus:border-primary transition-colors prose prose-sm max-w-none [&_img]:cursor-pointer [&_img]:transition-all [&_img:hover]:opacity-90"
                       style={{ fontFamily: "var(--font-body)" }}
                     />
                   </div>
