@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { Bell, UserPlus, Gift, Check, X } from "lucide-react";
+import { Bell, UserPlus, Gift, Check, X, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { AnimatePresence, motion } from "framer-motion";
@@ -27,14 +28,25 @@ interface GiftNotification {
   expires_at: string | null;
 }
 
+interface AdminNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  reference_id: string | null;
+  created_at: string;
+}
+
 const NotificationBell = () => {
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const [open, setOpen] = useState(false);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [giftNotifications, setGiftNotifications] = useState<GiftNotification[]>([]);
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const totalCount = friendRequests.length + giftNotifications.length;
+  const totalCount = friendRequests.length + giftNotifications.length + adminNotifications.length;
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
@@ -58,6 +70,19 @@ const NotificationBell = () => {
         .limit(10),
     ]);
 
+    // Admin notifications
+    if (isAdmin) {
+      const { data: adminData } = await supabase
+        .from("admin_notifications")
+        .select("*")
+        .eq("is_read", false)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      setAdminNotifications((adminData as AdminNotification[]) || []);
+    } else {
+      setAdminNotifications([]);
+    }
+
     // Get requester profiles
     const requesterIds = (friendsRes.data || []).map((f) => f.requester_id);
     let profileMap = new Map<string, { full_name: string | null; avatar_url: string | null }>();
@@ -78,7 +103,7 @@ const NotificationBell = () => {
     );
     setGiftNotifications(giftsRes.data || []);
     setLoading(false);
-  }, [user]);
+  }, [user, isAdmin]);
 
   useEffect(() => {
     fetchNotifications();
@@ -100,6 +125,11 @@ const NotificationBell = () => {
   const dismissGift = async (id: string) => {
     await supabase.from("gift_announcements").update({ is_read: true }).eq("id", id);
     setGiftNotifications((prev) => prev.filter((g) => g.id !== id));
+  };
+
+  const dismissAdminNotification = async (id: string) => {
+    await supabase.from("admin_notifications").update({ is_read: true } as any).eq("id", id);
+    setAdminNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
   const timeAgo = (dateStr: string) => {
@@ -259,6 +289,44 @@ const NotificationBell = () => {
                             </div>
                             <button
                               onClick={() => dismissGift(gift.id)}
+                              className="h-7 w-7 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground shrink-0 transition-colors"
+                              title="Dismiss"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Admin Notifications (Support Tickets etc.) */}
+                    {adminNotifications.length > 0 && (
+                      <div>
+                        <div className="px-4 py-2 bg-muted/30">
+                          <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={headingFont}>
+                            <T>Support Tickets</T>
+                          </span>
+                        </div>
+                        {adminNotifications.map((notif) => (
+                          <div key={notif.id} className="flex items-center gap-3 px-4 py-3 border-b border-border/50 hover:bg-muted/20 transition-colors">
+                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <HelpCircle className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <Link
+                                to="/admin"
+                                onClick={() => { setOpen(false); localStorage.setItem("admin-active-tab", "support_tickets"); }}
+                                className="text-xs font-medium hover:text-primary transition-colors block truncate"
+                                style={bodyFont}
+                              >
+                                {notif.message}
+                              </Link>
+                              <span className="text-[9px] text-muted-foreground" style={headingFont}>
+                                {timeAgo(notif.created_at)}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => dismissAdminNotification(notif.id)}
                               className="h-7 w-7 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground shrink-0 transition-colors"
                               title="Dismiss"
                             >
