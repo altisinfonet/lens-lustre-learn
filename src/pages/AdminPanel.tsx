@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell, HeartPulse, UserPlus, HelpCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell, HeartPulse, UserPlus, HelpCircle, Mail } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
@@ -23,6 +23,7 @@ import AdminEngagement from "@/components/admin/AdminEngagement";
 import AdminTransactions from "@/components/admin/AdminTransactions";
 import AdminReferrals from "@/components/admin/AdminReferrals";
 import AdminSupportTickets from "@/components/admin/AdminSupportTickets";
+import AdminEmailTemplates from "@/components/admin/AdminEmailTemplates";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,7 +90,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements" | "health" | "referrals" | "support_tickets";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements" | "health" | "referrals" | "support_tickets" | "email_templates";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -537,7 +538,7 @@ const AdminPanel = () => {
       ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["transactions", "Transactions", FileText],
     ] as const },
     { label: "Settings", items: [
-      ["health", "Site Health", HeartPulse], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["settings", "Integrations", Settings],
+      ["health", "Site Health", HeartPulse], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["settings", "Integrations", Settings], ["email_templates", "Email Templates", Mail],
     ] as const },
     { label: "Help & Support", items: [
       ["support_tickets", "Support Tickets", HelpCircle],
@@ -648,6 +649,9 @@ const AdminPanel = () => {
 
         {/* Settings Tab */}
         {tab === "settings" && <AdminSettings user={user} />}
+
+        {/* Email Templates Tab */}
+        {tab === "email_templates" && <AdminEmailTemplates user={user} />}
 
         {/* Engagement Tab */}
         {tab === "engagement" && <AdminEngagement user={user} />}
