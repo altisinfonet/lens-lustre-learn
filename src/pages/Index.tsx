@@ -2209,47 +2209,9 @@ const Index = () => {
                   50mm Retina
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-4" style={{ fontFamily: "var(--font-body)" }}>
+              <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
                 <T>A curated platform for photographers who see the world differently.</T>
               </p>
-              <div className="flex gap-4 items-start">
-                <div className="rounded-md overflow-hidden border border-border flex-shrink-0 w-[140px]">
-                  <iframe
-                    title="Altis Infonet Private Limited Location"
-                    src="https://www.openstreetmap.org/export/embed.html?bbox=77.6209%2C12.9660%2C77.6410%2C12.9785&layer=mapnik&marker=12.9716%2C77.6310"
-                    width="100%"
-                    height="120"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="grayscale hover:grayscale-0 transition-all duration-500"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5 text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                  <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                    <T>Altis Infonet Pvt. Ltd.</T>
-                  </span>
-                  <span className="leading-relaxed">
-                    Bangalore, Karnataka, India
-                  </span>
-                  <a href="tel:+918049535653" className="hover:text-foreground transition-colors duration-300">
-                    +91 80 4953 5653
-                  </a>
-                  <a href="mailto:info@altisinfonet.com" className="hover:text-foreground transition-colors duration-300">
-                    info@altisinfonet.com
-                  </a>
-                  <a
-                    href="https://www.google.com/maps/search/?api=1&query=Altis+Infonet+Private+Limited,+Bengaluru"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] uppercase tracking-[0.15em] text-foreground hover:text-primary transition-colors duration-300 mt-1"
-                    style={{ fontFamily: "var(--font-heading)" }}
-                  >
-                    Open in Google Maps
-                  </a>
-                </div>
-              </div>
             </div>
             <nav className="flex flex-col gap-3" aria-label="Footer navigation">
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}><T>Navigate</T></span>
