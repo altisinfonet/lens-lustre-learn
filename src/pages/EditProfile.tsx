@@ -100,6 +100,37 @@ const EditProfile = () => {
   const availableCities = country && state ? getCitiesForState(country, state) : [];
 
   // Validation helpers
+  const validateFullName = (value: string): string => {
+    if (!value.trim()) return "Name is required";
+    if (value.trim().length < 2) return "Name must be at least 2 characters";
+    if (value.trim().length > 100) return "Name must be less than 100 characters";
+    if (/<[^>]*>/i.test(value)) return "Name cannot contain HTML tags";
+    if (/[<>{}()\[\]\\\/;`$]/.test(value)) return "Name contains invalid characters";
+    if (/script|javascript|onerror|onclick/i.test(value)) return "Name contains prohibited content";
+    if (!/^[\p{L}\p{M}\s'\-.,]+$/u.test(value.trim())) return "Name can only contain letters, spaces, hyphens, apostrophes, and periods";
+    return "";
+  };
+
+  const validateBio = (value: string): string => {
+    if (value.length > 500) return "Bio must be less than 500 characters";
+    if (/<script[\s>]/i.test(value)) return "Bio cannot contain script tags";
+    if (/javascript\s*:/i.test(value)) return "Bio contains prohibited content";
+    if (/<iframe|<object|<embed|<form/i.test(value)) return "Bio cannot contain HTML elements";
+    if (/on\w+\s*=\s*["']/i.test(value)) return "Bio contains prohibited event handlers";
+    return "";
+  };
+
+  const handleFullNameChange = (val: string) => {
+    setFullName(val);
+    setErrors((prev) => ({ ...prev, fullName: validateFullName(val) }));
+  };
+
+  const handleBioChange = (val: string) => {
+    if (val.length > 500) return; // Hard cap
+    setBio(val);
+    setErrors((prev) => ({ ...prev, bio: validateBio(val) }));
+  };
+
   const validatePhone = (value: string): string => {
     if (!value.trim()) return "";
     const cleaned = value.replace(/[\s\-()]/g, "");
@@ -344,7 +375,9 @@ const EditProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    // Validate phone/whatsapp/postal/social
+    // Validate all fields
+    const nameErr = validateFullName(fullName);
+    const bioErr = validateBio(bio);
     const phoneErr = validatePhone(phone);
     const whatsappErr = validatePhone(whatsapp);
     const postalErr = validatePostalCode(postalCode);
@@ -352,8 +385,8 @@ const EditProfile = () => {
     const igErr = validateInstagram(instagramUrl);
     const twErr = validateTwitter(twitterUrl);
     const ytErr = validateYoutube(youtubeUrl);
-    if (phoneErr || whatsappErr || postalErr || fbErr || igErr || twErr || ytErr) {
-      setErrors({ phone: phoneErr, whatsapp: whatsappErr, postalCode: postalErr, facebook: fbErr, instagram: igErr, twitter: twErr, youtube: ytErr });
+    if (nameErr || bioErr || phoneErr || whatsappErr || postalErr || fbErr || igErr || twErr || ytErr) {
+      setErrors({ fullName: nameErr, bio: bioErr, phone: phoneErr, whatsapp: whatsappErr, postalCode: postalErr, facebook: fbErr, instagram: igErr, twitter: twErr, youtube: ytErr });
       toast({ title: "Please fix validation errors before saving", variant: "destructive" });
       return;
     }
@@ -483,8 +516,9 @@ const EditProfile = () => {
           {/* Full Name */}
           <div>
             <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Full Name</T></label>
-            <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100}
-              className={inputCls} placeholder="Your full name" style={{ fontFamily: "var(--font-body)" }} />
+            <input type="text" value={fullName} onChange={(e) => handleFullNameChange(e.target.value)} maxLength={100}
+              className={`${inputCls} ${errors.fullName ? "border-destructive" : ""}`} placeholder="Your full name" style={{ fontFamily: "var(--font-body)" }} />
+            {errors.fullName && <p className="text-[9px] text-destructive mt-1" style={{ fontFamily: "var(--font-heading)" }}>{errors.fullName}</p>}
           </div>
 
           {/* Bio */}
@@ -493,10 +527,13 @@ const EditProfile = () => {
               <label className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Bio</T></label>
               <PrivacyToggle value={privacySettings.bio || "public"} onChange={(v) => setFieldPrivacy("bio", v)} />
             </div>
-            <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={500} rows={4}
-              className="w-full bg-transparent border border-border focus:border-primary outline-none p-4 text-sm transition-colors duration-500 resize-none"
+            <textarea value={bio} onChange={(e) => handleBioChange(e.target.value)} maxLength={500} rows={4}
+              className={`w-full bg-transparent border ${errors.bio ? "border-destructive" : "border-border"} focus:border-primary outline-none p-4 text-sm transition-colors duration-500 resize-none`}
               placeholder="Tell us about yourself..." style={{ fontFamily: "var(--font-body)" }} />
-            <span className="text-[10px] text-muted-foreground mt-1 block text-right" style={{ fontFamily: "var(--font-body)" }}>{bio.length}/500</span>
+            <div className="flex justify-between mt-1">
+              {errors.bio ? <p className="text-[9px] text-destructive" style={{ fontFamily: "var(--font-heading)" }}>{errors.bio}</p> : <span />}
+              <span className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>{bio.length}/500</span>
+            </div>
           </div>
 
           {/* Portfolio URL */}
