@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -82,6 +82,8 @@ export default function AdminSettings({ user }: Props) {
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testLogs, setTestLogs] = useState<LogEntry[]>([]);
   const [showLogs, setShowLogs] = useState(false);
+  const [apiKeyStatus, setApiKeyStatus] = useState<{ valid: boolean; message: string } | null>(null);
+  const [verifyingKey, setVerifyingKey] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -170,6 +172,22 @@ export default function AdminSettings({ user }: Props) {
     setTestingSmtp(false);
   };
 
+  const verifyApiKey = async () => {
+    if (!smtp.api_key || smtp.provider === "smtp") return;
+    setVerifyingKey(true);
+    setApiKeyStatus(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-email-provider", {
+        body: { provider: smtp.provider, api_key: smtp.api_key },
+      });
+      if (error) throw error;
+      setApiKeyStatus({ valid: data?.valid ?? false, message: data?.message || "Unknown" });
+    } catch (err: any) {
+      setApiKeyStatus({ valid: false, message: err.message || "Verification failed" });
+    }
+    setVerifyingKey(false);
+  };
+
   const saveWhatsApp = async () => {
     if (!user) return;
     setSavingWa(true);
@@ -236,15 +254,43 @@ export default function AdminSettings({ user }: Props) {
             </div>
             {smtp.provider !== "smtp" && (
               <div>
-                <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>
-                  {smtp.provider === "brevo" ? "Brevo" : smtp.provider === "resend" ? "Resend" : "SendGrid"} API Key
-                </label>
-                <div className="relative">
-                  <input className={inputClass + " pr-10"} type={showSmtpPass ? "text" : "password"} placeholder="Enter API key" value={smtp.api_key} onChange={(e) => setSmtp({ ...smtp, api_key: e.target.value })} />
-                  <button onClick={() => setShowSmtpPass(!showSmtpPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                    {showSmtpPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className={labelClass + " mb-0"} style={{ fontFamily: "var(--font-heading)" }}>
+                    {smtp.provider === "brevo" ? "Brevo" : smtp.provider === "resend" ? "Resend" : "SendGrid"} API Key
+                  </label>
+                  {apiKeyStatus && (
+                    <span className={`inline-flex items-center gap-1 text-[9px] tracking-wider uppercase px-2 py-0.5 rounded-sm ${
+                      apiKeyStatus.valid
+                        ? "bg-green-500/10 text-green-600"
+                        : "bg-destructive/10 text-destructive"
+                    }`} style={{ fontFamily: "var(--font-heading)" }}>
+                      {apiKeyStatus.valid ? <ShieldCheck className="h-2.5 w-2.5" /> : <ShieldX className="h-2.5 w-2.5" />}
+                      {apiKeyStatus.valid ? "Verified" : "Invalid"}
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input className={inputClass + " pr-10"} type={showSmtpPass ? "text" : "password"} placeholder="Enter API key" value={smtp.api_key} onChange={(e) => { setSmtp({ ...smtp, api_key: e.target.value }); setApiKeyStatus(null); }} />
+                    <button onClick={() => setShowSmtpPass(!showSmtpPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                      {showSmtpPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                  <button
+                    onClick={verifyApiKey}
+                    disabled={verifyingKey || !smtp.api_key}
+                    className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.15em] uppercase px-3 py-2.5 border border-border bg-muted/30 text-foreground hover:bg-muted/60 transition-colors disabled:opacity-40 shrink-0 rounded-sm"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    {verifyingKey ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldQuestion className="h-3 w-3" />}
+                    Verify
                   </button>
                 </div>
+                {apiKeyStatus && (
+                  <p className={`text-[10px] mt-1.5 ${apiKeyStatus.valid ? "text-green-600" : "text-destructive"}`} style={{ fontFamily: "var(--font-body)" }}>
+                    {apiKeyStatus.message}
+                  </p>
+                )}
               </div>
             )}
             <div>
