@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Bell, UserPlus, Gift, Check, X, HelpCircle } from "lucide-react";
+import { Bell, UserPlus, Gift, Check, X, HelpCircle, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -37,6 +37,15 @@ interface AdminNotification {
   created_at: string;
 }
 
+interface UserNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  reference_id: string | null;
+  created_at: string;
+}
+
 const NotificationBell = () => {
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
@@ -44,9 +53,10 @@ const NotificationBell = () => {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [giftNotifications, setGiftNotifications] = useState<GiftNotification[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
+  const [userNotifications, setUserNotifications] = useState<UserNotification[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const totalCount = friendRequests.length + giftNotifications.length + adminNotifications.length;
+  const totalCount = friendRequests.length + giftNotifications.length + adminNotifications.length + userNotifications.length;
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
@@ -82,6 +92,16 @@ const NotificationBell = () => {
     } else {
       setAdminNotifications([]);
     }
+
+    // User notifications (ticket replies etc.)
+    const { data: userNotifsData } = await supabase
+      .from("user_notifications")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("is_read", false)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    setUserNotifications((userNotifsData as UserNotification[]) || []);
 
     // Get requester profiles
     const requesterIds = (friendsRes.data || []).map((f) => f.requester_id);
@@ -130,6 +150,11 @@ const NotificationBell = () => {
   const dismissAdminNotification = async (id: string) => {
     await supabase.from("admin_notifications").update({ is_read: true } as any).eq("id", id);
     setAdminNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const dismissUserNotification = async (id: string) => {
+    await supabase.from("user_notifications").update({ is_read: true } as any).eq("id", id);
+    setUserNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
   const timeAgo = (dateStr: string) => {
@@ -289,6 +314,44 @@ const NotificationBell = () => {
                             </div>
                             <button
                               onClick={() => dismissGift(gift.id)}
+                              className="h-7 w-7 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground shrink-0 transition-colors"
+                              title="Dismiss"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* User Notifications (Ticket Replies etc.) */}
+                    {userNotifications.length > 0 && (
+                      <div>
+                        <div className="px-4 py-2 bg-muted/30">
+                          <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground" style={headingFont}>
+                            <T>Support Updates</T>
+                          </span>
+                        </div>
+                        {userNotifications.map((notif) => (
+                          <div key={notif.id} className="flex items-center gap-3 px-4 py-3 border-b border-border/50 hover:bg-muted/20 transition-colors">
+                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <MessageCircle className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <Link
+                                to="/help-support"
+                                onClick={() => setOpen(false)}
+                                className="text-xs font-medium hover:text-primary transition-colors block truncate"
+                                style={bodyFont}
+                              >
+                                {notif.message}
+                              </Link>
+                              <span className="text-[9px] text-muted-foreground" style={headingFont}>
+                                {timeAgo(notif.created_at)}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => dismissUserNotification(notif.id)}
                               className="h-7 w-7 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground shrink-0 transition-colors"
                               title="Dismiss"
                             >
