@@ -2212,18 +2212,34 @@ const Index = () => {
               <p className="text-xs text-muted-foreground leading-relaxed mb-4" style={{ fontFamily: "var(--font-body)" }}>
                 <T>A curated platform for photographers who see the world differently.</T>
               </p>
-              <div className="rounded-md overflow-hidden border border-border">
-                <iframe
-                  title="Altis Infonet Private Limited Location"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.0094073498655!2d77.6309395!3d12.9715987!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae1670c9b44e6d%3A0xf8dfc3e8517e4fe0!2sAltis%20Infonet%20Pvt%20Ltd!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-                  width="100%"
-                  height="150"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="grayscale hover:grayscale-0 transition-all duration-500"
-                />
+              <div className="flex gap-4 items-start">
+                <div className="rounded-md overflow-hidden border border-border flex-shrink-0 w-[140px]">
+                  <iframe
+                    title="Altis Infonet Private Limited Location"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.0094073498655!2d77.6309395!3d12.9715987!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae1670c9b44e6d%3A0xf8dfc3e8517e4fe0!2sAltis%20Infonet%20Pvt%20Ltd!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                    width="100%"
+                    height="120"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="grayscale hover:grayscale-0 transition-all duration-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                  <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                    <T>Altis Infonet Pvt. Ltd.</T>
+                  </span>
+                  <span className="leading-relaxed">
+                    Bangalore, Karnataka, India
+                  </span>
+                  <a href="tel:+918049535653" className="hover:text-foreground transition-colors duration-300">
+                    +91 80 4953 5653
+                  </a>
+                  <a href="mailto:info@altisinfonet.com" className="hover:text-foreground transition-colors duration-300">
+                    info@altisinfonet.com
+                  </a>
+                </div>
               </div>
             </div>
             <nav className="flex flex-col gap-3" aria-label="Footer navigation">
