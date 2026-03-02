@@ -449,17 +449,24 @@ ${filtered.map(t => `<tr>
                     <span className="px-1.5 py-0.5 border border-yellow-500/40 text-yellow-600 bg-yellow-500/5 rounded-sm text-[9px]">Pending</span>
                     <button
                       onClick={async () => {
-                        // Approve: credit wallet via RPC, then mark completed
                         try {
                           const { error: rpcErr } = await supabase.rpc("wallet_transaction", {
                             _user_id: t.user_id,
                             _type: "deposit",
                             _amount: Number(t.amount),
-                            _description: `Approved: ${t.description || "UPI deposit"}`,
+                            _description: `Approved: ${t.description || "Manual deposit"}`,
+                            _metadata: t.metadata as any,
                           });
                           if (rpcErr) throw rpcErr;
                           // Mark original pending txn as approved
                           await supabase.from("wallet_transactions").update({ status: "approved" }).eq("id", t.id);
+                          // Notify user
+                          await supabase.from("user_notifications").insert({
+                            user_id: t.user_id,
+                            type: "deposit_approved",
+                            title: "Deposit Approved",
+                            message: `Your deposit of $${Number(t.amount).toFixed(2)} has been approved and credited to your wallet.`,
+                          });
                           toast({ title: "Deposit approved & credited" });
                           fetchTransactions();
                         } catch (err: any) {
@@ -473,6 +480,13 @@ ${filtered.map(t => `<tr>
                     <button
                       onClick={async () => {
                         await supabase.from("wallet_transactions").update({ status: "rejected" }).eq("id", t.id);
+                        // Notify user
+                        await supabase.from("user_notifications").insert({
+                          user_id: t.user_id,
+                          type: "deposit_rejected",
+                          title: "Deposit Rejected",
+                          message: `Your deposit request of $${Number(t.amount).toFixed(2)} was rejected. Please contact support for details.`,
+                        });
                         toast({ title: "Deposit rejected" });
                         fetchTransactions();
                       }}

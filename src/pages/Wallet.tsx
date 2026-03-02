@@ -62,6 +62,8 @@ const Wallet = () => {
   const [paymentGateways, setPaymentGateways] = useState<any>(null);
   const [upiStep, setUpiStep] = useState<"idle" | "details" | "submitting">("idle");
   const [upiTxnRef, setUpiTxnRef] = useState("");
+  const [bankStep, setBankStep] = useState<"idle" | "details" | "submitting">("idle");
+  const [bankTxnRef, setBankTxnRef] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -131,6 +133,10 @@ const Wallet = () => {
       setUpiStep("details");
       return;
     }
+    if (gateway === "Bank Transfer") {
+      setBankStep("details");
+      return;
+    }
     // Other gateways placeholder
     toast({
       title: `${gateway} payment — Coming soon`,
@@ -183,6 +189,52 @@ const Wallet = () => {
     } catch (err: any) {
       toast({ title: "Failed to submit", description: err.message, variant: "destructive" });
       setUpiStep("details");
+    }
+  };
+
+  const handleBankConfirm = async () => {
+    const amt = parseFloat(addAmount);
+    if (!amt || amt <= 0) {
+      toast({ title: "Enter a valid amount", variant: "destructive" });
+      return;
+    }
+    if (!bankTxnRef.trim()) {
+      toast({ title: "Please enter your bank transaction reference number", variant: "destructive" });
+      return;
+    }
+    setBankStep("submitting");
+    try {
+      const { error } = await supabase.from("wallet_transactions").insert({
+        user_id: user.id,
+        type: "deposit",
+        amount: amt,
+        description: `Bank Transfer deposit — Ref: ${bankTxnRef.trim()}`,
+        status: "pending",
+        metadata: {
+          gateway: "bank_transfer",
+          bank_reference: bankTxnRef.trim(),
+          bank_name: paymentGateways?.bank?.bank_name || "",
+          amount_inr: toINR(amt),
+        },
+      });
+      if (error) throw error;
+
+      await supabase.from("admin_notifications").insert({
+        type: "deposit_request",
+        title: "Bank Transfer Deposit Request",
+        message: `User submitted a Bank Transfer deposit of $${amt.toFixed(2)} (≈ ₹${toINR(amt).toFixed(2)}). Ref: ${bankTxnRef.trim()}`,
+        reference_id: user.id,
+      });
+
+      toast({ title: "Deposit request submitted!", description: "Your payment will be verified by admin and credited to your wallet." });
+      setBankStep("idle");
+      setBankTxnRef("");
+      setAddAmount("");
+      setShowAddMoney(false);
+      await refresh();
+    } catch (err: any) {
+      toast({ title: "Failed to submit", description: err.message, variant: "destructive" });
+      setBankStep("details");
     }
   };
 
@@ -458,7 +510,7 @@ const Wallet = () => {
                       </button>
                     </div>
                   )}
-                  {paymentGateways?.bank?.enabled && (
+                  {paymentGateways?.bank?.enabled && bankStep === "idle" && (
                     <button onClick={() => handleGatewayPayment("Bank Transfer")}
                       className="flex items-center gap-3 px-4 py-3 border border-border hover:border-primary/50 transition-all duration-300 text-left sm:col-span-2"
                       style={{ fontFamily: "var(--font-heading)" }}>
@@ -470,6 +522,66 @@ const Wallet = () => {
                         </span>
                       </div>
                     </button>
+                  )}
+                  {paymentGateways?.bank?.enabled && bankStep !== "idle" && (
+                    <div className="sm:col-span-2 border border-primary/40 p-5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Pay via Bank Transfer</T></span>
+                        <button onClick={() => { setBankStep("idle"); setBankTxnRef(""); }} className="text-muted-foreground hover:text-foreground text-sm">✕</button>
+                      </div>
+                      <div className="bg-muted/30 border border-border p-4 space-y-2">
+                        <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}><T>Transfer to this Bank Account</T></p>
+                        {paymentGateways.bank.bank_name && (
+                          <p className="text-sm text-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                            <strong><T>Bank:</T></strong> {paymentGateways.bank.bank_name}
+                          </p>
+                        )}
+                        {paymentGateways.bank.account_number && (
+                          <p className="text-sm text-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                            <strong><T>Account:</T></strong> {paymentGateways.bank.account_number}
+                          </p>
+                        )}
+                        {paymentGateways.bank.ifsc && (
+                          <p className="text-sm text-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                            <strong><T>IFSC:</T></strong> {paymentGateways.bank.ifsc}
+                          </p>
+                        )}
+                        {paymentGateways.bank.account_name && (
+                          <p className="text-sm text-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                            <strong><T>Name:</T></strong> {paymentGateways.bank.account_name}
+                          </p>
+                        )}
+                        <p className="text-xs text-primary font-medium" style={{ fontFamily: "var(--font-body)" }}>
+                          <T>Amount:</T> ₹{toINR(parseFloat(addAmount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })} (${parseFloat(addAmount || "0").toFixed(2)})
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block" style={{ fontFamily: "var(--font-heading)" }}>
+                          <T>Bank Transaction Reference Number</T> *
+                        </label>
+                        <input
+                          type="text"
+                          value={bankTxnRef}
+                          onChange={e => setBankTxnRef(e.target.value)}
+                          placeholder="e.g. NEFT/IMPS reference number"
+                          maxLength={50}
+                          className="w-full bg-transparent border-b border-border focus:border-primary outline-none py-3 text-sm transition-colors duration-500"
+                          style={{ fontFamily: "var(--font-body)" }}
+                        />
+                      </div>
+                      <p className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                        <T>After completing the bank transfer, enter the transaction reference number and click confirm. Admin will verify and credit your wallet.</T>
+                      </p>
+                      <button
+                        onClick={handleBankConfirm}
+                        disabled={bankStep === "submitting" || !bankTxnRef.trim()}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {bankStep === "submitting" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Banknote className="h-3.5 w-3.5" />}
+                        <T>Confirm Payment</T>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -575,6 +687,17 @@ const Wallet = () => {
                       )}
                       {t.type === "gift" && !t.metadata?.expires_at && (
                         <span className="text-[9px] px-1.5 py-0.5 border border-primary/30 text-primary bg-primary/5 rounded-sm"><T>No expiry</T></span>
+                      )}
+                      {t.status === "pending" && (
+                        <span className="text-[9px] px-1.5 py-0.5 border border-yellow-500/40 text-yellow-600 bg-yellow-500/5 rounded-sm flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" /> <T>Pending Approval</T>
+                        </span>
+                      )}
+                      {t.status === "rejected" && (
+                        <span className="text-[9px] px-1.5 py-0.5 border border-destructive/40 text-destructive bg-destructive/5 rounded-sm"><T>Rejected</T></span>
+                      )}
+                      {t.status === "approved" && (
+                        <span className="text-[9px] px-1.5 py-0.5 border border-primary/40 text-primary bg-primary/5 rounded-sm"><T>Approved</T></span>
                       )}
                     </div>
                   </div>
