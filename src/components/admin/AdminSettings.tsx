@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Props {
   user: User | null;
@@ -27,6 +28,13 @@ interface WhatsAppSettings {
   webhook_url: string;
 }
 
+interface LogEntry {
+  timestamp: string;
+  step: string;
+  status: "ok" | "error" | "info" | "warn";
+  detail: string;
+}
+
 const defaultSmtp: SmtpSettings = {
   host: "",
   port: "587",
@@ -46,6 +54,15 @@ const defaultWhatsApp: WhatsAppSettings = {
   webhook_url: "",
 };
 
+function LogIcon({ status }: { status: LogEntry["status"] }) {
+  switch (status) {
+    case "ok": return <CheckCircle className="h-3 w-3 text-green-500 shrink-0" />;
+    case "error": return <XCircle className="h-3 w-3 text-destructive shrink-0" />;
+    case "warn": return <AlertTriangle className="h-3 w-3 text-yellow-500 shrink-0" />;
+    default: return <Info className="h-3 w-3 text-muted-foreground shrink-0" />;
+  }
+}
+
 export default function AdminSettings({ user }: Props) {
   const [smtp, setSmtp] = useState<SmtpSettings>(defaultSmtp);
   const [whatsapp, setWhatsapp] = useState<WhatsAppSettings>(defaultWhatsApp);
@@ -57,6 +74,8 @@ export default function AdminSettings({ user }: Props) {
   const [testEmail, setTestEmail] = useState("");
   const [testingSmtp, setTestingSmtp] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testLogs, setTestLogs] = useState<LogEntry[]>([]);
+  const [showLogs, setShowLogs] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -111,6 +130,8 @@ export default function AdminSettings({ user }: Props) {
     }
     setTestingSmtp(true);
     setTestResult(null);
+    setTestLogs([]);
+    setShowLogs(false);
     try {
       const { data, error } = await supabase.functions.invoke("test-smtp", {
         body: {
@@ -119,11 +140,25 @@ export default function AdminSettings({ user }: Props) {
         },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setTestResult({ success: true, message: data?.message || `Test email sent to ${testEmail}` });
-      toast({ title: "Test email sent successfully!" });
+      
+      // Capture logs from response
+      if (data?.logs) {
+        setTestLogs(data.logs);
+      }
+
+      if (data?.error) {
+        setTestResult({ success: false, message: data.error });
+        toast({ title: "SMTP test failed", description: data.error, variant: "destructive" });
+      } else {
+        setTestResult({ success: data?.success ?? false, message: data?.message || "Test completed" });
+        if (data?.success) {
+          toast({ title: "SMTP test completed" });
+        } else {
+          toast({ title: "SMTP test completed with warnings", variant: "destructive" });
+        }
+      }
     } catch (err: any) {
-      setTestResult({ success: false, message: err.message || "Failed to send test email" });
+      setTestResult({ success: false, message: err.message || "Failed to reach test endpoint" });
       toast({ title: "SMTP test failed", description: err.message, variant: "destructive" });
     }
     setTestingSmtp(false);
@@ -243,13 +278,13 @@ export default function AdminSettings({ user }: Props) {
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground mb-3" style={{ fontFamily: "var(--font-body)" }}>
-              Send a test email to verify your SMTP configuration is working correctly.
+              Run a diagnostic test on your SMTP configuration. Full log report will be generated.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="email"
                 value={testEmail}
-                onChange={(e) => { setTestEmail(e.target.value); setTestResult(null); }}
+                onChange={(e) => { setTestEmail(e.target.value); setTestResult(null); setTestLogs([]); setShowLogs(false); }}
                 placeholder="Enter test email address"
                 className={inputClass + " sm:max-w-xs"}
                 style={{ fontFamily: "var(--font-body)" }}
@@ -264,6 +299,8 @@ export default function AdminSettings({ user }: Props) {
                 Send Test Email
               </button>
             </div>
+
+            {/* Test Result */}
             {testResult && (
               <div className={`mt-3 flex items-start gap-2 px-4 py-3 border rounded-sm text-xs ${
                 testResult.success
@@ -272,6 +309,63 @@ export default function AdminSettings({ user }: Props) {
               }`} style={{ fontFamily: "var(--font-body)" }}>
                 {testResult.success ? <CheckCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> : <XCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />}
                 <span>{testResult.message}</span>
+              </div>
+            )}
+
+            {/* Show Log Report Button */}
+            {testLogs.length > 0 && (
+              <div className="mt-3">
+                <button
+                  onClick={() => setShowLogs(!showLogs)}
+                  className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase px-4 py-2 border border-border bg-muted/30 text-foreground hover:bg-muted/60 transition-colors"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  {showLogs ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {showLogs ? "Hide" : "Show"} Log Report ({testLogs.length} entries)
+                </button>
+
+                {showLogs && (
+                  <div className="mt-2 border border-border rounded-sm overflow-hidden bg-card">
+                    <div className="px-4 py-2 border-b border-border bg-muted/30 flex items-center justify-between">
+                      <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                        SMTP Test Log Report
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {testLogs.filter(l => l.status === "ok").length} ok · {testLogs.filter(l => l.status === "warn").length} warn · {testLogs.filter(l => l.status === "error").length} error
+                      </span>
+                    </div>
+                    <ScrollArea className="max-h-72">
+                      <div className="divide-y divide-border/50">
+                        {testLogs.map((entry, i) => (
+                          <div key={i} className="px-4 py-2 flex items-start gap-3 text-xs hover:bg-muted/20 transition-colors">
+                            <LogIcon status={entry.status} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="font-medium text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                                  {entry.step}
+                                </span>
+                                <span className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm ${
+                                  entry.status === "ok" ? "bg-green-500/10 text-green-600" :
+                                  entry.status === "error" ? "bg-destructive/10 text-destructive" :
+                                  entry.status === "warn" ? "bg-yellow-500/10 text-yellow-600" :
+                                  "bg-muted text-muted-foreground"
+                                }`} style={{ fontFamily: "var(--font-heading)" }}>
+                                  {entry.status}
+                                </span>
+                              </div>
+                              <p className="text-muted-foreground break-all leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+                                {entry.detail}
+                              </p>
+                            </div>
+                            <span className="text-[9px] text-muted-foreground/60 font-mono shrink-0 hidden sm:block">
+                              {new Date(entry.timestamp).toLocaleTimeString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
               </div>
             )}
           </div>
