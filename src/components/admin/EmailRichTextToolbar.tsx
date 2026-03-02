@@ -2,11 +2,12 @@ import {
   Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered,
   AlignLeft, AlignCenter, AlignRight, Type, Heading1, Heading2, Heading3,
   Palette, Undo, Redo, RemoveFormatting, ImagePlus, Link2, Minus,
-  Table, Maximize2, Minimize2, Upload, Images, Trash2, X
+  Table, Maximize2, Minimize2, Upload, Images, Trash2, X, Crop
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import ImageCropModal from "./ImageCropModal";
 
 interface Props {
   editorRef: React.RefObject<HTMLDivElement | null>;
@@ -39,6 +40,10 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
   const [showGallery, setShowGallery] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
+
+  // Crop modal state
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropSource, setCropSource] = useState<"device" | "gallery">("device");
 
   // Image resize bar state
   const [resizeTarget, setResizeTarget] = useState<HTMLImageElement | null>(null);
@@ -161,7 +166,7 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
   };
 
   // ========== Image Upload ==========
-  const handleImageUpload = async (file: File) => {
+  const openCropForFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast({ title: "Only images allowed", variant: "destructive" });
       return;
@@ -170,12 +175,26 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
       toast({ title: "Max 5MB for email images", variant: "destructive" });
       return;
     }
+    saveSelection();
+    const objectUrl = URL.createObjectURL(file);
+    setCropSrc(objectUrl);
+    setCropSource("device");
+  };
+
+  const openCropForGalleryUrl = (url: string) => {
+    saveSelection();
+    setCropSrc(url);
+    setCropSource("gallery");
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    setCropSrc(null);
     setUploading(true);
     try {
       const baseName = `email-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const ext = file.name.split(".").pop() || "png";
+      const ext = "png";
       const path = `email-templates/${baseName}.${ext}`;
-      const { error } = await supabase.storage.from("journal-images").upload(path, file);
+      const { error } = await supabase.storage.from("journal-images").upload(path, croppedFile);
       if (error) {
         toast({ title: "Upload failed", description: error.message, variant: "destructive" });
         setUploading(false);
@@ -183,12 +202,18 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
       }
       const { data } = supabase.storage.from("journal-images").getPublicUrl(path);
       insertImageHtml(data.publicUrl);
-      // Refresh gallery if open
       if (showGallery) loadGallery();
     } catch {
       toast({ title: "Upload failed", variant: "destructive" });
     }
     setUploading(false);
+  };
+
+  const handleCropCancel = () => {
+    if (cropSrc && cropSource === "device") {
+      URL.revokeObjectURL(cropSrc);
+    }
+    setCropSrc(null);
   };
 
   const insertImageHtml = (url: string) => {
@@ -295,7 +320,7 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
       <div className="border border-border rounded-t-sm bg-card/60 px-2 py-1.5 flex flex-wrap items-center gap-0.5 relative">
         {/* Hidden file input */}
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ""; }}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) openCropForFile(f); e.target.value = ""; }}
         />
 
         {/* Undo / Redo */}
@@ -464,7 +489,7 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
             ) : (
               <div className="grid grid-cols-3 gap-2 max-h-[240px] overflow-y-auto pr-1">
                 {galleryImages.map(img => (
-                  <button key={img.name} type="button" onClick={() => insertImageHtml(img.url)}
+                  <button key={img.name} type="button" onClick={() => openCropForGalleryUrl(img.url)}
                     className="group relative aspect-square rounded-sm overflow-hidden border border-border hover:border-primary transition-colors"
                     title={img.name}>
                     <img src={img.url} alt={img.name} className="w-full h-full object-cover" loading="lazy" />
@@ -571,6 +596,15 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
+      )}
+
+      {/* Crop Modal */}
+      {cropSrc && (
+        <ImageCropModal
+          imageSrc={cropSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
       )}
     </>
   );
