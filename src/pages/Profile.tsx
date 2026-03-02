@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Copy, Check, Edit2, ExternalLink, Globe, KeyRound, Lock, Mail, MapPin, MessageSquare, Phone, Share2, User, Users } from "lucide-react";
+import { Camera, Copy, Check, Edit2, ExternalLink, Globe, KeyRound, Lock, Mail, MapPin, MessageSquare, Phone, Share2, Users } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
-import ProfileCompletionBar from "@/components/ProfileCompletionBar";
+import AvatarCompletionRing from "@/components/AvatarCompletionRing";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -94,18 +94,18 @@ const Profile = () => {
           <div className="flex flex-col items-center gap-8 mb-16">
             {/* Avatar + Name row */}
             <div className="flex flex-col md:flex-row items-center md:items-end gap-8 w-full">
-              <div className="relative flex-shrink-0">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={displayName} className="h-32 w-32 md:h-40 md:w-40 rounded-full object-cover border-2 border-border" />
-                ) : (
-                  <div className="h-32 w-32 md:h-40 md:w-40 rounded-full bg-muted border-2 border-border flex items-center justify-center">
-                    <User className="h-12 w-12 text-muted-foreground/40" />
-                  </div>
-                )}
-                <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                  <Camera className="h-3.5 w-3.5 text-primary-foreground" />
+              {profile ? (
+                <AvatarCompletionRing
+                  profile={profile}
+                  avatarUrl={avatarUrl}
+                  displayName={displayName}
+                  size={160}
+                />
+              ) : (
+                <div className="h-40 w-40 rounded-full bg-muted border-2 border-border flex items-center justify-center">
+                  <Camera className="h-12 w-12 text-muted-foreground/40" />
                 </div>
-              </div>
+              )}
 
               <div className="text-center md:text-left flex-1 min-w-0">
                 <div className="flex items-center gap-4 mb-2 justify-center md:justify-start">
@@ -214,12 +214,6 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Profile Completion */}
-          {profile && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15, duration: 0.8 }}>
-              <ProfileCompletionBar profile={profile} showSections className="mb-12 border border-border p-6" />
-            </motion.div>
-          )}
 
           {/* Address */}
           {profile?.city && (
