@@ -9,7 +9,11 @@ interface Props {
   user: User | null;
 }
 
+type EmailProvider = "brevo" | "resend" | "sendgrid" | "smtp";
+
 interface SmtpSettings {
+  provider: EmailProvider;
+  api_key: string;
   host: string;
   port: string;
   username: string;
@@ -36,6 +40,8 @@ interface LogEntry {
 }
 
 const defaultSmtp: SmtpSettings = {
+  provider: "brevo",
+  api_key: "",
   host: "",
   port: "587",
   username: "",
@@ -211,35 +217,36 @@ export default function AdminSettings({ user }: Props) {
         </p>
       </div>
 
-      {/* SMTP Settings */}
+      {/* Email Provider Settings */}
       <div className="border border-border rounded-sm overflow-hidden">
         <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-card/50">
           <Mail className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-medium tracking-wide uppercase" style={{ fontFamily: "var(--font-heading)" }}>SMTP Email Settings</h3>
+          <h3 className="text-sm font-medium tracking-wide uppercase" style={{ fontFamily: "var(--font-heading)" }}>Email Provider Settings</h3>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>SMTP Host</label>
-              <input className={inputClass} placeholder="smtp.gmail.com" value={smtp.host} onChange={(e) => setSmtp({ ...smtp, host: e.target.value })} />
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Email Provider</label>
+              <select className={inputClass} value={smtp.provider} onChange={(e) => setSmtp({ ...smtp, provider: e.target.value as EmailProvider })}>
+                <option value="brevo">Brevo (Sendinblue)</option>
+                <option value="resend">Resend</option>
+                <option value="sendgrid">SendGrid</option>
+                <option value="smtp">Custom SMTP</option>
+              </select>
             </div>
-            <div>
-              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Port</label>
-              <input className={inputClass} placeholder="587" value={smtp.port} onChange={(e) => setSmtp({ ...smtp, port: e.target.value })} />
-            </div>
-            <div>
-              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Username / Email</label>
-              <input className={inputClass} placeholder="noreply@example.com" value={smtp.username} onChange={(e) => setSmtp({ ...smtp, username: e.target.value })} />
-            </div>
-            <div>
-              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Password</label>
-              <div className="relative">
-                <input className={inputClass + " pr-10"} type={showSmtpPass ? "text" : "password"} placeholder="••••••••" value={smtp.password} onChange={(e) => setSmtp({ ...smtp, password: e.target.value })} />
-                <button onClick={() => setShowSmtpPass(!showSmtpPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                  {showSmtpPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                </button>
+            {smtp.provider !== "smtp" && (
+              <div>
+                <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>
+                  {smtp.provider === "brevo" ? "Brevo" : smtp.provider === "resend" ? "Resend" : "SendGrid"} API Key
+                </label>
+                <div className="relative">
+                  <input className={inputClass + " pr-10"} type={showSmtpPass ? "text" : "password"} placeholder="Enter API key" value={smtp.api_key} onChange={(e) => setSmtp({ ...smtp, api_key: e.target.value })} />
+                  <button onClick={() => setShowSmtpPass(!showSmtpPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showSmtpPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
             <div>
               <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>From Email</label>
               <input className={inputClass} placeholder="noreply@50mmretina.com" value={smtp.from_email} onChange={(e) => setSmtp({ ...smtp, from_email: e.target.value })} />
@@ -248,15 +255,52 @@ export default function AdminSettings({ user }: Props) {
               <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>From Name</label>
               <input className={inputClass} placeholder="50mm Retina" value={smtp.from_name} onChange={(e) => setSmtp({ ...smtp, from_name: e.target.value })} />
             </div>
-            <div>
-              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Encryption</label>
-              <select className={inputClass} value={smtp.encryption} onChange={(e) => setSmtp({ ...smtp, encryption: e.target.value as any })}>
-                <option value="tls">TLS</option>
-                <option value="ssl">SSL</option>
-                <option value="none">None</option>
-              </select>
-            </div>
+            {smtp.provider === "smtp" && (
+              <>
+                <div>
+                  <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>SMTP Host</label>
+                  <input className={inputClass} placeholder="smtp.gmail.com" value={smtp.host} onChange={(e) => setSmtp({ ...smtp, host: e.target.value })} />
+                </div>
+                <div>
+                  <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Port</label>
+                  <input className={inputClass} placeholder="587" value={smtp.port} onChange={(e) => setSmtp({ ...smtp, port: e.target.value })} />
+                </div>
+                <div>
+                  <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Username / Email</label>
+                  <input className={inputClass} placeholder="noreply@example.com" value={smtp.username} onChange={(e) => setSmtp({ ...smtp, username: e.target.value })} />
+                </div>
+                <div>
+                  <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Password</label>
+                  <div className="relative">
+                    <input className={inputClass + " pr-10"} type={showSmtpPass ? "text" : "password"} placeholder="••••••••" value={smtp.password} onChange={(e) => setSmtp({ ...smtp, password: e.target.value })} />
+                    <button onClick={() => setShowSmtpPass(!showSmtpPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                      {showSmtpPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Encryption</label>
+                  <select className={inputClass} value={smtp.encryption} onChange={(e) => setSmtp({ ...smtp, encryption: e.target.value as any })}>
+                    <option value="tls">TLS</option>
+                    <option value="ssl">SSL</option>
+                    <option value="none">None</option>
+                  </select>
+                </div>
+              </>
+            )}
           </div>
+          {smtp.provider !== "smtp" && (
+            <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+              {smtp.provider === "brevo" && "Get your API key from Brevo Dashboard → SMTP & API → API Keys"}
+              {smtp.provider === "resend" && "Get your API key from resend.com/api-keys"}
+              {smtp.provider === "sendgrid" && "Get your API key from SendGrid → Settings → API Keys"}
+            </p>
+          )}
+          {smtp.provider === "smtp" && (
+            <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+              ⚠️ Custom SMTP uses configuration validation only. For actual email delivery, use Brevo, Resend, or SendGrid.
+            </p>
+          )}
           <div className="flex items-center gap-3 pt-2">
             <button
               onClick={saveSmtp}

@@ -16,6 +16,82 @@ function log(logs: LogEntry[], step: string, status: LogEntry["status"], detail:
   logs.push({ timestamp: new Date().toISOString(), step, status, detail });
 }
 
+async function sendViaBrevo(apiKey: string, fromEmail: string, fromName: string, toEmail: string, subject: string, html: string, logs: LogEntry[]) {
+  log(logs, "Brevo API", "info", "Sending via Brevo HTTP API...");
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: { "accept": "application/json", "api-key": apiKey, "content-type": "application/json" },
+    body: JSON.stringify({
+      sender: { name: fromName, email: fromEmail },
+      to: [{ email: toEmail }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+  const text = await res.text();
+  if (res.ok) {
+    let msgId = "";
+    try { msgId = JSON.parse(text).messageId || ""; } catch {}
+    log(logs, "Brevo API", "ok", `Email sent! ${msgId ? `Message ID: ${msgId}` : ""}`);
+    return true;
+  }
+  let err = text;
+  try { err = JSON.parse(text).message || text; } catch {}
+  log(logs, "Brevo API", "error", `Error (${res.status}): ${err}`);
+  return false;
+}
+
+async function sendViaResend(apiKey: string, fromEmail: string, fromName: string, toEmail: string, subject: string, html: string, logs: LogEntry[]) {
+  log(logs, "Resend API", "info", "Sending via Resend HTTP API...");
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: `${fromName} <${fromEmail}>`,
+      to: [toEmail],
+      subject,
+      html,
+    }),
+  });
+  const text = await res.text();
+  if (res.ok) {
+    let msgId = "";
+    try { msgId = JSON.parse(text).id || ""; } catch {}
+    log(logs, "Resend API", "ok", `Email sent! ${msgId ? `ID: ${msgId}` : ""}`);
+    return true;
+  }
+  let err = text;
+  try { err = JSON.parse(text).message || text; } catch {}
+  log(logs, "Resend API", "error", `Error (${res.status}): ${err}`);
+  return false;
+}
+
+async function sendViaSendGrid(apiKey: string, fromEmail: string, fromName: string, toEmail: string, subject: string, html: string, logs: LogEntry[]) {
+  log(logs, "SendGrid API", "info", "Sending via SendGrid HTTP API...");
+  const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      personalizations: [{ to: [{ email: toEmail }] }],
+      from: { email: fromEmail, name: fromName },
+      subject,
+      content: [{ type: "text/html", value: html }],
+    }),
+  });
+  const text = await res.text();
+  if (res.ok || res.status === 202) {
+    log(logs, "SendGrid API", "ok", "Email accepted for delivery!");
+    return true;
+  }
+  let err = text;
+  try {
+    const parsed = JSON.parse(text);
+    err = parsed.errors?.map((e: any) => e.message).join("; ") || text;
+  } catch {}
+  log(logs, "SendGrid API", "error", `Error (${res.status}): ${err}`);
+  return false;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,8 +100,6 @@ Deno.serve(async (req) => {
   const logs: LogEntry[] = [];
 
   try {
-    // Auth check
-    log(logs, "Auth", "info", "Checking authorization...");
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       log(logs, "Auth", "error", "No authorization header");
@@ -49,10 +123,9 @@ Deno.serve(async (req) => {
     }
     log(logs, "Auth", "ok", `User verified: ${user.email}`);
 
-    // Admin check
     const { data: roleData } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
     if (!roleData) {
-      log(logs, "Auth", "error", "User does not have admin role");
+      log(logs, "Auth", "error", "Admin role required");
       return new Response(JSON.stringify({ error: "Admin access required", logs }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -60,104 +133,82 @@ Deno.serve(async (req) => {
     log(logs, "Auth", "ok", "Admin role confirmed");
 
     const { to_email, smtp_config } = await req.json();
+    const provider = smtp_config?.provider || "brevo";
+    const fromEmail = smtp_config?.from_email || smtp_config?.username || "noreply@example.com";
+    const fromName = smtp_config?.from_name || "50mm Retina";
+    const apiKey = smtp_config?.api_key || "";
 
-    // Validate inputs
+    log(logs, "Config", "info", `Provider: ${provider}`);
+    log(logs, "Config", "info", `From: ${fromName} <${fromEmail}>`);
+    log(logs, "Config", "info", `To: ${to_email}`);
+
     if (!to_email) {
       log(logs, "Validation", "error", "No recipient email provided");
-      return new Response(JSON.stringify({ error: "Missing recipient email", logs }), {
+      return new Response(JSON.stringify({ error: "Missing recipient", logs }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const fromEmail = smtp_config?.from_email || smtp_config?.username || "noreply@example.com";
-    const fromName = smtp_config?.from_name || "50mm Retina";
-
-    log(logs, "Config", "info", `From: ${fromName} <${fromEmail}>`);
-    log(logs, "Config", "info", `To: ${to_email}`);
-    log(logs, "Config", "info", `SMTP Host (saved): ${smtp_config?.host || "N/A"}`);
-    log(logs, "Config", "info", `Using Brevo HTTP API for delivery`);
-
-    // Check Brevo API key
-    const brevoApiKey = Deno.env.get("BREVO_API_KEY");
-    if (!brevoApiKey) {
-      log(logs, "Brevo API", "error", "BREVO_API_KEY secret is not configured");
+    // For custom SMTP, just validate config
+    if (provider === "smtp") {
+      log(logs, "SMTP", "info", `Host: ${smtp_config?.host || "NOT SET"}, Port: ${smtp_config?.port || "NOT SET"}`);
+      log(logs, "SMTP", "warn", "Edge Functions cannot make raw SMTP connections");
+      log(logs, "SMTP", "info", "Switch to Brevo, Resend, or SendGrid for actual email delivery");
       return new Response(JSON.stringify({
         success: false,
-        message: "Brevo API key is not configured. Please add BREVO_API_KEY in your secrets.",
+        message: "Custom SMTP is not supported for sending from edge functions. Please use Brevo, Resend, or SendGrid.",
         logs,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    log(logs, "Brevo API", "ok", "API key found");
 
-    // Send email via Brevo HTTP API
-    log(logs, "Send Email", "info", "Sending test email via Brevo API...");
+    // Check API key
+    if (!apiKey) {
+      log(logs, "Validation", "error", `No API key provided for ${provider}. Please enter your API key in the settings.`);
+      return new Response(JSON.stringify({
+        success: false,
+        message: `No API key configured for ${provider}. Please enter your API key and save settings.`,
+        logs,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    log(logs, "Validation", "ok", "API key present");
 
-    const emailPayload = {
-      sender: { name: fromName, email: fromEmail },
-      to: [{ email: to_email }],
-      subject: `Test Email from ${fromName}`,
-      htmlContent: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">✅ SMTP Test Successful</h2>
-          <p style="color: #666; line-height: 1.6;">
-            This is a test email sent from <strong>${fromName}</strong> admin panel.
-          </p>
-          <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 5px 0; font-size: 14px;"><strong>From:</strong> ${fromName} &lt;${fromEmail}&gt;</p>
-            <p style="margin: 5px 0; font-size: 14px;"><strong>To:</strong> ${to_email}</p>
-            <p style="margin: 5px 0; font-size: 14px;"><strong>Provider:</strong> Brevo (HTTP API)</p>
-            <p style="margin: 5px 0; font-size: 14px;"><strong>Sent at:</strong> ${new Date().toISOString()}</p>
-          </div>
-          <p style="color: #999; font-size: 12px;">
-            If you received this email, your email configuration is working correctly.
-          </p>
+    const subject = `Test Email from ${fromName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333;">✅ Email Test Successful</h2>
+        <p style="color: #666; line-height: 1.6;">This is a test email sent from <strong>${fromName}</strong> admin panel.</p>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 5px 0; font-size: 14px;"><strong>From:</strong> ${fromName} &lt;${fromEmail}&gt;</p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>To:</strong> ${to_email}</p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Provider:</strong> ${provider}</p>
+          <p style="margin: 5px 0; font-size: 14px;"><strong>Sent at:</strong> ${new Date().toISOString()}</p>
         </div>
-      `,
-    };
+        <p style="color: #999; font-size: 12px;">If you received this email, your configuration is working correctly.</p>
+      </div>
+    `;
 
-    const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": brevoApiKey,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(emailPayload),
-    });
-
-    const brevoResult = await brevoResponse.text();
-
-    if (brevoResponse.ok) {
-      let messageId = "";
-      try {
-        const parsed = JSON.parse(brevoResult);
-        messageId = parsed.messageId || "";
-      } catch {}
-      log(logs, "Send Email", "ok", `Email sent successfully! ${messageId ? `Message ID: ${messageId}` : ""}`);
-      log(logs, "Summary", "ok", `Test email delivered to ${to_email} via Brevo API`);
-
-      return new Response(JSON.stringify({
-        success: true,
-        message: `Test email sent successfully to ${to_email}`,
-        logs,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    } else {
-      let errorDetail = brevoResult;
-      try {
-        const parsed = JSON.parse(brevoResult);
-        errorDetail = parsed.message || parsed.code || brevoResult;
-      } catch {}
-      log(logs, "Send Email", "error", `Brevo API error (${brevoResponse.status}): ${errorDetail}`);
-      log(logs, "Summary", "error", `Failed to send test email. Check your Brevo account and sender configuration.`);
-
-      return new Response(JSON.stringify({
-        success: false,
-        message: `Brevo API error: ${errorDetail}`,
-        logs,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let success = false;
+    if (provider === "brevo") {
+      success = await sendViaBrevo(apiKey, fromEmail, fromName, to_email, subject, html, logs);
+    } else if (provider === "resend") {
+      success = await sendViaResend(apiKey, fromEmail, fromName, to_email, subject, html, logs);
+    } else if (provider === "sendgrid") {
+      success = await sendViaSendGrid(apiKey, fromEmail, fromName, to_email, subject, html, logs);
     }
+
+    log(logs, "Summary", success ? "ok" : "error", success
+      ? `Test email sent to ${to_email} via ${provider}`
+      : `Failed to send email via ${provider}. Check your API key and sender domain.`
+    );
+
+    return new Response(JSON.stringify({
+      success,
+      message: success ? `Test email sent to ${to_email} via ${provider}` : `Failed to send via ${provider}. See log report.`,
+      logs,
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
   } catch (err: any) {
-    console.error("Test SMTP error:", err);
+    console.error("Test email error:", err);
     log(logs, "Error", "error", err.message || "Unknown error");
     return new Response(
       JSON.stringify({ error: err.message || "Failed to test email", logs }),
