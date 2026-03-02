@@ -60,6 +60,8 @@ const Wallet = () => {
   const [ledgerYears, setLedgerYears] = useState(1);
   const [expiringBalance, setExpiringBalance] = useState<{ amount: number; soonest: string | null; count: number }>({ amount: 0, soonest: null, count: 0 });
   const [paymentGateways, setPaymentGateways] = useState<any>(null);
+  const [upiStep, setUpiStep] = useState<"idle" | "details" | "submitting">("idle");
+  const [upiTxnRef, setUpiTxnRef] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -125,11 +127,63 @@ const Wallet = () => {
       toast({ title: "Enter a valid amount", variant: "destructive" });
       return;
     }
-    // Gateway-specific handling will be implemented when API keys are configured
+    if (gateway === "UPI") {
+      setUpiStep("details");
+      return;
+    }
+    // Other gateways placeholder
     toast({
       title: `${gateway} payment — Coming soon`,
       description: `Payment of ${formatCurrency(amt)} via ${gateway} will be processed once the integration is fully activated by the admin.`,
     });
+  };
+
+  const handleUpiConfirm = async () => {
+    const amt = parseFloat(addAmount);
+    if (!amt || amt <= 0) {
+      toast({ title: "Enter a valid amount", variant: "destructive" });
+      return;
+    }
+    if (!upiTxnRef.trim()) {
+      toast({ title: "Please enter your UPI transaction reference / UTR number", variant: "destructive" });
+      return;
+    }
+    setUpiStep("submitting");
+    try {
+      // Create a pending deposit request for admin verification
+      const { error } = await supabase.from("wallet_transactions").insert({
+        user_id: user.id,
+        type: "deposit",
+        amount: amt,
+        description: `UPI deposit — Ref: ${upiTxnRef.trim()}`,
+        status: "pending",
+        metadata: {
+          gateway: "upi",
+          upi_reference: upiTxnRef.trim(),
+          upi_id: paymentGateways?.upi?.upi_id || "",
+          amount_inr: toINR(amt),
+        },
+      });
+      if (error) throw error;
+
+      // Notify admin
+      await supabase.from("admin_notifications").insert({
+        type: "deposit_request",
+        title: "UPI Deposit Request",
+        message: `User submitted a UPI deposit of $${amt.toFixed(2)} (≈ ₹${toINR(amt).toFixed(2)}). Ref: ${upiTxnRef.trim()}`,
+        reference_id: user.id,
+      });
+
+      toast({ title: "Deposit request submitted!", description: "Your payment will be verified by admin and credited to your wallet." });
+      setUpiStep("idle");
+      setUpiTxnRef("");
+      setAddAmount("");
+      setShowAddMoney(false);
+      await refresh();
+    } catch (err: any) {
+      toast({ title: "Failed to submit", description: err.message, variant: "destructive" });
+      setUpiStep("details");
+    }
   };
 
   const handleWithdraw = async () => {
@@ -348,7 +402,7 @@ const Wallet = () => {
                       </div>
                     </button>
                   )}
-                  {paymentGateways?.upi?.enabled && (
+                  {paymentGateways?.upi?.enabled && upiStep === "idle" && (
                     <button onClick={() => handleGatewayPayment("UPI")}
                       className="flex items-center gap-3 px-4 py-3 border border-border hover:border-primary/50 transition-all duration-300 text-left"
                       style={{ fontFamily: "var(--font-heading)" }}>
@@ -360,6 +414,49 @@ const Wallet = () => {
                         </span>
                       </div>
                     </button>
+                  )}
+                  {paymentGateways?.upi?.enabled && upiStep !== "idle" && (
+                    <div className="sm:col-span-2 border border-primary/40 p-5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}><T>Pay via UPI</T></span>
+                        <button onClick={() => { setUpiStep("idle"); setUpiTxnRef(""); }} className="text-muted-foreground hover:text-foreground text-sm">✕</button>
+                      </div>
+                      <div className="bg-muted/30 border border-border p-4 space-y-2">
+                        <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}><T>Send payment to this UPI ID</T></p>
+                        <p className="text-lg font-medium text-foreground tracking-wide" style={{ fontFamily: "var(--font-display)" }}>
+                          {paymentGateways.upi.upi_id || "—"}
+                        </p>
+                        <p className="text-xs text-primary font-medium" style={{ fontFamily: "var(--font-body)" }}>
+                          <T>Amount:</T> ₹{toINR(parseFloat(addAmount) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })} (${parseFloat(addAmount || "0").toFixed(2)})
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground block" style={{ fontFamily: "var(--font-heading)" }}>
+                          <T>UPI Transaction Reference / UTR Number</T> *
+                        </label>
+                        <input
+                          type="text"
+                          value={upiTxnRef}
+                          onChange={e => setUpiTxnRef(e.target.value)}
+                          placeholder="e.g. 412345678901"
+                          maxLength={50}
+                          className="w-full bg-transparent border-b border-border focus:border-primary outline-none py-3 text-sm transition-colors duration-500"
+                          style={{ fontFamily: "var(--font-body)" }}
+                        />
+                      </div>
+                      <p className="text-[9px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                        <T>After sending payment via your UPI app, enter the transaction reference number above and click confirm. Admin will verify and credit your wallet.</T>
+                      </p>
+                      <button
+                        onClick={handleUpiConfirm}
+                        disabled={upiStep === "submitting" || !upiTxnRef.trim()}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
+                        {upiStep === "submitting" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Banknote className="h-3.5 w-3.5" />}
+                        <T>Confirm Payment</T>
+                      </button>
+                    </div>
                   )}
                   {paymentGateways?.bank?.enabled && (
                     <button onClick={() => handleGatewayPayment("Bank Transfer")}
