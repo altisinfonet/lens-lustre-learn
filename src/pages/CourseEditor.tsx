@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { compressImageToFiles } from "@/lib/imageCompression";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { toast } from "@/hooks/use-toast";
 
 
@@ -96,6 +97,8 @@ const CourseEditor = () => {
 
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
+      const safe = await scanFileWithToast(file, toast, { allowedTypes: "image" });
+      if (!safe) return null;
       const baseName = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
       const webpPath = `covers/${baseName}.webp`;

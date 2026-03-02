@@ -26,6 +26,7 @@ import AdminSupportTickets from "@/components/admin/AdminSupportTickets";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { toast } from "@/hooks/use-toast";
@@ -276,6 +277,8 @@ const AdminPanel = () => {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      const safe = await scanFileWithToast(file, toast, { allowedTypes: "image" });
+      if (!safe) continue;
       const ext = file.name.split('.').pop();
       const filePath = `${Date.now()}-${i}.${ext}`;
 

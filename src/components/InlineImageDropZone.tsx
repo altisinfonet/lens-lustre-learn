@@ -3,6 +3,7 @@ import { Plus, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { compressImageToFiles } from "@/lib/imageCompression";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 
 interface Props {
   onImageInserted: (url: string) => void;
@@ -24,6 +25,8 @@ const InlineImageDropZone = ({ onImageInserted }: Props) => {
     }
     setUploading(true);
     try {
+      const safe = await scanFileWithToast(file, toast, { allowedTypes: "image" });
+      if (!safe) { setUploading(false); return; }
       const baseName = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
       const webpPath = `inline/${baseName}.webp`;
