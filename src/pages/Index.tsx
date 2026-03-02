@@ -2216,7 +2216,7 @@ const Index = () => {
                 <div className="rounded-md overflow-hidden border border-border flex-shrink-0 w-[140px]">
                   <iframe
                     title="Altis Infonet Private Limited Location"
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.0094073498655!2d77.6309395!3d12.9715987!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae1670c9b44e6d%3A0xf8dfc3e8517e4fe0!2sAltis%20Infonet%20Pvt%20Ltd!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                    src="https://www.google.com/maps?q=Altis+Infonet+Private+Limited,+Bengaluru&output=embed"
                     width="100%"
                     height="120"
                     style={{ border: 0 }}
@@ -2238,6 +2238,15 @@ const Index = () => {
                   </a>
                   <a href="mailto:info@altisinfonet.com" className="hover:text-foreground transition-colors duration-300">
                     info@altisinfonet.com
+                  </a>
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=Altis+Infonet+Private+Limited,+Bengaluru"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] uppercase tracking-[0.15em] text-foreground hover:text-primary transition-colors duration-300 mt-1"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    Open in Google Maps
                   </a>
                 </div>
               </div>
