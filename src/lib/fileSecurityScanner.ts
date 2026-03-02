@@ -27,6 +27,12 @@ const MAGIC_BYTES: Record<string, { offset: number; bytes: number[] }[]> = {
   ],
   "image/heic": [{ offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] }], // "ftyp"
   "application/pdf": [{ offset: 0, bytes: [0x25, 0x50, 0x44, 0x46] }], // "%PDF"
+  // Office documents (ZIP-based: DOCX, XLSX, PPTX)
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [{ offset: 0, bytes: [0x50, 0x4B, 0x03, 0x04] }], // PK
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [{ offset: 0, bytes: [0x50, 0x4B, 0x03, 0x04] }],
+  // Legacy Office (OLE2 Compound Document)
+  "application/msword": [{ offset: 0, bytes: [0xD0, 0xCF, 0x11, 0xE0] }],
+  "application/vnd.ms-excel": [{ offset: 0, bytes: [0xD0, 0xCF, 0x11, 0xE0] }],
 };
 
 // Dangerous patterns that could indicate embedded malware or exploits
@@ -148,7 +154,7 @@ function validateImageDecodable(file: File): Promise<boolean> {
   });
 }
 
-export type AllowedFileType = "image" | "pdf" | "image+pdf";
+export type AllowedFileType = "image" | "pdf" | "image+pdf" | "document" | "image+pdf+document";
 
 interface ScanOptions {
   /** Which file types to allow. Default: "image" */
@@ -177,18 +183,34 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
 
   // 2. MIME type whitelist
   const allowedMimes: string[] = [];
-  if (allowedTypes === "image" || allowedTypes === "image+pdf") {
+  const includesImages = ["image", "image+pdf", "image+pdf+document"].includes(allowedTypes);
+  const includesPdf = ["pdf", "image+pdf", "image+pdf+document"].includes(allowedTypes);
+  const includesDocs = ["document", "image+pdf+document"].includes(allowedTypes);
+
+  if (includesImages) {
     allowedMimes.push(
       "image/jpeg", "image/png", "image/webp", "image/gif",
       "image/bmp", "image/tiff", "image/heic", "image/heif"
     );
   }
-  if (allowedTypes === "pdf" || allowedTypes === "image+pdf") {
+  if (includesPdf) {
     allowedMimes.push("application/pdf");
+  }
+  if (includesDocs) {
+    allowedMimes.push(
+      "application/msword",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
   }
 
   if (!allowedMimes.includes(file.type)) {
-    const typeLabel = allowedTypes === "image" ? "images" : allowedTypes === "pdf" ? "PDF files" : "images or PDFs";
+    const labels: string[] = [];
+    if (includesImages) labels.push("images");
+    if (includesPdf) labels.push("PDFs");
+    if (includesDocs) labels.push("documents");
+    const typeLabel = labels.join(", ");
     return { safe: false, reason: `File type not allowed. Only ${typeLabel} are accepted.` };
   }
 
