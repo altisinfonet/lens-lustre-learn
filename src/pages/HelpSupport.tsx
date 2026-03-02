@@ -6,8 +6,9 @@ import { toast } from "@/hooks/use-toast";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { motion } from "framer-motion";
-import { Plus, Send, MessageSquare, Clock, CheckCircle, XCircle, ChevronDown, ChevronUp, Paperclip, FileText, Image, Loader2, X } from "lucide-react";
+import { Plus, Send, MessageSquare, Clock, CheckCircle, XCircle, ChevronDown, ChevronUp, Paperclip, FileText, Image, Loader2, X, FileSpreadsheet } from "lucide-react";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
+import FileUploadDropZone, { type UploadedFile } from "@/components/FileUploadDropZone";
 
 interface Ticket {
   id: string;
@@ -42,6 +43,7 @@ const HelpSupport = () => {
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [sendingReply, setSendingReply] = useState<string | null>(null);
   const [issueFile, setIssueFile] = useState<File | null>(null);
+  const [issuePreUpload, setIssuePreUpload] = useState<{ url: string; name: string } | null>(null);
   const [replyFiles, setReplyFiles] = useState<Record<string, File | null>>({});
   const [uploadingFile, setUploadingFile] = useState(false);
 
@@ -83,7 +85,7 @@ const HelpSupport = () => {
   };
 
   const uploadAttachment = async (file: File): Promise<{ url: string; name: string } | null> => {
-    const safe = await scanFileWithToast(file, toast, { allowedTypes: "image+pdf", maxSize: 10 * 1024 * 1024 });
+    const safe = await scanFileWithToast(file, toast, { allowedTypes: "image+pdf+document", maxSize: 10 * 1024 * 1024 });
     if (!safe) return null;
     const ext = file.name.split(".").pop() || "bin";
     const path = `${user!.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -103,12 +105,12 @@ const HelpSupport = () => {
     }
     setSubmitting(true);
 
-    let attachment: { url: string; name: string } | null = null;
-    if (issueFile) {
+    let attachment: { url: string; name: string } | null = issuePreUpload || null;
+    if (!attachment && issueFile) {
       setUploadingFile(true);
       attachment = await uploadAttachment(issueFile);
       setUploadingFile(false);
-      if (!attachment && issueFile) { setSubmitting(false); return; }
+      if (!attachment) { setSubmitting(false); return; }
     }
 
     const { data: ticket, error: ticketErr } = await supabase
@@ -135,6 +137,7 @@ const HelpSupport = () => {
     setSubject("");
     setIssue("");
     setIssueFile(null);
+    setIssuePreUpload(null);
     setShowForm(false);
     toast({ title: "Ticket submitted successfully!" });
     fetchTickets();
@@ -177,10 +180,12 @@ const HelpSupport = () => {
   };
 
   const AttachmentDisplay = ({ url, name }: { url: string; name: string }) => {
-    const isPdf = name?.toLowerCase().endsWith(".pdf");
+    const lower = name?.toLowerCase() || "";
+    const isPdf = lower.endsWith(".pdf");
+    const isDoc = /\.(docx?|xlsx?)$/.test(lower);
     return (
       <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-muted/50 border border-border rounded text-xs hover:border-primary transition-colors">
-        {isPdf ? <FileText className="h-3 w-3 text-red-500" /> : <Image className="h-3 w-3 text-blue-500" />}
+        {isPdf ? <FileText className="h-3 w-3 text-red-500" /> : isDoc ? <FileSpreadsheet className="h-3 w-3 text-green-500" /> : <Image className="h-3 w-3 text-blue-500" />}
         <span className="truncate max-w-[180px]">{name || "attachment"}</span>
       </a>
     );
@@ -257,19 +262,29 @@ const HelpSupport = () => {
               {/* File attachment */}
               <div>
                 <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                  <T>Attachment</T> <span className="normal-case">(JPEG or PDF, max 10MB)</span>
+                  <T>Attachment</T> <span className="normal-case">(Images, PDFs, or Documents, max 10MB)</span>
                 </label>
                 {issueFile ? (
                   <div className="inline-flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border text-sm">
-                    {issueFile.name.toLowerCase().endsWith(".pdf") ? <FileText className="h-3.5 w-3.5 text-red-500" /> : <Image className="h-3.5 w-3.5 text-blue-500" />}
+                    {issueFile.name.toLowerCase().endsWith(".pdf") ? <FileText className="h-3.5 w-3.5 text-red-500" /> : /\.(docx?|xlsx?)$/i.test(issueFile.name) ? <FileSpreadsheet className="h-3.5 w-3.5 text-green-500" /> : <Image className="h-3.5 w-3.5 text-blue-500" />}
                     <span className="truncate max-w-[200px]">{issueFile.name}</span>
                     <button onClick={() => setIssueFile(null)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer inline-flex items-center gap-2 text-xs px-4 py-2 border border-border hover:border-primary transition-colors">
-                    <Paperclip className="h-3 w-3" /> <T>Attach File</T>
-                    <input type="file" accept="image/jpeg,image/jpg,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && setIssueFile(e.target.files[0])} />
-                  </label>
+                  <FileUploadDropZone
+                    bucket="support-attachments"
+                    folder={user?.id || "uploads"}
+                    allowedTypes="image+pdf+document"
+                    maxSize={10 * 1024 * 1024}
+                    compressImages={false}
+                    showGallery={false}
+                    compact
+                    label="Drop file here or browse"
+                    onFileUploaded={(uploaded) => {
+                      setIssueFile(new File([], uploaded.name, { type: uploaded.type }));
+                      setIssuePreUpload({ url: uploaded.url, name: uploaded.name });
+                    }}
+                  />
                 )}
               </div>
               <div className="flex gap-3">
@@ -283,7 +298,7 @@ const HelpSupport = () => {
                   {submitting ? <T>Submitting…</T> : <T>Submit Ticket</T>}
                 </button>
                 <button
-                  onClick={() => { setShowForm(false); setSubject(""); setIssue(""); setIssueFile(null); }}
+                  onClick={() => { setShowForm(false); setSubject(""); setIssue(""); setIssueFile(null); setIssuePreUpload(null); }}
                   className="text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary transition-all"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
@@ -377,7 +392,7 @@ const HelpSupport = () => {
                             />
                             <label className="cursor-pointer self-end p-2 text-muted-foreground hover:text-foreground transition-colors">
                               <Paperclip className="h-4 w-4" />
-                              <input type="file" accept="image/jpeg,image/jpg,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && setReplyFiles((prev) => ({ ...prev, [ticket.id]: e.target.files![0] }))} />
+                              <input type="file" accept="image/jpeg,image/jpg,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" onChange={(e) => e.target.files?.[0] && setReplyFiles((prev) => ({ ...prev, [ticket.id]: e.target.files![0] }))} />
                             </label>
                             <button
                               onClick={() => handleSendReply(ticket.id)}
