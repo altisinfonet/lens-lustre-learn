@@ -1,6 +1,7 @@
 import { calcProfileCompletion } from "@/lib/profileCompletion";
 import { useMemo, useState } from "react";
-import { User } from "lucide-react";
+import { User, Edit2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Props {
   profile: Record<string, any>;
@@ -108,7 +109,7 @@ const AvatarCompletionRing = ({ profile, avatarUrl, displayName, size = 160 }: P
           >
             Complete your profile
           </p>
-          <ul className="space-y-1">
+          <ul className="space-y-1 mb-2.5">
             {missing.map((m) => (
               <li key={m.label} className="text-xs text-muted-foreground flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-muted-foreground/40 flex-shrink-0" />
@@ -116,6 +117,14 @@ const AvatarCompletionRing = ({ profile, avatarUrl, displayName, size = 160 }: P
               </li>
             ))}
           </ul>
+          <Link
+            to="/edit-profile"
+            className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase text-primary hover:underline transition-all"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            <Edit2 className="h-3 w-3" />
+            Complete Now
+          </Link>
         </div>
       )}
     </div>
