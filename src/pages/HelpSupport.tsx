@@ -6,7 +6,8 @@ import { toast } from "@/hooks/use-toast";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { motion } from "framer-motion";
-import { Plus, Send, MessageSquare, Clock, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Send, MessageSquare, Clock, CheckCircle, XCircle, ChevronDown, ChevronUp, Paperclip, FileText, Image, Loader2, X } from "lucide-react";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 
 interface Ticket {
   id: string;
@@ -23,6 +24,8 @@ interface Reply {
   message: string;
   is_admin: boolean;
   created_at: string;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
 }
 
 const HelpSupport = () => {
@@ -38,6 +41,9 @@ const HelpSupport = () => {
   const [replies, setReplies] = useState<Record<string, Reply[]>>({});
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [sendingReply, setSendingReply] = useState<string | null>(null);
+  const [issueFile, setIssueFile] = useState<File | null>(null);
+  const [replyFiles, setReplyFiles] = useState<Record<string, File | null>>({});
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
@@ -76,6 +82,20 @@ const HelpSupport = () => {
     }
   };
 
+  const uploadAttachment = async (file: File): Promise<{ url: string; name: string } | null> => {
+    const safe = await scanFileWithToast(file, toast, { allowedTypes: "image+pdf", maxSize: 10 * 1024 * 1024 });
+    if (!safe) return null;
+    const ext = file.name.split(".").pop() || "bin";
+    const path = `${user!.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("support-attachments").upload(path, file);
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      return null;
+    }
+    const { data: urlData } = supabase.storage.from("support-attachments").getPublicUrl(path);
+    return { url: urlData.publicUrl, name: file.name };
+  };
+
   const handleSubmit = async () => {
     if (!user || !subject.trim() || !issue.trim()) {
       toast({ title: "Please fill in both subject and issue", variant: "destructive" });
@@ -83,7 +103,14 @@ const HelpSupport = () => {
     }
     setSubmitting(true);
 
-    // Create ticket
+    let attachment: { url: string; name: string } | null = null;
+    if (issueFile) {
+      setUploadingFile(true);
+      attachment = await uploadAttachment(issueFile);
+      setUploadingFile(false);
+      if (!attachment && issueFile) { setSubmitting(false); return; }
+    }
+
     const { data: ticket, error: ticketErr } = await supabase
       .from("support_tickets")
       .insert({ user_id: user.id, subject: subject.trim() } as any)
@@ -96,17 +123,18 @@ const HelpSupport = () => {
       return;
     }
 
-    // Add first reply as the issue description
     await supabase.from("ticket_replies").insert({
       ticket_id: (ticket as any).id,
       user_id: user.id,
       message: issue.trim(),
       is_admin: false,
+      ...(attachment ? { attachment_url: attachment.url, attachment_name: attachment.name } : {}),
     } as any);
 
     setSubmitting(false);
     setSubject("");
     setIssue("");
+    setIssueFile(null);
     setShowForm(false);
     toast({ title: "Ticket submitted successfully!" });
     fetchTickets();
@@ -114,17 +142,26 @@ const HelpSupport = () => {
 
   const handleSendReply = async (ticketId: string) => {
     const text = replyText[ticketId]?.trim();
-    if (!text || !user) return;
+    const file = replyFiles[ticketId];
+    if ((!text && !file) || !user) return;
     setSendingReply(ticketId);
+
+    let attachment: { url: string; name: string } | null = null;
+    if (file) {
+      attachment = await uploadAttachment(file);
+      if (!attachment) { setSendingReply(null); return; }
+    }
 
     await supabase.from("ticket_replies").insert({
       ticket_id: ticketId,
       user_id: user.id,
-      message: text,
+      message: text || (attachment ? `Attached: ${attachment.name}` : ""),
       is_admin: false,
+      ...(attachment ? { attachment_url: attachment.url, attachment_name: attachment.name } : {}),
     } as any);
 
     setReplyText((prev) => ({ ...prev, [ticketId]: "" }));
+    setReplyFiles((prev) => ({ ...prev, [ticketId]: null }));
     setSendingReply(null);
     fetchReplies(ticketId);
   };
@@ -137,6 +174,16 @@ const HelpSupport = () => {
       case "closed": return <XCircle className="h-3.5 w-3.5 text-muted-foreground" />;
       default: return <Clock className="h-3.5 w-3.5" />;
     }
+  };
+
+  const AttachmentDisplay = ({ url, name }: { url: string; name: string }) => {
+    const isPdf = name?.toLowerCase().endsWith(".pdf");
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-muted/50 border border-border rounded text-xs hover:border-primary transition-colors">
+        {isPdf ? <FileText className="h-3 w-3 text-red-500" /> : <Image className="h-3 w-3 text-blue-500" />}
+        <span className="truncate max-w-[180px]">{name || "attachment"}</span>
+      </a>
+    );
   };
 
   if (authLoading || loading) {
@@ -207,18 +254,36 @@ const HelpSupport = () => {
                   style={{ fontFamily: "var(--font-body)" }}
                 />
               </div>
+              {/* File attachment */}
+              <div>
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <T>Attachment</T> <span className="normal-case">(JPEG or PDF, max 10MB)</span>
+                </label>
+                {issueFile ? (
+                  <div className="inline-flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border text-sm">
+                    {issueFile.name.toLowerCase().endsWith(".pdf") ? <FileText className="h-3.5 w-3.5 text-red-500" /> : <Image className="h-3.5 w-3.5 text-blue-500" />}
+                    <span className="truncate max-w-[200px]">{issueFile.name}</span>
+                    <button onClick={() => setIssueFile(null)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer inline-flex items-center gap-2 text-xs px-4 py-2 border border-border hover:border-primary transition-colors">
+                    <Paperclip className="h-3 w-3" /> <T>Attach File</T>
+                    <input type="file" accept="image/jpeg,image/jpg,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && setIssueFile(e.target.files[0])} />
+                  </label>
+                )}
+              </div>
               <div className="flex gap-3">
                 <button
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  disabled={submitting || uploadingFile}
                   className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-6 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  <Send className="h-3 w-3" />
+                  {uploadingFile ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                   {submitting ? <T>Submitting…</T> : <T>Submit Ticket</T>}
                 </button>
                 <button
-                  onClick={() => { setShowForm(false); setSubject(""); setIssue(""); }}
+                  onClick={() => { setShowForm(false); setSubject(""); setIssue(""); setIssueFile(null); }}
                   className="text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary transition-all"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
@@ -283,30 +348,46 @@ const HelpSupport = () => {
                             <p className="text-sm text-foreground whitespace-pre-wrap" style={{ fontFamily: "var(--font-body)" }}>
                               {reply.message}
                             </p>
+                            {reply.attachment_url && reply.attachment_name && (
+                              <AttachmentDisplay url={reply.attachment_url} name={reply.attachment_name} />
+                            )}
                           </div>
                         </div>
                       ))}
 
                       {/* Reply input (only for open/replied tickets) */}
                       {(ticket.status === "open" || ticket.status === "replied") && (
-                        <div className="flex gap-3 pt-2">
-                          <input
-                            value={replyText[ticket.id] || ""}
-                            onChange={(e) => setReplyText((prev) => ({ ...prev, [ticket.id]: e.target.value }))}
-                            placeholder="Type your reply..."
-                            maxLength={2000}
-                            className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm"
-                            style={{ fontFamily: "var(--font-body)" }}
-                            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendReply(ticket.id); } }}
-                          />
-                          <button
-                            onClick={() => handleSendReply(ticket.id)}
-                            disabled={sendingReply === ticket.id || !replyText[ticket.id]?.trim()}
-                            className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
-                            style={{ fontFamily: "var(--font-heading)" }}
-                          >
-                            <Send className="h-3 w-3" />
-                          </button>
+                        <div className="space-y-2 pt-2">
+                          {replyFiles[ticket.id] && (
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted/50 border border-border text-xs">
+                              <Paperclip className="h-3 w-3" />
+                              <span className="truncate max-w-[180px]">{replyFiles[ticket.id]!.name}</span>
+                              <button onClick={() => setReplyFiles((prev) => ({ ...prev, [ticket.id]: null }))} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <input
+                              value={replyText[ticket.id] || ""}
+                              onChange={(e) => setReplyText((prev) => ({ ...prev, [ticket.id]: e.target.value }))}
+                              placeholder="Type your reply..."
+                              maxLength={2000}
+                              className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm"
+                              style={{ fontFamily: "var(--font-body)" }}
+                              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendReply(ticket.id); } }}
+                            />
+                            <label className="cursor-pointer self-end p-2 text-muted-foreground hover:text-foreground transition-colors">
+                              <Paperclip className="h-4 w-4" />
+                              <input type="file" accept="image/jpeg,image/jpg,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && setReplyFiles((prev) => ({ ...prev, [ticket.id]: e.target.files![0] }))} />
+                            </label>
+                            <button
+                              onClick={() => handleSendReply(ticket.id)}
+                              disabled={sendingReply === ticket.id || (!replyText[ticket.id]?.trim() && !replyFiles[ticket.id])}
+                              className="self-end inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
+                              style={{ fontFamily: "var(--font-heading)" }}
+                            >
+                              <Send className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
