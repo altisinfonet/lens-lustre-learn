@@ -1,0 +1,324 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import T from "@/components/T";
+import { motion } from "framer-motion";
+import { Plus, Send, MessageSquare, Clock, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+
+interface Ticket {
+  id: string;
+  subject: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Reply {
+  id: string;
+  ticket_id: string;
+  user_id: string;
+  message: string;
+  is_admin: boolean;
+  created_at: string;
+}
+
+const HelpSupport = () => {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [issue, setIssue] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
+  const [replies, setReplies] = useState<Record<string, Reply[]>>({});
+  const [replyText, setReplyText] = useState<Record<string, string>>({});
+  const [sendingReply, setSendingReply] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) navigate("/login");
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchTickets();
+  }, [user]);
+
+  const fetchTickets = async () => {
+    const { data } = await supabase
+      .from("support_tickets")
+      .select("*")
+      .eq("user_id", user!.id)
+      .order("created_at", { ascending: false });
+    setTickets((data as any[]) || []);
+    setLoading(false);
+  };
+
+  const fetchReplies = async (ticketId: string) => {
+    const { data } = await supabase
+      .from("ticket_replies")
+      .select("*")
+      .eq("ticket_id", ticketId)
+      .order("created_at", { ascending: true });
+    setReplies((prev) => ({ ...prev, [ticketId]: (data as any[]) || [] }));
+  };
+
+  const handleToggleTicket = (ticketId: string) => {
+    if (expandedTicket === ticketId) {
+      setExpandedTicket(null);
+    } else {
+      setExpandedTicket(ticketId);
+      if (!replies[ticketId]) fetchReplies(ticketId);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!user || !subject.trim() || !issue.trim()) {
+      toast({ title: "Please fill in both subject and issue", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+
+    // Create ticket
+    const { data: ticket, error: ticketErr } = await supabase
+      .from("support_tickets")
+      .insert({ user_id: user.id, subject: subject.trim() } as any)
+      .select("id")
+      .single();
+
+    if (ticketErr || !ticket) {
+      toast({ title: "Failed to create ticket", description: ticketErr?.message, variant: "destructive" });
+      setSubmitting(false);
+      return;
+    }
+
+    // Add first reply as the issue description
+    await supabase.from("ticket_replies").insert({
+      ticket_id: (ticket as any).id,
+      user_id: user.id,
+      message: issue.trim(),
+      is_admin: false,
+    } as any);
+
+    setSubmitting(false);
+    setSubject("");
+    setIssue("");
+    setShowForm(false);
+    toast({ title: "Ticket submitted successfully!" });
+    fetchTickets();
+  };
+
+  const handleSendReply = async (ticketId: string) => {
+    const text = replyText[ticketId]?.trim();
+    if (!text || !user) return;
+    setSendingReply(ticketId);
+
+    await supabase.from("ticket_replies").insert({
+      ticket_id: ticketId,
+      user_id: user.id,
+      message: text,
+      is_admin: false,
+    } as any);
+
+    setReplyText((prev) => ({ ...prev, [ticketId]: "" }));
+    setSendingReply(null);
+    fetchReplies(ticketId);
+  };
+
+  const statusIcon = (status: string) => {
+    switch (status) {
+      case "open": return <Clock className="h-3.5 w-3.5 text-yellow-500" />;
+      case "replied": return <MessageSquare className="h-3.5 w-3.5 text-primary" />;
+      case "resolved": return <CheckCircle className="h-3.5 w-3.5 text-green-500" />;
+      case "closed": return <XCircle className="h-3.5 w-3.5 text-muted-foreground" />;
+      default: return <Clock className="h-3.5 w-3.5" />;
+    }
+  };
+
+  if (authLoading || loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={{ fontFamily: "var(--font-heading)" }}>
+          <T>Loading...</T>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <div className="container mx-auto px-6 md:px-12 py-10 md:py-16 max-w-4xl">
+        <Breadcrumbs items={[{ label: "Dashboard", to: "/dashboard" }, { label: "Help & Support" }]} className="mb-12" />
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-12 h-px bg-primary hidden md:block" />
+            <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+              <T>Help & Support</T>
+            </span>
+          </div>
+          <div className="flex items-center justify-between mb-10">
+            <h1 className="text-2xl md:text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+              <T>Support Tickets</T>
+            </h1>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity duration-500"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              <Plus className="h-3.5 w-3.5" /> <T>New Ticket</T>
+            </button>
+          </div>
+
+          {/* New Ticket Form */}
+          {showForm && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="border border-border p-6 md:p-8 mb-10 space-y-5">
+              <span className="text-xs tracking-[0.2em] uppercase text-primary block" style={{ fontFamily: "var(--font-heading)" }}>
+                <T>Submit a New Ticket</T>
+              </span>
+              <div>
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <T>Subject</T> *
+                </label>
+                <input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Brief description of your issue"
+                  maxLength={200}
+                  className="w-full bg-transparent border-b border-border focus:border-primary outline-none py-3 text-sm transition-colors duration-500"
+                  style={{ fontFamily: "var(--font-body)" }}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  <T>Issue Details</T> *
+                </label>
+                <textarea
+                  value={issue}
+                  onChange={(e) => setIssue(e.target.value)}
+                  placeholder="Describe your issue in detail..."
+                  rows={4}
+                  maxLength={2000}
+                  className="w-full bg-transparent border border-border focus:border-primary outline-none p-4 text-sm transition-colors duration-500 resize-none"
+                  style={{ fontFamily: "var(--font-body)" }}
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-6 py-2.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  <Send className="h-3 w-3" />
+                  {submitting ? <T>Submitting…</T> : <T>Submit Ticket</T>}
+                </button>
+                <button
+                  onClick={() => { setShowForm(false); setSubject(""); setIssue(""); }}
+                  className="text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary transition-all"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  <T>Cancel</T>
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Tickets List */}
+          {tickets.length === 0 ? (
+            <div className="border border-border p-10 text-center">
+              <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                <T>No support tickets yet. Click "New Ticket" to get help.</T>
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tickets.map((ticket) => (
+                <div key={ticket.id} className="border border-border">
+                  {/* Ticket Header */}
+                  <button
+                    onClick={() => handleToggleTicket(ticket.id)}
+                    className="w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-muted/30 transition-colors"
+                  >
+                    {statusIcon(ticket.status)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>
+                        {ticket.subject}
+                      </p>
+                      <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mt-1" style={{ fontFamily: "var(--font-heading)" }}>
+                        {new Date(ticket.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        {" · "}
+                        <span className={ticket.status === "open" ? "text-yellow-500" : ticket.status === "replied" ? "text-primary" : ticket.status === "resolved" ? "text-green-500" : "text-muted-foreground"}>
+                          {ticket.status.toUpperCase()}
+                        </span>
+                      </p>
+                    </div>
+                    {expandedTicket === ticket.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                  </button>
+
+                  {/* Thread */}
+                  {expandedTicket === ticket.id && (
+                    <div className="border-t border-border px-6 py-4 space-y-4">
+                      {(replies[ticket.id] || []).map((reply) => (
+                        <div
+                          key={reply.id}
+                          className={`flex ${reply.is_admin ? "justify-start" : "justify-end"}`}
+                        >
+                          <div className={`max-w-[80%] px-4 py-3 rounded-lg ${reply.is_admin ? "bg-primary/10 border border-primary/20" : "bg-muted/50 border border-border"}`}>
+                            <p className="text-[9px] tracking-[0.15em] uppercase mb-1.5 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                              {reply.is_admin ? (
+                                <span className="text-primary">50mm Retina Support</span>
+                              ) : (
+                                <span className="text-muted-foreground">You</span>
+                              )}
+                              <span className="text-muted-foreground/50 ml-2 font-normal">
+                                {new Date(reply.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </p>
+                            <p className="text-sm text-foreground whitespace-pre-wrap" style={{ fontFamily: "var(--font-body)" }}>
+                              {reply.message}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Reply input (only for open/replied tickets) */}
+                      {(ticket.status === "open" || ticket.status === "replied") && (
+                        <div className="flex gap-3 pt-2">
+                          <input
+                            value={replyText[ticket.id] || ""}
+                            onChange={(e) => setReplyText((prev) => ({ ...prev, [ticket.id]: e.target.value }))}
+                            placeholder="Type your reply..."
+                            maxLength={2000}
+                            className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm"
+                            style={{ fontFamily: "var(--font-body)" }}
+                            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendReply(ticket.id); } }}
+                          />
+                          <button
+                            onClick={() => handleSendReply(ticket.id)}
+                            disabled={sendingReply === ticket.id || !replyText[ticket.id]?.trim()}
+                            className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
+                            style={{ fontFamily: "var(--font-heading)" }}
+                          >
+                            <Send className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </main>
+  );
+};
+
+export default HelpSupport;

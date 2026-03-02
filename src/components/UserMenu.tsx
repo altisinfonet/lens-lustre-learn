@@ -25,6 +25,7 @@ import {
   Compass,
   Rss,
   UserPlus,
+  HelpCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -120,6 +121,7 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
     { icon: UserPlus, label: "Referrals", to: "/referrals", show: true },
     { icon: ImageIcon, label: "My Submissions", to: "/dashboard?tab=submissions", show: true },
     { icon: Scale, label: "Judge Panel", to: "/judge", show: hasRole("judge") },
+    { icon: HelpCircle, label: "Help & Support", to: "/help-support", show: true },
   ];
 
   return (
