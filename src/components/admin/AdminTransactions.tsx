@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Download, Search, Calendar, FileText, Table2, Globe, Loader2, ArrowDownLeft, ArrowUpRight, Filter } from "lucide-react";
+import { Download, Search, Calendar, FileText, Table2, Globe, Loader2, ArrowDownLeft, ArrowUpRight, Filter, CheckCircle, XCircle } from "lucide-react";
 import T from "@/components/T";
 import jsPDF from "jspdf";
 import { format } from "date-fns";
@@ -407,8 +407,8 @@ ${filtered.map(t => `<tr>
 
       {/* Transaction Table */}
       <div className="border border-border divide-y divide-border">
-        <div className="hidden md:grid grid-cols-[1fr_1.2fr_1fr_0.8fr_0.8fr_1.5fr] gap-2 px-4 py-2.5 bg-muted/30">
-          {["Date", "User", "Type", "Amount", "Balance", "Description"].map(h => (
+        <div className="hidden md:grid grid-cols-[1fr_1.2fr_1fr_0.8fr_0.8fr_1.2fr_0.8fr] gap-2 px-4 py-2.5 bg-muted/30">
+          {["Date", "User", "Type", "Amount", "Balance", "Description", "Status"].map(h => (
             <span key={h} className="text-[8px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>{h}</span>
           ))}
         </div>
@@ -420,7 +420,7 @@ ${filtered.map(t => `<tr>
           </div>
         ) : (
           filtered.slice(0, 500).map(t => (
-            <div key={t.id} className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr_1fr_0.8fr_0.8fr_1.5fr] gap-1 md:gap-2 px-4 py-3 hover:bg-muted/20 transition-colors duration-200">
+            <div key={t.id} className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr_1fr_0.8fr_0.8fr_1.2fr_0.8fr] gap-1 md:gap-2 px-4 py-3 hover:bg-muted/20 transition-colors duration-200">
               <span className="text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                 {new Date(t.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
                 <span className="block text-[9px] opacity-60">{new Date(t.created_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>
@@ -442,6 +442,52 @@ ${filtered.map(t => `<tr>
               </span>
               <span className="text-[10px] text-muted-foreground truncate" style={{ fontFamily: "var(--font-body)" }}>
                 {t.description || "—"}
+              </span>
+              <span className="text-[10px] flex items-center gap-1">
+                {t.status === "pending" ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="px-1.5 py-0.5 border border-yellow-500/40 text-yellow-600 bg-yellow-500/5 rounded-sm text-[9px]">Pending</span>
+                    <button
+                      onClick={async () => {
+                        // Approve: credit wallet via RPC, then mark completed
+                        try {
+                          const { error: rpcErr } = await supabase.rpc("wallet_transaction", {
+                            _user_id: t.user_id,
+                            _type: "deposit",
+                            _amount: Number(t.amount),
+                            _description: `Approved: ${t.description || "UPI deposit"}`,
+                          });
+                          if (rpcErr) throw rpcErr;
+                          // Mark original pending txn as approved
+                          await supabase.from("wallet_transactions").update({ status: "approved" }).eq("id", t.id);
+                          toast({ title: "Deposit approved & credited" });
+                          fetchTransactions();
+                        } catch (err: any) {
+                          toast({ title: "Approve failed", description: err.message, variant: "destructive" });
+                        }
+                      }}
+                      className="p-1 hover:text-primary transition-colors" title="Approve & credit wallet"
+                    >
+                      <CheckCircle className="h-3.5 w-3.5 text-primary" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await supabase.from("wallet_transactions").update({ status: "rejected" }).eq("id", t.id);
+                        toast({ title: "Deposit rejected" });
+                        fetchTransactions();
+                      }}
+                      className="p-1 hover:text-destructive transition-colors" title="Reject"
+                    >
+                      <XCircle className="h-3.5 w-3.5 text-destructive" />
+                    </button>
+                  </span>
+                ) : t.status === "rejected" ? (
+                  <span className="px-1.5 py-0.5 border border-destructive/40 text-destructive bg-destructive/5 rounded-sm text-[9px]">Rejected</span>
+                ) : t.status === "approved" ? (
+                  <span className="px-1.5 py-0.5 border border-primary/40 text-primary bg-primary/5 rounded-sm text-[9px]">Approved</span>
+                ) : (
+                  <span className="text-muted-foreground text-[9px]">{t.status}</span>
+                )}
               </span>
             </div>
           ))
