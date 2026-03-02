@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Eye, EyeOff, Upload, Star, Loader2, XCircle } from "lucide-react";
 import { compressImageToFiles } from "@/lib/imageCompression";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { User } from "@supabase/supabase-js";
 
 interface POTD {
@@ -45,6 +46,8 @@ export default function AdminPhotoOfDay({ user }: { user: User | null }) {
     if (!user) return;
     setUploading(true);
     try {
+      const safe = await scanFileWithToast(file, toast, { allowedTypes: "image" });
+      if (!safe) { setUploading(false); return; }
       const baseName = `potd-${Date.now()}`;
       const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
       const webpPath = `potd/${baseName}.webp`;

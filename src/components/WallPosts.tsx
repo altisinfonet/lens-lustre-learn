@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X, Download, Share2, Link2, Copy } from "lucide-react";
 import { compressImageToFiles, getJpegDownloadUrl } from "@/lib/imageCompression";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
@@ -228,6 +229,8 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       const uploadedUrls: string[] = [];
 
       for (let i = 0; i < selectedImages.length; i++) {
+        const safe = await scanFileWithToast(selectedImages[i], toast, { allowedTypes: "image" });
+        if (!safe) { setPosting(false); return; }
         const baseName = `${Date.now()}_${i}`;
         const { webpFile, jpegFile } = await compressImageToFiles(selectedImages[i], baseName);
         const webpPath = `${user.id}/${baseName}.webp`;

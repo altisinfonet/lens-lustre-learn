@@ -13,6 +13,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { compressAvatar } from "@/lib/imageCompression";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 
 const INTEREST_OPTIONS = [
   "Wildlife", "Street", "Portrait", "Aerial", "Documentary",
@@ -262,6 +263,8 @@ const EditProfile = () => {
     }
     setUploadingAvatar(true);
     try {
+      const safe = await scanFileWithToast(file, toast, { allowedTypes: "image" });
+      if (!safe) { setUploadingAvatar(false); return; }
       const { webpFile } = await compressAvatar(file);
       const filePath = `${user.id}/avatar.webp`;
       const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, webpFile, { upsert: true });
@@ -293,6 +296,8 @@ const EditProfile = () => {
       toast({ title: "File must be under 10MB", variant: "destructive" });
       return;
     }
+    const safe = await scanFileWithToast(file, toast, { allowedTypes: "image+pdf" });
+    if (!safe) return;
     setUploadingId(true);
     const ext = file.name.split(".").pop();
     const filePath = `${user.id}/national-id.${ext}`;

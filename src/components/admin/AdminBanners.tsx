@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Eye, EyeOff, XCircle, Loader2, Upload, Image, GripVertical, Globe, Type, Save } from "lucide-react";
 import { compressImageToFiles } from "@/lib/imageCompression";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import type { User } from "@supabase/supabase-js";
 
 interface Banner {
@@ -69,6 +70,8 @@ const AdminBanners = ({ user }: { user: User | null }) => {
   const handleImageUpload = async (file: File) => {
     setUploading(true);
     try {
+      const safe = await scanFileWithToast(file, toast, { allowedTypes: "image" });
+      if (!safe) { setUploading(false); return; }
       const baseName = `banner-${Date.now()}`;
       const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
       const webpPath = `banners/${baseName}.webp`;

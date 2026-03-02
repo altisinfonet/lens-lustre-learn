@@ -9,6 +9,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { compressImageToFiles } from "@/lib/imageCompression";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 
@@ -140,6 +141,8 @@ const JournalEditor = () => {
 
   const uploadImage = async (file: File, folder: string): Promise<string | null> => {
     try {
+      const safe = await scanFileWithToast(file, toast, { allowedTypes: "image" });
+      if (!safe) return null;
       const baseName = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
       const webpPath = `${folder}/${baseName}.webp`;

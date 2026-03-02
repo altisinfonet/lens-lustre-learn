@@ -9,6 +9,7 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { useWallet } from "@/hooks/useWallet";
 import { toast } from "@/hooks/use-toast";
 import { compressImageToFiles } from "@/lib/imageCompression";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 
 const CompetitionSubmit = () => {
   const { id } = useParams<{ id: string }>();
@@ -76,6 +77,8 @@ const CompetitionSubmit = () => {
       if (!file.type.startsWith("image/")) continue;
 
       try {
+        const safe = await scanFileWithToast(file, toast, { allowedTypes: "image" });
+        if (!safe) continue;
         const baseName = crypto.randomUUID();
         const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
         const webpPath = `${user.id}/${id}/${baseName}.webp`;
