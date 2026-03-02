@@ -131,7 +131,7 @@ export default function AdminSettings({ user }: Props) {
     setTestingSmtp(true);
     setTestResult(null);
     setTestLogs([]);
-    setShowLogs(false);
+    setShowLogs(true);
     try {
       const { data, error } = await supabase.functions.invoke("test-smtp", {
         body: {
