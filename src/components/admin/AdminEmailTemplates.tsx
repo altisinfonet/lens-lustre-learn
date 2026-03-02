@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Save, Eye, Code, Type, Plus, Pencil, Trash2, XCircle, CheckCircle, Copy, ChevronDown, ToggleLeft, ToggleRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import EmailRichTextToolbar from "./EmailRichTextToolbar";
 import type { User } from "@supabase/supabase-js";
 
 interface Props {
@@ -285,15 +286,18 @@ export default function AdminEmailTemplates({ user }: Props) {
               {/* Editor */}
               <div>
                 {editorMode === "visual" ? (
-                  <div
-                    ref={editorRef}
-                    contentEditable
-                    suppressContentEditableWarning
-                    onInput={handleVisualInput}
-                    dangerouslySetInnerHTML={{ __html: editing.body_html }}
-                    className="min-h-[300px] border border-border rounded-sm p-4 bg-background focus:outline-none focus:border-primary transition-colors prose prose-sm max-w-none"
-                    style={{ fontFamily: "var(--font-body)" }}
-                  />
+                  <div>
+                    <EmailRichTextToolbar editorRef={editorRef} onInput={handleVisualInput} />
+                    <div
+                      ref={editorRef}
+                      contentEditable
+                      suppressContentEditableWarning
+                      onInput={handleVisualInput}
+                      dangerouslySetInnerHTML={{ __html: editing.body_html }}
+                      className="min-h-[300px] border border-border border-t-0 rounded-b-sm p-4 bg-background focus:outline-none focus:border-primary transition-colors prose prose-sm max-w-none"
+                      style={{ fontFamily: "var(--font-body)" }}
+                    />
+                  </div>
                 ) : (
                   <textarea
                     value={editing.body_html}
