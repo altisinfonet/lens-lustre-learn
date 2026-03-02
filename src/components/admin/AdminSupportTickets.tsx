@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import T from "@/components/T";
-import { Send, Clock, CheckCircle, MessageSquare, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, Clock, CheckCircle, MessageSquare, XCircle, ChevronDown, ChevronUp, Paperclip, FileText, Image, X } from "lucide-react";
+import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 
 interface Ticket {
   id: string;
@@ -22,6 +23,8 @@ interface Reply {
   message: string;
   is_admin: boolean;
   created_at: string;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
 }
 
 interface Props {
@@ -35,6 +38,7 @@ const AdminSupportTickets = ({ user }: Props) => {
   const [replies, setReplies] = useState<Record<string, Reply[]>>({});
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [sendingReply, setSendingReply] = useState<string | null>(null);
+  const [replyFiles, setReplyFiles] = useState<Record<string, File | null>>({});
   const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
@@ -82,25 +86,58 @@ const AdminSupportTickets = ({ user }: Props) => {
     }
   };
 
+  const uploadAttachment = async (file: File): Promise<{ url: string; name: string } | null> => {
+    const safe = await scanFileWithToast(file, toast, { allowedTypes: "image+pdf", maxSize: 10 * 1024 * 1024 });
+    if (!safe) return null;
+    const ext = file.name.split(".").pop() || "bin";
+    const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("support-attachments").upload(path, file);
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+      return null;
+    }
+    const { data: urlData } = supabase.storage.from("support-attachments").getPublicUrl(path);
+    return { url: urlData.publicUrl, name: file.name };
+  };
+
   const handleSendReply = async (ticketId: string) => {
     const text = replyText[ticketId]?.trim();
-    if (!text || !user) return;
+    const file = replyFiles[ticketId];
+    if ((!text && !file) || !user) return;
     setSendingReply(ticketId);
+
+    let attachment: { url: string; name: string } | null = null;
+    if (file) {
+      attachment = await uploadAttachment(file);
+      if (!attachment) { setSendingReply(null); return; }
+    }
 
     await supabase.from("ticket_replies").insert({
       ticket_id: ticketId,
       user_id: user.id,
-      message: text,
+      message: text || (attachment ? `Attached: ${attachment.name}` : ""),
       is_admin: true,
+      ...(attachment ? { attachment_url: attachment.url, attachment_name: attachment.name } : {}),
     } as any);
 
     // Update ticket status to replied
     await supabase.from("support_tickets").update({ status: "replied", updated_at: new Date().toISOString() } as any).eq("id", ticketId);
 
     setReplyText((prev) => ({ ...prev, [ticketId]: "" }));
+    setReplyFiles((prev) => ({ ...prev, [ticketId]: null }));
     setSendingReply(null);
     fetchReplies(ticketId);
     setTickets((prev) => prev.map((t) => t.id === ticketId ? { ...t, status: "replied", updated_at: new Date().toISOString() } : t));
+  };
+
+  const AttachmentDisplay = ({ url, name }: { url: string; name: string }) => {
+    const isPdf = name?.toLowerCase().endsWith(".pdf");
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-muted/50 border border-border rounded text-xs hover:border-primary transition-colors">
+        {isPdf ? <FileText className="h-3 w-3 text-red-500" /> : <Image className="h-3 w-3 text-blue-500" />}
+        <span className="truncate max-w-[180px]">{name || "attachment"}</span>
+      </a>
+    );
   };
 
   const updateTicketStatus = async (ticketId: string, newStatus: string) => {
@@ -237,29 +274,47 @@ const AdminSupportTickets = ({ user }: Props) => {
                         <p className="text-sm text-foreground whitespace-pre-wrap" style={{ fontFamily: "var(--font-body)" }}>
                           {reply.message}
                         </p>
+                        {reply.attachment_url && reply.attachment_name && (
+                          <AttachmentDisplay url={reply.attachment_url} name={reply.attachment_name} />
+                        )}
                       </div>
                     </div>
                   ))}
 
                   {/* Admin Reply */}
-                  <div className="flex gap-3 pt-2">
-                    <textarea
-                      value={replyText[ticket.id] || ""}
-                      onChange={(e) => setReplyText((prev) => ({ ...prev, [ticket.id]: e.target.value }))}
-                      placeholder="Type your reply to the user..."
-                      maxLength={2000}
-                      rows={2}
-                      className="flex-1 bg-transparent border border-border focus:border-primary outline-none p-3 text-sm resize-none"
-                      style={{ fontFamily: "var(--font-body)" }}
-                    />
-                    <button
-                      onClick={() => handleSendReply(ticket.id)}
-                      disabled={sendingReply === ticket.id || !replyText[ticket.id]?.trim()}
-                      className="self-end inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase px-4 py-2.5 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      <Send className="h-3 w-3" /> Reply
-                    </button>
+                  <div className="space-y-2 pt-2">
+                    {replyFiles[ticket.id] && (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted/50 border border-border text-xs">
+                        <Paperclip className="h-3 w-3" />
+                        <span className="truncate max-w-[180px]">{replyFiles[ticket.id]!.name}</span>
+                        <button onClick={() => setReplyFiles((prev) => ({ ...prev, [ticket.id]: null }))} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                      </div>
+                    )}
+                    <div className="flex gap-3">
+                      <textarea
+                        value={replyText[ticket.id] || ""}
+                        onChange={(e) => setReplyText((prev) => ({ ...prev, [ticket.id]: e.target.value }))}
+                        placeholder="Type your reply to the user..."
+                        maxLength={2000}
+                        rows={2}
+                        className="flex-1 bg-transparent border border-border focus:border-primary outline-none p-3 text-sm resize-none"
+                        style={{ fontFamily: "var(--font-body)" }}
+                      />
+                      <div className="flex flex-col gap-2 self-end">
+                        <label className="cursor-pointer p-2 text-muted-foreground hover:text-foreground transition-colors border border-border hover:border-primary">
+                          <Paperclip className="h-4 w-4" />
+                          <input type="file" accept="image/jpeg,image/jpg,application/pdf" className="hidden" onChange={(e) => e.target.files?.[0] && setReplyFiles((prev) => ({ ...prev, [ticket.id]: e.target.files![0] }))} />
+                        </label>
+                        <button
+                          onClick={() => handleSendReply(ticket.id)}
+                          disabled={sendingReply === ticket.id || (!replyText[ticket.id]?.trim() && !replyFiles[ticket.id])}
+                          className="inline-flex items-center gap-1.5 text-xs tracking-[0.1em] uppercase px-4 py-2.5 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
+                          <Send className="h-3 w-3" /> Reply
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
