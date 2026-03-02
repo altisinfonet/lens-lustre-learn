@@ -2216,7 +2216,7 @@ const Index = () => {
                 <div className="rounded-md overflow-hidden border border-border flex-shrink-0 w-[140px]">
                   <iframe
                     title="Altis Infonet Private Limited Location"
-                    src="https://www.google.com/maps?q=Altis+Infonet+Private+Limited,+Bengaluru&output=embed"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=77.6209%2C12.9660%2C77.6410%2C12.9785&layer=mapnik&marker=12.9716%2C77.6310"
                     width="100%"
                     height="120"
                     style={{ border: 0 }}
