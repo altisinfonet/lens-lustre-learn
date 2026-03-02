@@ -76,37 +76,47 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
     }
   };
 
-  // ========== Click-to-select images in editor ==========
+  // ========== Click-to-select & drag-to-resize images in editor ==========
+  const dragState = useRef<{ img: HTMLImageElement; startX: number; startWidth: number } | null>(null);
+
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
 
-    // Style all images to be selectable
-    const styleImages = () => {
-      editor.querySelectorAll("img").forEach((img) => {
-        (img as HTMLElement).style.cursor = "pointer";
+    const clearHighlights = () => {
+      editor.querySelectorAll("img").forEach(i => {
+        const el = i as HTMLElement;
+        el.style.outline = "";
+        el.style.outlineOffset = "";
+        el.style.boxShadow = "";
       });
     };
-    styleImages();
 
-    const observer = new MutationObserver(styleImages);
+    const addResizeHandles = () => {
+      editor.querySelectorAll("img").forEach((img) => {
+        const el = img as HTMLElement;
+        el.style.cursor = "pointer";
+        // Mark as having handles set up
+        if (el.dataset.resizable) return;
+        el.dataset.resizable = "true";
+        el.style.position = "relative";
+      });
+    };
+    addResizeHandles();
+
+    const observer = new MutationObserver(addResizeHandles);
     observer.observe(editor, { childList: true, subtree: true });
 
-    const handleClick = (e: MouseEvent) => {
+    // --- Click to select ---
+    const handleMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
+
       if (target.tagName === "IMG") {
         const img = target as HTMLImageElement;
         e.preventDefault();
         e.stopPropagation();
 
-        // Clear previous selection highlights
-        editor.querySelectorAll("img").forEach(i => {
-          (i as HTMLElement).style.outline = "";
-          (i as HTMLElement).style.outlineOffset = "";
-          (i as HTMLElement).style.boxShadow = "";
-        });
-
-        // Highlight selected
+        clearHighlights();
         img.style.outline = "2px solid hsl(var(--primary))";
         img.style.outlineOffset = "3px";
         img.style.boxShadow = "0 0 0 6px hsl(var(--primary) / 0.1)";
@@ -114,24 +124,78 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
         setResizeTarget(img);
         const w = parseInt(img.style.maxWidth || img.style.width || "100");
         setResizeWidth(isNaN(w) ? 100 : w);
-      } else {
-        // Deselect all
-        editor.querySelectorAll("img").forEach(i => {
-          (i as HTMLElement).style.outline = "";
-          (i as HTMLElement).style.outlineOffset = "";
-          (i as HTMLElement).style.boxShadow = "";
-        });
+
+        // Check if click is near the right or bottom edge → start drag resize
+        const rect = img.getBoundingClientRect();
+        const edgeThreshold = 16;
+        const nearRight = e.clientX >= rect.right - edgeThreshold;
+        const nearBottom = e.clientY >= rect.bottom - edgeThreshold;
+
+        if (nearRight || nearBottom) {
+          dragState.current = {
+            img,
+            startX: e.clientX,
+            startWidth: img.offsetWidth,
+          };
+          img.style.cursor = "nwse-resize";
+          document.body.style.cursor = "nwse-resize";
+          document.body.style.userSelect = "none";
+        }
+      } else if (!target.closest("[data-resize-handle]")) {
+        clearHighlights();
         setResizeTarget(null);
       }
     };
 
-    // Use mousedown for more reliable capture before contentEditable focus
-    editor.addEventListener("mousedown", handleClick);
+    // --- Drag move ---
+    const handleMouseMove = (e: MouseEvent) => {
+      // Show resize cursor when hovering near edge of any image
+      const target = e.target as HTMLElement;
+      if (target.tagName === "IMG" && !dragState.current) {
+        const rect = target.getBoundingClientRect();
+        const nearEdge = e.clientX >= rect.right - 16 || e.clientY >= rect.bottom - 16;
+        target.style.cursor = nearEdge ? "nwse-resize" : "pointer";
+      }
+
+      if (!dragState.current) return;
+      e.preventDefault();
+
+      const { img, startX, startWidth } = dragState.current;
+      const deltaX = e.clientX - startX;
+      const newPxWidth = Math.max(40, startWidth + deltaX);
+
+      // Convert to percentage of editor width
+      const editorWidth = editor.clientWidth;
+      const newPct = Math.min(100, Math.max(10, Math.round((newPxWidth / editorWidth) * 100)));
+
+      img.style.width = `${newPct}%`;
+      img.style.maxWidth = `${newPct}%`;
+      img.style.height = "auto";
+      setResizeWidth(newPct);
+    };
+
+    // --- Drag end ---
+    const handleMouseUp = () => {
+      if (!dragState.current) return;
+      const { img } = dragState.current;
+      img.style.cursor = "pointer";
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      dragState.current = null;
+      onInput();
+    };
+
+    editor.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
     return () => {
-      editor.removeEventListener("mousedown", handleClick);
+      editor.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
       observer.disconnect();
     };
-  }, [editorRef]);
+  }, [editorRef, onInput]);
 
   // ========== Image resize ==========
   const applyResize = (newWidth: number) => {
