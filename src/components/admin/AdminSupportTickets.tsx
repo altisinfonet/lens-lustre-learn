@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import T from "@/components/T";
-import { Send, Clock, CheckCircle, MessageSquare, XCircle, ChevronDown, ChevronUp, Paperclip, FileText, Image, X } from "lucide-react";
+import { Send, Clock, CheckCircle, MessageSquare, XCircle, ChevronDown, ChevronUp, Paperclip, FileText, Image, X, Trash2, ArrowUpDown } from "lucide-react";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Ticket {
   id: string;
@@ -40,6 +41,9 @@ const AdminSupportTickets = ({ user }: Props) => {
   const [sendingReply, setSendingReply] = useState<string | null>(null);
   const [replyFiles, setReplyFiles] = useState<Record<string, File | null>>({});
   const [filter, setFilter] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchTickets();
@@ -120,7 +124,6 @@ const AdminSupportTickets = ({ user }: Props) => {
       ...(attachment ? { attachment_url: attachment.url, attachment_name: attachment.name } : {}),
     } as any);
 
-    // Update ticket status to replied
     await supabase.from("support_tickets").update({ status: "replied", updated_at: new Date().toISOString() } as any).eq("id", ticketId);
 
     setReplyText((prev) => ({ ...prev, [ticketId]: "" }));
@@ -146,6 +149,42 @@ const AdminSupportTickets = ({ user }: Props) => {
     toast({ title: `Ticket marked as ${newStatus}` });
   };
 
+  const handleSelectToggle = (ticketId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(ticketId)) next.delete(ticketId);
+      else next.add(ticketId);
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(filtered.map((t) => t.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const confirmed = window.confirm(`Are you sure you want to delete ${selectedIds.size} ticket(s)? This will also delete all replies.`);
+    if (!confirmed) return;
+
+    setDeleting(true);
+    const ids = Array.from(selectedIds);
+
+    // Delete replies first, then tickets
+    await supabase.from("ticket_replies").delete().in("ticket_id", ids);
+    await supabase.from("support_tickets").delete().in("id", ids);
+
+    setTickets((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+    setSelectedIds(new Set());
+    setExpandedTicket(null);
+    setDeleting(false);
+    toast({ title: `${ids.length} ticket(s) deleted` });
+  };
+
   const statusIcon = (status: string) => {
     switch (status) {
       case "open": return <Clock className="h-3.5 w-3.5 text-yellow-500" />;
@@ -156,7 +195,12 @@ const AdminSupportTickets = ({ user }: Props) => {
     }
   };
 
-  const filtered = filter === "all" ? tickets : tickets.filter((t) => t.status === filter);
+  const filtered = (filter === "all" ? tickets : tickets.filter((t) => t.status === filter))
+    .sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
 
   if (loading) {
     return (
@@ -168,11 +212,24 @@ const AdminSupportTickets = ({ user }: Props) => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-          {filtered.length} ticket{filtered.length !== 1 ? "s" : ""}
-        </span>
-        <div className="flex gap-2">
+      {/* Top bar: count, sort, filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+            {filtered.length} ticket{filtered.length !== 1 ? "s" : ""}
+          </span>
+          {/* Sort toggle */}
+          <button
+            onClick={() => setSortOrder((o) => o === "newest" ? "oldest" : "newest")}
+            className="inline-flex items-center gap-1 text-[10px] tracking-[0.15em] uppercase px-3 py-1.5 border border-border text-muted-foreground hover:border-foreground hover:text-foreground transition-all"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            <ArrowUpDown className="h-3 w-3" />
+            {sortOrder === "newest" ? "Newest first" : "Oldest first"}
+          </button>
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
           {["all", "open", "replied", "resolved", "closed"].map((f) => (
             <button
               key={f}
@@ -186,6 +243,31 @@ const AdminSupportTickets = ({ user }: Props) => {
         </div>
       </div>
 
+      {/* Bulk actions bar — only visible when items selected */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-4 mb-4 px-4 py-3 border border-destructive/30 bg-destructive/5">
+          <span className="text-[10px] tracking-[0.15em] uppercase text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+            {selectedIds.size} selected
+          </span>
+          <button
+            onClick={handleBulkDelete}
+            disabled={deleting}
+            className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-4 py-1.5 bg-destructive text-destructive-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            <Trash2 className="h-3 w-3" />
+            {deleting ? "Deleting..." : "Delete Selected"}
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="border border-border p-10 text-center">
           <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-4" />
@@ -195,30 +277,48 @@ const AdminSupportTickets = ({ user }: Props) => {
         </div>
       ) : (
         <div className="space-y-3">
+          {/* Select all */}
+          <div className="flex items-center gap-2 px-6 py-2">
+            <Checkbox
+              checked={filtered.length > 0 && filtered.every((t) => selectedIds.has(t.id))}
+              onCheckedChange={(checked) => handleSelectAll(!!checked)}
+            />
+            <span className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+              Select all
+            </span>
+          </div>
+
           {filtered.map((ticket) => (
-            <div key={ticket.id} className="border border-border">
+            <div key={ticket.id} className={`border ${selectedIds.has(ticket.id) ? "border-primary/50 bg-primary/5" : "border-border"}`}>
               {/* Header */}
-              <button
-                onClick={() => handleToggle(ticket.id)}
-                className="w-full flex items-center gap-4 px-6 py-4 text-left hover:bg-muted/30 transition-colors"
-              >
-                {statusIcon(ticket.status)}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>
-                    {ticket.subject}
-                  </p>
-                  <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mt-1" style={{ fontFamily: "var(--font-heading)" }}>
-                    <span className="text-foreground/70">{ticket.user_name}</span>
-                    {" · "}
-                    {new Date(ticket.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    {" · "}
-                    <span className={ticket.status === "open" ? "text-yellow-500" : ticket.status === "replied" ? "text-primary" : ticket.status === "resolved" ? "text-green-500" : "text-muted-foreground"}>
-                      {ticket.status.toUpperCase()}
-                    </span>
-                  </p>
-                </div>
-                {expandedTicket === ticket.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-              </button>
+              <div className="flex items-center gap-2 px-6 py-4">
+                <Checkbox
+                  checked={selectedIds.has(ticket.id)}
+                  onCheckedChange={() => handleSelectToggle(ticket.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <button
+                  onClick={() => handleToggle(ticket.id)}
+                  className="flex-1 flex items-center gap-4 text-left hover:bg-muted/30 transition-colors -my-4 py-4 -mr-6 pr-6"
+                >
+                  {statusIcon(ticket.status)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-body)" }}>
+                      {ticket.subject}
+                    </p>
+                    <p className="text-[10px] tracking-[0.1em] uppercase text-muted-foreground mt-1" style={{ fontFamily: "var(--font-heading)" }}>
+                      <span className="text-foreground/70">{ticket.user_name}</span>
+                      {" · "}
+                      {new Date(ticket.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      {" · "}
+                      <span className={ticket.status === "open" ? "text-yellow-500" : ticket.status === "replied" ? "text-primary" : ticket.status === "resolved" ? "text-green-500" : "text-muted-foreground"}>
+                        {ticket.status.toUpperCase()}
+                      </span>
+                    </p>
+                  </div>
+                  {expandedTicket === ticket.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+              </div>
 
               {/* Thread */}
               {expandedTicket === ticket.id && (
