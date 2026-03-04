@@ -76,7 +76,7 @@ const Dashboard = () => {
   // Role application state
   const [applications, setApplications] = useState<RoleApplication[]>([]);
   const [showApplyForm, setShowApplyForm] = useState(false);
-  const [applyRole, setApplyRole] = useState<"judge" | "content_editor">("judge");
+  const [applyRole, setApplyRole] = useState<"judge" | "content_editor" | "registered_photographer">("judge");
   const [applyReason, setApplyReason] = useState("");
   const [applyPortfolio, setApplyPortfolio] = useState("");
   const [applyExperience, setApplyExperience] = useState("");
@@ -484,8 +484,18 @@ const Dashboard = () => {
                 <T>Role Applications</T>
               </span>
 
-              {(canApplyFor("judge") || canApplyFor("content_editor")) && !showApplyForm && (
+              {(canApplyFor("judge") || canApplyFor("content_editor") || canApplyFor("registered_photographer")) && !showApplyForm && (
                 <div className="flex flex-wrap gap-3 mb-6">
+                  {canApplyFor("registered_photographer") && (
+                    <button
+                      onClick={() => { setApplyRole("registered_photographer"); setShowApplyForm(true); }}
+                      className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-3 border border-primary/30 bg-primary/5 hover:border-primary/50 transition-all duration-500"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      <Camera className="h-3.5 w-3.5 text-primary" />
+                      <T>Apply as Registered Photographer</T>
+                    </button>
+                  )}
                   {canApplyFor("judge") && (
                     <button
                       onClick={() => { setApplyRole("judge"); setShowApplyForm(true); }}
@@ -513,7 +523,7 @@ const Dashboard = () => {
                 <div className="border border-border p-6 md:p-8 mb-6 space-y-5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs tracking-[0.2em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                      <T>{`Apply as ${applyRole === "judge" ? "Judge" : "Content Editor"}`}</T>
+                      <T>{`Apply as ${applyRole === "judge" ? "Judge" : applyRole === "registered_photographer" ? "Registered Photographer" : "Content Editor"}`}</T>
                     </span>
                     <button onClick={() => setShowApplyForm(false)} className="text-muted-foreground hover:text-foreground">
                       <XCircle className="h-4 w-4" />
@@ -527,7 +537,7 @@ const Dashboard = () => {
                     <Textarea
                       value={applyReason}
                       onChange={(e) => setApplyReason(e.target.value)}
-                      placeholder={applyRole === "judge" ? "Describe your experience in photography judging..." : "Tell us about your writing and photography experience..."}
+                      placeholder={applyRole === "judge" ? "Describe your experience in photography judging..." : applyRole === "registered_photographer" ? "Tell us about your photography experience and specialties..." : "Tell us about your writing and photography experience..."}
                       className="bg-transparent"
                       maxLength={1000}
                     />
@@ -583,7 +593,7 @@ const Dashboard = () => {
                       <div className="mt-0.5">{appStatusIcon(app.status)}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-light" style={{ fontFamily: "var(--font-heading)" }}>
-                          <T>{`${app.requested_role === "content_editor" ? "Content Editor" : "Judge"} Application`}</T>
+                          <T>{`${app.requested_role === "content_editor" ? "Content Editor" : app.requested_role === "registered_photographer" ? "Registered Photographer" : "Judge"} Application`}</T>
                         </p>
                         <p className="text-[11px] text-muted-foreground mt-0.5" style={{ fontFamily: "var(--font-body)" }}>
                           <T>Status:</T> <span className={app.status === "approved" ? "text-primary" : app.status === "rejected" ? "text-destructive" : "text-yellow-500"}><T>{app.status}</T></span>
@@ -602,7 +612,7 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                  {canApplyFor("judge") || canApplyFor("content_editor")
+                  {canApplyFor("judge") || canApplyFor("content_editor") || canApplyFor("registered_photographer")
                     ? <T>No applications yet. Apply for a role above to unlock new features.</T>
                     : <T>You already have all available roles.</T>}
                 </p>
