@@ -35,7 +35,7 @@ export function calcProfileCompletion(p: ProfileFields): {
   sections: CompletionSection[];
 } {
   const sections: CompletionSection[] = [
-    { label: "Profile Picture", percentage: 10, completed: !!p.avatar_url },
+    { label: "Profile Picture", percentage: 5, completed: !!p.avatar_url },
     { label: "Full Name", percentage: 10, completed: !!p.full_name?.trim() },
     { label: "Bio", percentage: 8, completed: !!p.bio?.trim() },
     { label: "Portfolio URL", percentage: 5, completed: !!p.portfolio_url?.trim() },

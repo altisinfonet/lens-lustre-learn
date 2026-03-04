@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2, AlertCircle, ExternalLink, Twitter, Youtube } from "lucide-react";
+import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2, AlertCircle, ExternalLink, Twitter, Youtube, CloudOff, Cloud } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import T from "@/components/T";
@@ -7,7 +7,7 @@ import PrivacyToggle, { DEFAULT_PRIVACY, type PrivacyLevel } from "@/components/
 import { COUNTRIES } from "@/lib/profileCompletion";
 import { getCountries, getStatesForCountry, getCitiesForState } from "@/lib/locationData";
 import { SUPPORTED_LANGUAGES, useLanguage } from "@/hooks/useLanguage";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +32,10 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [sendingReset, setSendingReset] = useState(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadDone = useRef(false);
   const [preferredLanguage, setPreferredLanguage] = useState("English");
 
   const handlePasswordReset = async () => {
@@ -372,8 +375,7 @@ const EditProfile = () => {
     national_id_url: nationalIdUrl,
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performSave = useCallback(async () => {
     if (!user) return;
     // Validate all fields
     const nameErr = validateFullName(fullName);
@@ -387,10 +389,11 @@ const EditProfile = () => {
     const ytErr = validateYoutube(youtubeUrl);
     if (nameErr || bioErr || phoneErr || whatsappErr || postalErr || fbErr || igErr || twErr || ytErr) {
       setErrors({ fullName: nameErr, bio: bioErr, phone: phoneErr, whatsapp: whatsappErr, postalCode: postalErr, facebook: fbErr, instagram: igErr, twitter: twErr, youtube: ytErr });
-      toast({ title: "Please fix validation errors before saving", variant: "destructive" });
+      setSaveStatus("error");
       return;
     }
     setSaving(true);
+    setSaveStatus("saving");
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -431,13 +434,41 @@ const EditProfile = () => {
     }
     setSaving(false);
     if (error) {
+      setSaveStatus("error");
       toast({ title: "Failed to save", description: error.message, variant: "destructive" });
     } else {
+      setSaveStatus("saved");
       await setGlobalLanguage(preferredLanguage);
-      toast({ title: "Profile updated" });
-      navigate("/dashboard");
+      // Reset to idle after 2s
+      setTimeout(() => setSaveStatus("idle"), 2000);
     }
-  };
+  }, [user, fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, nationalIdUrl, preferredLanguage, privacySettings, bankAccountName, bankAccountNumber, bankName, bankIfsc, setGlobalLanguage]);
+
+  // Debounced auto-save: triggers 1.5s after any field change
+  const triggerAutoSave = useCallback(() => {
+    if (!initialLoadDone.current) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    setSaveStatus("idle");
+    autoSaveTimerRef.current = setTimeout(() => {
+      performSave();
+    }, 1500);
+  }, [performSave]);
+
+  // Watch all form fields for changes and trigger auto-save
+  useEffect(() => {
+    triggerAutoSave();
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, bankAccountName, bankAccountNumber, bankName, bankIfsc, nationalIdUrl, preferredLanguage, privacySettings]);
+
+  // Mark initial load as done after profile is fetched
+  useEffect(() => {
+    if (!loading) {
+      // Small delay to skip the initial state-setting triggers
+      setTimeout(() => { initialLoadDone.current = true; }, 200);
+    }
+  }, [loading]);
 
   if (authLoading || loading) {
     return (
@@ -463,7 +494,7 @@ const EditProfile = () => {
         {/* Completion Bar */}
         <ProfileCompletionBar profile={profileData} showSections className="mb-12 border border-border p-6" />
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="space-y-8">
           {/* Profile Picture */}
           <div className="flex items-center gap-6">
             <div className="relative group">
@@ -970,20 +1001,42 @@ const EditProfile = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 pt-4 border-t border-border">
-            <button type="submit" disabled={saving}
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
-              style={{ fontFamily: "var(--font-heading)" }}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              <T>Save Changes</T>
-            </button>
+          {/* Auto-save status indicator */}
+          <div className="flex items-center gap-3 pt-4 border-t border-border">
+            <div className="flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
+              {saveStatus === "saving" && (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  <span className="text-muted-foreground"><T>Saving...</T></span>
+                </>
+              )}
+              {saveStatus === "saved" && (
+                <>
+                  <Cloud className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-primary"><T>All changes saved</T></span>
+                </>
+              )}
+              {saveStatus === "error" && (
+                <>
+                  <CloudOff className="h-3.5 w-3.5 text-destructive" />
+                  <span className="text-destructive"><T>Fix errors to save</T></span>
+                </>
+              )}
+              {saveStatus === "idle" && (
+                <>
+                  <Cloud className="h-3.5 w-3.5 text-muted-foreground/50" />
+                  <span className="text-muted-foreground/50"><T>Auto-save enabled</T></span>
+                </>
+              )}
+            </div>
+            <div className="flex-1" />
             <Link to="/dashboard"
               className="text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500"
               style={{ fontFamily: "var(--font-heading)" }}>
-              <T>Cancel</T>
+              <T>← Back to Dashboard</T>
             </Link>
           </div>
-        </form>
+        </div>
       </div>
     </main>
   );
