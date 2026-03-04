@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import GiftCelebrationModal from "@/components/GiftCelebrationModal";
 import AnnouncementBar from "@/components/AnnouncementBar";
+import AskAnything from "@/components/AskAnything";
 
 /** Pages where the Navbar should NOT be shown (auth screens) */
 const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
@@ -29,6 +30,7 @@ const Layout = () => {
       )}
       <GiftCelebrationModal />
       <Outlet />
+      {!hideNav && <AskAnything />}
     </>
   );
 };

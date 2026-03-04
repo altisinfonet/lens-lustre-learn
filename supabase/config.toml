@@ -2,3 +2,6 @@ project_id = "isywidnfnjhtydmdfgtk"
 
 [functions.translate]
 verify_jwt = false
+
+[functions.ask-anything]
+verify_jwt = false
