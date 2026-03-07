@@ -8,6 +8,7 @@ import T from "@/components/T";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { generateArticlePdf } from "@/lib/generateArticlePdf";
+import PageSEO from "@/components/PageSEO";
 import { toast } from "@/hooks/use-toast";
 
 interface Article {
@@ -127,6 +128,7 @@ const JournalArticle = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
+      <PageSEO title={article.title} />
       {/* Back nav */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
