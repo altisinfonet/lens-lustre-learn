@@ -68,9 +68,10 @@ async function uploadToS3(fileBytes: Uint8Array, contentType: string, s3Key: str
 
   const signedHeaders = "content-type;host;x-amz-content-sha256;x-amz-date";
 
+  const canonicalUri = new URL(url).pathname;
   const canonicalRequest = [
     "PUT",
-    `/${s3Key}`,
+    canonicalUri,
     "",
     canonicalHeaders,
     signedHeaders,
