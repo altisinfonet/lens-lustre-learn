@@ -6,6 +6,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import T from "@/components/T";
 import { motion } from "framer-motion";
+import PageSEO from "@/components/PageSEO";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -188,6 +189,7 @@ const CompetitionDetail = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
+      <PageSEO title={competition.title} />
       {/* Hero */}
       <div className="relative h-72 md:h-96 overflow-hidden bg-muted">
         {competition.cover_image_url ? (
