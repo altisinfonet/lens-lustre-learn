@@ -734,12 +734,47 @@ export default function AdminSettings({ user }: Props) {
             <div>
               <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Public / CDN URL</label>
               <input className={inputClass} placeholder="https://cdn.example.com" value={s3.public_url || ""} onChange={(e) => setS3({ ...s3, public_url: e.target.value })} />
-              <p className="text-[9px] text-muted-foreground mt-1">Public URL where uploaded files are served. Required for Cloudflare R2 and providers where the API endpoint differs from the public URL. Leave empty for AWS S3.</p>
+              <p className="text-[9px] text-muted-foreground mt-1">Public URL where uploaded files are served. Required for Cloudflare R2 and providers where the API endpoint differs from the public URL. Leave empty for AWS S3. <strong>Only applies to public buckets.</strong></p>
             </div>
             <div>
               <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Path Prefix (Optional)</label>
               <input className={inputClass} placeholder="uploads/50mm-retina" value={s3.path_prefix} onChange={(e) => setS3({ ...s3, path_prefix: e.target.value })} />
               <p className="text-[9px] text-muted-foreground mt-1">Files will be stored under this prefix in the bucket</p>
+            </div>
+
+            {/* Bucket Privacy Info */}
+            <div className="col-span-full border border-border/50 rounded-sm p-4 bg-muted/10 mt-2">
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] tracking-[0.15em] uppercase text-foreground font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+                  Bucket Access Levels
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[9px] tracking-[0.1em] uppercase text-muted-foreground mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+                    Public Buckets (CDN URL)
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["avatars", "post-images", "competition-photos", "journal-images", "course-images", "portfolio-images"].map((b) => (
+                      <span key={b} className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">{b}</span>
+                    ))}
+                  </div>
+                  <p className="text-[8px] text-muted-foreground mt-1.5">Files served via the Public / CDN URL above. Accessible to anyone.</p>
+                </div>
+                <div>
+                  <p className="text-[9px] tracking-[0.1em] uppercase text-muted-foreground mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+                    Private Buckets (Signed URLs)
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["national-ids", "support-attachments"].map((b) => (
+                      <span key={b} className="text-[9px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">{b}</span>
+                    ))}
+                  </div>
+                  <p className="text-[8px] text-muted-foreground mt-1.5">Files require authentication. Accessed via time-limited signed URLs (15 min). Only the file owner or admins can view.</p>
+                </div>
+              </div>
+            </div>
             </div>
           </div>
           <div className="flex items-center gap-3 pt-2">
