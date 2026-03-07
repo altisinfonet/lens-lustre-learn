@@ -88,6 +88,35 @@ const FileUploadDropZone = ({
 
     const isImage = file.type.startsWith("image/");
     const baseName = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    // --- S3 path ---
+    if (useS3) {
+      try {
+        let uploadFile: File | Blob = file;
+        let uploadName = file.name;
+
+        if (isImage && compressImages) {
+          try {
+            const { webpFile } = await compressImageToFiles(file, baseName);
+            uploadFile = webpFile;
+            uploadName = `${baseName}.webp`;
+          } catch {
+            // Compression failed, use original
+          }
+        }
+
+        const ext = uploadName.split(".").pop() || "bin";
+        const s3Path = `${bucket}/${folder}/${baseName}.${ext}`;
+        const result = await uploadToS3(uploadFile, s3Path, uploadName);
+        onFileUploaded({ url: result.url, name: file.name, type: file.type, size: file.size });
+        return;
+      } catch (err: any) {
+        toast({ title: "S3 upload failed", description: err.message, variant: "destructive" });
+        return;
+      }
+    }
+
+    // --- Default Supabase storage path ---
     let uploadPath: string;
     let uploadFile: File | Blob = file;
 
@@ -123,7 +152,7 @@ const FileUploadDropZone = ({
     }
     const { data } = supabase.storage.from(bucket).getPublicUrl(uploadPath);
     onFileUploaded({ url: data.publicUrl, name: file.name, type: file.type, size: file.size });
-  }, [bucket, folder, allowedTypes, maxSize, compressImages, onFileUploaded]);
+  }, [bucket, folder, allowedTypes, maxSize, compressImages, onFileUploaded, useS3]);
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     setUploading(true);
