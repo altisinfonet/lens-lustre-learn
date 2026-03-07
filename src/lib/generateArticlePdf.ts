@@ -11,7 +11,7 @@ interface ArticleData {
   author_name?: string | null;
 }
 
-const BRAND_NAME = "50mm Retina";
+const BRAND_NAME = "50mm Retina World";
 const LOGO_PATH = "/images/logo.png";
 
 // A4 dimensions in mm

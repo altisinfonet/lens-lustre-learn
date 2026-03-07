@@ -177,7 +177,7 @@ export default function AdminEmailTemplates({ user }: Props) {
     return html
       .replace(/\{\{user_name\}\}/g, "John Doe")
       .replace(/\{\{user_email\}\}/g, "john@example.com")
-      .replace(/\{\{site_name\}\}/g, "50mm Retina")
+      .replace(/\{\{site_name\}\}/g, "50mm Retina World")
       .replace(/\{\{site_url\}\}/g, "https://50mmretina.com")
       .replace(/\{\{amount\}\}/g, "₹500")
       .replace(/\{\{competition_title\}\}/g, "Street Photography 2026")

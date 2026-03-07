@@ -26,11 +26,11 @@ interface GlobalSEO {
 }
 
 const defaultGlobalSEO: GlobalSEO = {
-  title_template: "%s — 50mm Retina",
-  default_title: "50mm Retina — Competitions, Education & Journal for Photographers",
-  default_description: "Join 50mm Retina — the ultimate platform for photographers. Enter global competitions, master your craft through expert courses, and explore our photography journal.",
+  title_template: "%s — 50mm Retina World",
+  default_title: "50mm Retina World — Competitions, Education & Journal for Photographers",
+  default_description: "Join 50mm Retina World — the ultimate platform for photographers. Enter global competitions, master your craft through expert courses, and explore our photography journal.",
   default_og_image: "",
-  site_name: "50mm Retina",
+  site_name: "50mm Retina World",
   twitter_handle: "",
   canonical_base: "https://lens-lustre-learn.lovable.app",
   google_verification: "",
@@ -243,12 +243,12 @@ ${urls.map((u) => `  <url>
             <div className="grid md:grid-cols-2 gap-5">
               <div>
                 <label className={labelClass} style={headingFont}>Title Template</label>
-                <input value={globalSEO.title_template} onChange={(e) => setGlobalSEO((p) => ({ ...p, title_template: e.target.value }))} className={inputClass} style={bodyFont} placeholder="%s — 50mm Retina" />
+                <input value={globalSEO.title_template} onChange={(e) => setGlobalSEO((p) => ({ ...p, title_template: e.target.value }))} className={inputClass} style={bodyFont} placeholder="%s — 50mm Retina World" />
                 <p className="text-[10px] text-muted-foreground mt-1" style={bodyFont}>Use %s as page title placeholder</p>
               </div>
               <div>
                 <label className={labelClass} style={headingFont}>Default Title</label>
-                <input value={globalSEO.default_title} onChange={(e) => setGlobalSEO((p) => ({ ...p, default_title: e.target.value }))} className={inputClass} style={bodyFont} placeholder="50mm Retina" />
+                <input value={globalSEO.default_title} onChange={(e) => setGlobalSEO((p) => ({ ...p, default_title: e.target.value }))} className={inputClass} style={bodyFont} placeholder="50mm Retina World" />
               </div>
               <div className="md:col-span-2">
                 <label className={labelClass} style={headingFont}>Default Description</label>

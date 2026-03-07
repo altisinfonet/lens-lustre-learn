@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
     const { to_email, smtp_config } = await req.json();
     const provider = smtp_config?.provider || "brevo";
     const fromEmail = smtp_config?.from_email || smtp_config?.username || "noreply@example.com";
-    const fromName = smtp_config?.from_name || "50mm Retina";
+    const fromName = smtp_config?.from_name || "50mm Retina World";
     const apiKey = smtp_config?.api_key || "";
 
     log(logs, "Config", "info", `Provider: ${provider}`);

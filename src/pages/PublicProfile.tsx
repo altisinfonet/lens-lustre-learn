@@ -711,7 +711,7 @@ const PublicProfile = () => {
       {/* Footer */}
       <div className="container mx-auto px-4 md:px-8 max-w-7xl py-8 text-center">
         <Link to="/" className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground hover:text-primary transition-colors duration-500" style={headingFont}>
-          ← Back to 50mm Retina
+          ← Back to 50mm Retina World
         </Link>
       </div>
     </main>

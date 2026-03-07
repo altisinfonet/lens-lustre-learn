@@ -122,7 +122,7 @@ const Referrals = () => {
   const handleShare = async () => {
     if (navigator.share) {
       await navigator.share({
-        title: "Join me on 50mm Retina!",
+        title: "Join me on 50mm Retina World!",
         text: "Sign up using my referral link and we both earn rewards!",
         url: referralLink,
       });
@@ -139,9 +139,9 @@ const Referrals = () => {
       toast({ title: "Invalid email(s)", description: invalidEmails.join(", "), variant: "destructive" });
       return;
     }
-    const subject = encodeURIComponent("Join me on 50mm Retina!");
+    const subject = encodeURIComponent("Join me on 50mm Retina World!");
     const body = encodeURIComponent(
-      `Hey!\n\nI'd love for you to join 50mm Retina — a photography community where you can showcase your work, enter competitions, and learn from others.\n\nSign up using my referral link and we both earn rewards:\n${referralLink}\n\nSee you there!`
+      `Hey!\n\nI'd love for you to join 50mm Retina World — a photography community where you can showcase your work, enter competitions, and learn from others.\n\nSign up using my referral link and we both earn rewards:\n${referralLink}\n\nSee you there!`
     );
     const mailto = `mailto:${emails.join(",")}?subject=${subject}&body=${body}`;
     window.open(mailto, "_blank");

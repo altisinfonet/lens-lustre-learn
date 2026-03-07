@@ -700,7 +700,7 @@ const Dashboard = () => {
                 <ActivityItem
                   icon={<User className="h-3.5 w-3.5" />}
                   title="Account created"
-                  description="Welcome to 50mm Retina"
+                  description="Welcome to 50mm Retina World"
                   time={memberSince}
                 />
                 {roles.map((r) => (
