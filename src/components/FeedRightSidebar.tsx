@@ -120,7 +120,15 @@ const FeedRightSidebar = () => {
     const settings = data.value as any;
     const slots = settings.slots || [];
     const sidebarAds = slots.filter((s: any) => s.is_active && s.placement === "sidebar");
-    setAds(sidebarAds.map((s: any) => ({ id: s.id, html: s.html_code, placement: s.placement })));
+    setAds(sidebarAds.map((s: any) => ({
+      id: s.id,
+      html: s.html_code || s.ad_code || "",
+      placement: s.placement,
+      image_url: s.image_url || "",
+      click_url: s.click_url || "",
+      alt_text: s.alt_text || "",
+      image_source: s.image_source || "code",
+    })));
   };
 
   const loadTrendingPhotos = async () => {
