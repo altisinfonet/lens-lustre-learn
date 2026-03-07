@@ -130,9 +130,10 @@ Deno.serve(async (req) => {
 
     const signedHeaders = "content-type;host;x-amz-content-sha256;x-amz-date";
 
+    const canonicalUri = new URL(url).pathname;
     const canonicalRequest = [
       "PUT",
-      `/${s3Key}`,
+      canonicalUri,
       "",
       canonicalHeaders,
       signedHeaders,
