@@ -27,6 +27,7 @@ import AdminEmailTemplates from "@/components/admin/AdminEmailTemplates";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUpload, storageRemove } from "@/lib/storageUpload";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";

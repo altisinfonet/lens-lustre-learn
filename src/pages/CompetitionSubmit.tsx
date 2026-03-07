@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUploadImagePair, storageRemove } from "@/lib/storageUpload";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { useWallet } from "@/hooks/useWallet";

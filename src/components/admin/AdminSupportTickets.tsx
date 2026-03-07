@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUpload } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
 import T from "@/components/T";
 import { Send, Clock, CheckCircle, MessageSquare, XCircle, ChevronDown, ChevronUp, Paperclip, FileText, Image, X, Trash2, ArrowUpDown } from "lucide-react";

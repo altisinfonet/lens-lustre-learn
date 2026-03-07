@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUploadImagePair } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Eye, EyeOff, XCircle, Loader2, Upload, Image, GripVertical, Globe, Type, Save } from "lucide-react";
 import { compressImageToFiles } from "@/lib/imageCompression";

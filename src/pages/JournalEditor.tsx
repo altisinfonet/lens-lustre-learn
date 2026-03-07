@@ -4,6 +4,7 @@ import { Save, Eye, Upload, X, Image as ImageIcon, GripVertical } from "lucide-r
 import Breadcrumbs from "@/components/Breadcrumbs";
 import InlineImageDropZone from "@/components/InlineImageDropZone";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUploadImagePair } from "@/lib/storageUpload";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";

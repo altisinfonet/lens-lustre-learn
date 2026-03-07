@@ -5,6 +5,7 @@ import { compressImageToFiles, getJpegDownloadUrl } from "@/lib/imageCompression
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUploadImagePair } from "@/lib/storageUpload";
 import { profilesPublic } from "@/lib/profilesPublic";
 import { toast } from "@/hooks/use-toast";
 import T from "@/components/T";

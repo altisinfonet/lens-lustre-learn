@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUpload } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
 import { compressAvatar } from "@/lib/imageCompression";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
