@@ -775,7 +775,6 @@ export default function AdminSettings({ user }: Props) {
                 </div>
               </div>
             </div>
-            </div>
           </div>
           <div className="flex items-center gap-3 pt-2">
             <button
