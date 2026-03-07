@@ -292,31 +292,21 @@ Deno.serve(async (req) => {
     // Action: "migrate-folder" - list subfolders then migrate each
     if (action === "list-folders") {
       const targetBucket = body.bucket;
+      const parentFolder = body.folder || "";
       
-      // Recursively collect all folders
-      async function collectFolders(bucket: string, prefix: string): Promise<string[]> {
-        const { data: items } = await adminClient.storage.from(bucket).list(prefix, { limit: 1000 });
-        const folders: string[] = [];
-        let rootFileCount = 0;
-        for (const item of (items || [])) {
-          if (!item.id) {
-            const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
-            folders.push(fullPath);
-            // Recurse into subfolder
-            const subFolders = await collectFolders(bucket, fullPath);
-            folders.push(...subFolders);
-          } else if (!prefix) {
-            rootFileCount++;
-          }
+      const { data: items } = await adminClient.storage.from(targetBucket).list(parentFolder, { limit: 1000 });
+      const folders: string[] = [];
+      let rootFiles = 0;
+      for (const item of (items || [])) {
+        if (!item.id) {
+          const fullPath = parentFolder ? `${parentFolder}/${item.name}` : item.name;
+          folders.push(fullPath);
+        } else {
+          rootFiles++;
         }
-        return folders;
       }
-
-      const allFolders = await collectFolders(targetBucket, "");
-      const { data: rootItems } = await adminClient.storage.from(targetBucket).list("", { limit: 1000 });
-      const rootFiles = (rootItems || []).filter(f => f.id).length;
       
-      return new Response(JSON.stringify({ folders: allFolders, rootFiles }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ folders, rootFiles }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(JSON.stringify({ error: "Invalid action. Use 'list', 'migrate', or 'list-folders'" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
