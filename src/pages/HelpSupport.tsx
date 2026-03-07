@@ -184,8 +184,22 @@ const HelpSupport = () => {
     const lower = name?.toLowerCase() || "";
     const isPdf = lower.endsWith(".pdf");
     const isDoc = /\.(docx?|xlsx?)$/.test(lower);
+    const [signedUrl, setSignedUrl] = useState<string | null>(null);
+
+    // If URL is not a full URL (private file path), get signed URL
+    useEffect(() => {
+      if (url && !url.startsWith("http")) {
+        import("@/lib/storageUpload").then(({ storageGetSignedUrl }) => {
+          storageGetSignedUrl("support-attachments", url).then(setSignedUrl).catch(() => setSignedUrl(null));
+        });
+      } else {
+        setSignedUrl(url);
+      }
+    }, [url]);
+
+    const href = signedUrl || url;
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-muted/50 border border-border rounded text-xs hover:border-primary transition-colors">
+      <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-muted/50 border border-border rounded text-xs hover:border-primary transition-colors">
         {isPdf ? <FileText className="h-3 w-3 text-red-500" /> : isDoc ? <FileSpreadsheet className="h-3 w-3 text-green-500" /> : <Image className="h-3 w-3 text-blue-500" />}
         <span className="truncate max-w-[180px]">{name || "attachment"}</span>
       </a>

@@ -36,11 +36,13 @@ export function clearS3Cache() {
 
 /**
  * Upload a file to S3 via the edge function proxy.
+ * @param isPrivate - if true, file won't get a public URL
  */
-export async function uploadToS3(file: File | Blob, path: string, fileName?: string): Promise<S3UploadResult> {
+export async function uploadToS3(file: File | Blob, path: string, fileName?: string, isPrivate = false): Promise<S3UploadResult> {
   const formData = new FormData();
   formData.append("file", file, fileName || (file instanceof File ? file.name : "file"));
   formData.append("path", path);
+  if (isPrivate) formData.append("private", "true");
 
   const { data, error } = await supabase.functions.invoke("s3-upload", {
     body: formData,

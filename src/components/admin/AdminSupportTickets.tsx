@@ -136,8 +136,21 @@ const AdminSupportTickets = ({ user }: Props) => {
 
   const AttachmentDisplay = ({ url, name }: { url: string; name: string }) => {
     const isPdf = name?.toLowerCase().endsWith(".pdf");
+    const [signedUrl, setSignedUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+      if (url && !url.startsWith("http")) {
+        import("@/lib/storageUpload").then(({ storageGetSignedUrl }) => {
+          storageGetSignedUrl("support-attachments", url).then(setSignedUrl).catch(() => setSignedUrl(null));
+        });
+      } else {
+        setSignedUrl(url);
+      }
+    }, [url]);
+
+    const href = signedUrl || url;
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-muted/50 border border-border rounded text-xs hover:border-primary transition-colors">
+      <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-muted/50 border border-border rounded text-xs hover:border-primary transition-colors">
         {isPdf ? <FileText className="h-3 w-3 text-red-500" /> : <Image className="h-3 w-3 text-blue-500" />}
         <span className="truncate max-w-[180px]">{name || "attachment"}</span>
       </a>
