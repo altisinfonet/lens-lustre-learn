@@ -180,7 +180,7 @@ const AskAnything = () => {
                     >
                       Ask Anything
                     </h3>
-                    <p className="text-[10px] text-muted-foreground">Photography & 50mm Retina World</p>
+                    <p className="text-[10px] text-muted-foreground">50mm Retina World — AI Assistant</p>
                   </div>
                 </div>
                 <button
