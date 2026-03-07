@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Save, Megaphone, Plus, Trash2, Eye, EyeOff, Monitor, Smartphone, Tablet } from "lucide-react";
+import { Loader2, Save, Megaphone, Plus, Trash2, Eye, EyeOff, Monitor, Smartphone, Tablet, Upload, Link, Image as ImageIcon, Crop as CropIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import ImageCropModal from "@/components/admin/ImageCropModal";
+import { storageUpload } from "@/lib/storageUpload";
 import type { User } from "@supabase/supabase-js";
 
 type Placement = "header" | "footer" | "sidebar" | "in-content" | "between-entries" | "lightbox-overlay";
 type Device = "desktop" | "mobile" | "tablet";
+type AdImageSource = "upload" | "url" | "code";
 
 interface AdSlot {
   id: string;
@@ -19,15 +22,19 @@ interface AdSlot {
   start_date: string;
   end_date: string;
   notes: string;
+  image_url?: string;
+  image_source?: AdImageSource;
+  click_url?: string;
+  alt_text?: string;
 }
 
-const placementOptions: { value: Placement; label: string }[] = [
-  { value: "header", label: "Header (Top Banner)" },
-  { value: "footer", label: "Footer (Bottom Banner)" },
-  { value: "sidebar", label: "Sidebar" },
-  { value: "in-content", label: "In-Content (Between Sections)" },
-  { value: "between-entries", label: "Between Entries / Cards" },
-  { value: "lightbox-overlay", label: "Lightbox Overlay" },
+const placementOptions: { value: Placement; label: string; width: number; height: number; aspect: number }[] = [
+  { value: "header", label: "Header (Top Banner)", width: 970, height: 90, aspect: 970 / 90 },
+  { value: "footer", label: "Footer (Bottom Banner)", width: 970, height: 90, aspect: 970 / 90 },
+  { value: "sidebar", label: "Sidebar", width: 300, height: 250, aspect: 300 / 250 },
+  { value: "in-content", label: "In-Content (Between Sections)", width: 728, height: 90, aspect: 728 / 90 },
+  { value: "between-entries", label: "Between Entries / Cards", width: 600, height: 200, aspect: 600 / 200 },
+  { value: "lightbox-overlay", label: "Lightbox Overlay", width: 640, height: 480, aspect: 640 / 480 },
 ];
 
 const deviceOptions: { value: Device; label: string; icon: typeof Monitor }[] = [
@@ -47,6 +54,10 @@ const emptySlot = (): AdSlot => ({
   start_date: "",
   end_date: "",
   notes: "",
+  image_url: "",
+  image_source: "upload",
+  click_url: "",
+  alt_text: "",
 });
 
 export default function AdminAdvertisements({ user }: { user: User | null }) {
@@ -55,6 +66,9 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("slots");
   const [editingSlot, setEditingSlot] = useState<AdSlot | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -113,8 +127,13 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
       toast({ title: "Please enter a slot name", variant: "destructive" });
       return;
     }
-    if (!editingSlot.ad_code.trim()) {
+    const source = editingSlot.image_source || "code";
+    if (source === "code" && !editingSlot.ad_code.trim()) {
       toast({ title: "Please enter the ad code/HTML", variant: "destructive" });
+      return;
+    }
+    if ((source === "upload" || source === "url") && !editingSlot.image_url?.trim()) {
+      toast({ title: "Please provide an image (upload or URL)", variant: "destructive" });
       return;
     }
 
@@ -126,6 +145,32 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
     saveSlots(updated);
     setEditingSlot(null);
   };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setCropSrc(objectUrl);
+    e.target.value = "";
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    setCropSrc(null);
+    if (!editingSlot || !user) return;
+    setUploading(true);
+    try {
+      const path = `ads/${editingSlot.id}-${Date.now()}.png`;
+      const { url } = await storageUpload("journal-images", path, croppedFile);
+      setEditingSlot({ ...editingSlot, image_url: url, image_source: "upload" });
+      toast({ title: "Image uploaded" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
+  const getPlacementInfo = (placement: Placement) =>
+    placementOptions.find((p) => p.value === placement) || placementOptions[0];
 
   const toggleDevice = (device: Device) => {
     if (!editingSlot) return;
@@ -284,17 +329,188 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
                 </div>
               </div>
 
-              {/* Ad Code */}
+              {/* Ad Creative Source */}
               <div>
-                <label className={labelClass} style={headingFont}>Ad Code / HTML *</label>
-                <textarea
-                  value={editingSlot.ad_code}
-                  onChange={(e) => setEditingSlot({ ...editingSlot, ad_code: e.target.value })}
-                  className={`${inputClass} resize-none border border-border rounded-sm p-3 font-mono`}
-                  rows={6}
-                  placeholder={'<!-- Paste your ad code here -->\n<div class="ad-banner">\n  <a href="https://...">\n    <img src="https://..." alt="Ad" />\n  </a>\n</div>'}
-                />
+                <label className={labelClass} style={headingFont}>Ad Creative Type</label>
+                <div className="flex gap-3 mb-4">
+                  {([
+                    { value: "upload" as AdImageSource, label: "Upload Image", icon: Upload },
+                    { value: "url" as AdImageSource, label: "Image URL", icon: Link },
+                    { value: "code" as AdImageSource, label: "HTML / Code", icon: CropIcon },
+                  ]).map(({ value, label, icon: Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setEditingSlot({ ...editingSlot, image_source: value })}
+                      className={`flex items-center gap-2 px-4 py-2.5 border text-xs tracking-[0.1em] uppercase transition-all ${
+                        (editingSlot.image_source || "code") === value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-foreground/30"
+                      }`}
+                      style={headingFont}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {(() => {
+                  const source = editingSlot.image_source || "code";
+                  const pInfo = getPlacementInfo(editingSlot.placement);
+
+                  if (source === "upload") {
+                    return (
+                      <div className="space-y-4">
+                        <div className="border border-dashed border-border rounded-sm p-5 bg-muted/10">
+                          <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-3" style={headingFont}>
+                            <ImageIcon className="h-4 w-4 text-primary" />
+                            <span>Recommended: {pInfo.width} × {pInfo.height}px ({pInfo.label})</span>
+                          </div>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-xs tracking-[0.15em] uppercase hover:border-primary hover:text-primary transition-all disabled:opacity-50"
+                            style={headingFont}
+                          >
+                            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                            {uploading ? "Uploading…" : "Choose & Crop Image"}
+                          </button>
+                        </div>
+
+                        {editingSlot.image_url && (
+                          <div className="border border-border rounded-sm p-3">
+                            <p className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={headingFont}>Preview</p>
+                            <img
+                              src={editingSlot.image_url}
+                              alt="Ad preview"
+                              className="max-h-40 object-contain rounded-sm border border-border/50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditingSlot({ ...editingSlot, image_url: "" })}
+                              className="mt-2 text-[9px] tracking-wider uppercase text-destructive hover:underline"
+                              style={headingFont}
+                            >
+                              Remove Image
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <label className={labelClass} style={headingFont}>Click URL (where ad links to)</label>
+                            <input
+                              value={editingSlot.click_url || ""}
+                              onChange={(e) => setEditingSlot({ ...editingSlot, click_url: e.target.value })}
+                              className={inputClass}
+                              style={bodyFont}
+                              placeholder="https://example.com/landing-page"
+                            />
+                          </div>
+                          <div>
+                            <label className={labelClass} style={headingFont}>Alt Text</label>
+                            <input
+                              value={editingSlot.alt_text || ""}
+                              onChange={(e) => setEditingSlot({ ...editingSlot, alt_text: e.target.value })}
+                              className={inputClass}
+                              style={bodyFont}
+                              placeholder="Description of the ad"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (source === "url") {
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-1" style={headingFont}>
+                          <ImageIcon className="h-4 w-4 text-primary" />
+                          <span>Recommended: {pInfo.width} × {pInfo.height}px ({pInfo.label})</span>
+                        </div>
+                        <div>
+                          <label className={labelClass} style={headingFont}>Image URL *</label>
+                          <input
+                            value={editingSlot.image_url || ""}
+                            onChange={(e) => setEditingSlot({ ...editingSlot, image_url: e.target.value })}
+                            className={inputClass}
+                            style={bodyFont}
+                            placeholder="https://example.com/ad-banner.jpg"
+                          />
+                        </div>
+
+                        {editingSlot.image_url && (
+                          <div className="border border-border rounded-sm p-3">
+                            <p className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={headingFont}>Preview</p>
+                            <img
+                              src={editingSlot.image_url}
+                              alt="Ad preview"
+                              className="max-h-40 object-contain rounded-sm border border-border/50"
+                              onError={(e) => (e.currentTarget.style.display = "none")}
+                            />
+                          </div>
+                        )}
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <label className={labelClass} style={headingFont}>Click URL (where ad links to)</label>
+                            <input
+                              value={editingSlot.click_url || ""}
+                              onChange={(e) => setEditingSlot({ ...editingSlot, click_url: e.target.value })}
+                              className={inputClass}
+                              style={bodyFont}
+                              placeholder="https://example.com/landing-page"
+                            />
+                          </div>
+                          <div>
+                            <label className={labelClass} style={headingFont}>Alt Text</label>
+                            <input
+                              value={editingSlot.alt_text || ""}
+                              onChange={(e) => setEditingSlot({ ...editingSlot, alt_text: e.target.value })}
+                              className={inputClass}
+                              style={bodyFont}
+                              placeholder="Description of the ad"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // code mode
+                  return (
+                    <div>
+                      <label className={labelClass} style={headingFont}>Ad Code / HTML *</label>
+                      <textarea
+                        value={editingSlot.ad_code}
+                        onChange={(e) => setEditingSlot({ ...editingSlot, ad_code: e.target.value })}
+                        className={`${inputClass} resize-none border border-border rounded-sm p-3 font-mono`}
+                        rows={6}
+                        placeholder={'<!-- Paste your ad code here -->\n<div class="ad-banner">\n  <a href="https://...">\n    <img src="https://..." alt="Ad" />\n  </a>\n</div>'}
+                      />
+                    </div>
+                  );
+                })()}
               </div>
+
+              {/* Crop Modal */}
+              {cropSrc && (
+                <ImageCropModal
+                  imageSrc={cropSrc}
+                  onCropComplete={handleCropComplete}
+                  onCancel={() => setCropSrc(null)}
+                />
+              )}
 
               {/* Notes */}
               <div>
