@@ -20,7 +20,7 @@ const FacebookPhotoGrid = ({ urls, onPhotoClick }: FacebookPhotoGridProps) => {
 
   const Photo = ({ src, index, className = "", overlay }: { src: string; index: number; className?: string; overlay?: string }) => (
     <div
-      className={`relative group/photo overflow-hidden cursor-pointer bg-muted/30 ${className}`}
+      className={`relative group/photo overflow-hidden cursor-pointer bg-muted/30 aspect-square ${className}`}
       onClick={() => openLightbox(index)}
     >
       <img
