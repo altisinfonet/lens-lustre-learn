@@ -71,8 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setTimeout(() => linkReferral(session.user), 100);
           setTimeout(() => logAuthEvent(session.user.id, 'login'), 0);
         }
-        if (_event === 'SIGNED_UP') {
-          setTimeout(() => logAuthEvent(session.user.id, 'signup'), 0);
+        if (_event === 'USER_UPDATED') {
+          setTimeout(() => logAuthEvent(session.user.id, 'profile_updated'), 0);
         }
         if (_event === 'PASSWORD_RECOVERY') {
           setTimeout(() => logAuthEvent(session.user.id, 'password_recovery'), 0);
