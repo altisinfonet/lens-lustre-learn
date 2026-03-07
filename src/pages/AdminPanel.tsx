@@ -24,6 +24,7 @@ import AdminTransactions from "@/components/admin/AdminTransactions";
 import AdminReferrals from "@/components/admin/AdminReferrals";
 import AdminSupportTickets from "@/components/admin/AdminSupportTickets";
 import AdminEmailTemplates from "@/components/admin/AdminEmailTemplates";
+import AdminActivityLogs from "@/components/admin/AdminActivityLogs";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
