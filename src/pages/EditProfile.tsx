@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUpload } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
 import { compressAvatar } from "@/lib/imageCompression";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
@@ -301,14 +302,8 @@ const EditProfile = () => {
       if (!safe) { setUploadingAvatar(false); return; }
       const { webpFile } = await compressAvatar(file);
       const filePath = `${user.id}/avatar.webp`;
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, webpFile, { upsert: true });
-      if (uploadError) {
-        toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
-        setUploadingAvatar(false);
-        return;
-      }
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      const result = await storageUpload("avatars", filePath, webpFile, { upsert: true, fileName: "avatar.webp" });
+      const newUrl = `${result.url}?t=${Date.now()}`;
       await supabase.from("profiles").update({ avatar_url: newUrl } as any).eq("id", user.id);
       setAvatarUrl(newUrl);
       toast({ title: "Profile picture updated" });
@@ -335,8 +330,9 @@ const EditProfile = () => {
     setUploadingId(true);
     const ext = file.name.split(".").pop();
     const filePath = `${user.id}/national-id.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("national-ids").upload(filePath, file, { upsert: true });
-    if (uploadError) {
+    try {
+      await storageUpload("national-ids", filePath, file, { upsert: true, fileName: file.name });
+    } catch (uploadError: any) {
       toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
       setUploadingId(false);
       return;

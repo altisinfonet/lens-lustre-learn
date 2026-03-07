@@ -4,6 +4,7 @@ import { Save, Eye, Upload, X, Image as ImageIcon, GripVertical } from "lucide-r
 import Breadcrumbs from "@/components/Breadcrumbs";
 import InlineImageDropZone from "@/components/InlineImageDropZone";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUploadImagePair } from "@/lib/storageUpload";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
@@ -147,16 +148,8 @@ const JournalEditor = () => {
       const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
       const webpPath = `${folder}/${baseName}.webp`;
       const jpegPath = `${folder}/${baseName}.jpg`;
-      const [webpRes] = await Promise.all([
-        supabase.storage.from("journal-images").upload(webpPath, webpFile),
-        supabase.storage.from("journal-images").upload(jpegPath, jpegFile),
-      ]);
-      if (webpRes.error) {
-        toast({ title: "Upload failed", description: webpRes.error.message, variant: "destructive" });
-        return null;
-      }
-      const { data } = supabase.storage.from("journal-images").getPublicUrl(webpPath);
-      return data.publicUrl;
+      const result = await storageUploadImagePair("journal-images", webpPath, jpegPath, webpFile, jpegFile);
+      return result.url;
     } catch (err: any) {
       toast({ title: "Compression failed", description: err.message, variant: "destructive" });
       return null;

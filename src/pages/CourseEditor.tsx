@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { Save, Eye, Plus, Trash2, GripVertical, Upload, X } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUploadImagePair } from "@/lib/storageUpload";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
@@ -103,12 +104,8 @@ const CourseEditor = () => {
       const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
       const webpPath = `covers/${baseName}.webp`;
       const jpegPath = `covers/${baseName}.jpg`;
-      const [webpRes] = await Promise.all([
-        supabase.storage.from("course-images").upload(webpPath, webpFile),
-        supabase.storage.from("course-images").upload(jpegPath, jpegFile),
-      ]);
-      if (webpRes.error) { toast({ title: "Upload failed", description: webpRes.error.message, variant: "destructive" }); return null; }
-      return supabase.storage.from("course-images").getPublicUrl(webpPath).data.publicUrl;
+      const result = await storageUploadImagePair("course-images", webpPath, jpegPath, webpFile, jpegFile);
+      return result.url;
     } catch (err: any) {
       toast({ title: "Compression failed", variant: "destructive" }); return null;
     }

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { scanFileWithToast, type AllowedFileType } from "@/lib/fileSecurityScanner";
 import { compressImageToFiles } from "@/lib/imageCompression";
-import { isS3Enabled, uploadToS3 } from "@/lib/s3Upload";
+import { storageUpload, storageUploadImagePair } from "@/lib/storageUpload";
 
 export interface UploadedFile {
   url: string;
@@ -74,85 +74,38 @@ const FileUploadDropZone = ({
   const [showGalleryPanel, setShowGalleryPanel] = useState(false);
   const [galleryFiles, setGalleryFiles] = useState<GalleryFile[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
-  const [useS3, setUseS3] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    isS3Enabled().then(setUseS3);
-  }, []);
-
   const uploadSingleFile = useCallback(async (file: File) => {
-    // Security scan
     const safe = await scanFileWithToast(file, toast, { allowedTypes, maxSize });
     if (!safe) return;
 
     const isImage = file.type.startsWith("image/");
     const baseName = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-    // --- S3 path ---
-    if (useS3) {
-      try {
-        let uploadFile: File | Blob = file;
-        let uploadName = file.name;
-
-        if (isImage && compressImages) {
-          try {
-            const { webpFile } = await compressImageToFiles(file, baseName);
-            uploadFile = webpFile;
-            uploadName = `${baseName}.webp`;
-          } catch {
-            // Compression failed, use original
-          }
-        }
-
-        const ext = uploadName.split(".").pop() || "bin";
-        const s3Path = `${bucket}/${folder}/${baseName}.${ext}`;
-        const result = await uploadToS3(uploadFile, s3Path, uploadName);
-        onFileUploaded({ url: result.url, name: file.name, type: file.type, size: file.size });
-        return;
-      } catch (err: any) {
-        toast({ title: "S3 upload failed", description: err.message, variant: "destructive" });
-        return;
-      }
-    }
-
-    // --- Default Supabase storage path ---
-    let uploadPath: string;
-    let uploadFile: File | Blob = file;
-
-    if (isImage && compressImages) {
-      try {
-        const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
-        const webpPath = `${folder}/${baseName}.webp`;
-        const jpegPath = `${folder}/${baseName}.jpg`;
-        const [webpRes] = await Promise.all([
-          supabase.storage.from(bucket).upload(webpPath, webpFile),
-          supabase.storage.from(bucket).upload(jpegPath, jpegFile),
-        ]);
-        if (webpRes.error) {
-          toast({ title: "Upload failed", description: webpRes.error.message, variant: "destructive" });
+    try {
+      if (isImage && compressImages) {
+        try {
+          const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
+          const webpPath = `${folder}/${baseName}.webp`;
+          const jpegPath = `${folder}/${baseName}.jpg`;
+          const result = await storageUploadImagePair(bucket, webpPath, jpegPath, webpFile, jpegFile);
+          onFileUploaded({ url: result.url, name: file.name, type: file.type, size: file.size });
           return;
+        } catch {
+          toast({ title: "Compression failed, uploading original", variant: "default" });
         }
-        const { data } = supabase.storage.from(bucket).getPublicUrl(webpPath);
-        onFileUploaded({ url: data.publicUrl, name: file.name, type: file.type, size: file.size });
-        return;
-      } catch {
-        toast({ title: "Compression failed, uploading original", variant: "default" });
       }
-    }
 
-    // Non-image or compression failed
-    const ext = file.name.split(".").pop() || "bin";
-    uploadPath = `${folder}/${baseName}.${ext}`;
-
-    const { error } = await supabase.storage.from(bucket).upload(uploadPath, uploadFile);
-    if (error) {
-      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
-      return;
+      // Non-image or compression failed
+      const ext = file.name.split(".").pop() || "bin";
+      const uploadPath = `${folder}/${baseName}.${ext}`;
+      const result = await storageUpload(bucket, uploadPath, file, { fileName: file.name });
+      onFileUploaded({ url: result.url, name: file.name, type: file.type, size: file.size });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
-    const { data } = supabase.storage.from(bucket).getPublicUrl(uploadPath);
-    onFileUploaded({ url: data.publicUrl, name: file.name, type: file.type, size: file.size });
-  }, [bucket, folder, allowedTypes, maxSize, compressImages, onFileUploaded, useS3]);
+  }, [bucket, folder, allowedTypes, maxSize, compressImages, onFileUploaded]);
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     setUploading(true);

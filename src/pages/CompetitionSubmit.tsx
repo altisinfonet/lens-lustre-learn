@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { storageUploadImagePair, storageRemove } from "@/lib/storageUpload";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { useWallet } from "@/hooks/useWallet";
@@ -84,16 +85,10 @@ const CompetitionSubmit = () => {
         const webpPath = `${user.id}/${id}/${baseName}.webp`;
         const jpegPath = `${user.id}/${id}/${baseName}.jpg`;
 
-        const [webpRes, _jpegRes] = await Promise.all([
-          supabase.storage.from("competition-photos").upload(webpPath, webpFile),
-          supabase.storage.from("competition-photos").upload(jpegPath, jpegFile),
-        ]);
-        if (webpRes.error) {
-          toast({ title: `Upload failed: ${file.name}`, description: webpRes.error.message, variant: "destructive" });
-          continue;
-        }
-        const { data: urlData } = supabase.storage.from("competition-photos").getPublicUrl(webpPath);
-        setPhotos((prev) => [...prev, { url: urlData.publicUrl, path: webpPath }]);
+        const uploadResult = await storageUploadImagePair(
+          "competition-photos", webpPath, jpegPath, webpFile, jpegFile
+        );
+        setPhotos((prev) => [...prev, { url: uploadResult.url, path: uploadResult.path }]);
       } catch (err: any) {
         toast({ title: `Compression failed: ${file.name}`, variant: "destructive" });
       }
@@ -105,7 +100,7 @@ const CompetitionSubmit = () => {
 
   const removePhoto = async (index: number) => {
     const photo = photos[index];
-    await supabase.storage.from("competition-photos").remove([photo.path]);
+    await storageRemove("competition-photos", [photo.path]);
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
