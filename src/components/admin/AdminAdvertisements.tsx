@@ -4,7 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, Save, Megaphone, Plus, Trash2, Eye, EyeOff, Monitor, Smartphone, Tablet, Upload, Link, Image as ImageIcon, Crop as CropIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ImageCropModal from "@/components/admin/ImageCropModal";
-import { uploadFile } from "@/lib/storageUpload";
+import { storageUpload } from "@/lib/storageUpload";
 import type { User } from "@supabase/supabase-js";
 
 type Placement = "header" | "footer" | "sidebar" | "in-content" | "between-entries" | "lightbox-overlay";
