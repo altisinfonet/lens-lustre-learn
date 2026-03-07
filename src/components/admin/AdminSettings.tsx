@@ -745,6 +745,11 @@ export default function AdminSettings({ user }: Props) {
               Save Storage Settings
             </button>
           </div>
+
+          {/* Bulk Migration Tool */}
+          {s3.enabled && s3.bucket_name && s3.access_key_id && (
+            <StorageMigrationPanel />
+          )}
         </div>
       </div>
 
