@@ -40,7 +40,7 @@ const DANGEROUS_PATTERNS = [
   /<script[\s>]/i,
   /javascript:/i,
   /vbscript:/i,
-  /on\w+\s*=/i, // onclick=, onerror=, etc.
+  /\bon(click|error|load|mouseover|mouseout|focus|blur|submit|change|keydown|keyup|keypress)\s*=/i, // specific event handlers only
   /eval\s*\(/i,
   /document\.(cookie|write|location)/i,
   /window\.(location|open)/i,
@@ -49,7 +49,6 @@ const DANGEROUS_PATTERNS = [
   /<embed/i,
   /<svg[^>]*on\w+/i,
   /data:text\/html/i,
-  /\\x[0-9a-f]{2}/i, // hex-encoded payloads
   /base64[^a-z0-9]*,(.*<script)/i,
 ];
 
@@ -235,12 +234,14 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
     }
   }
 
-  // 5. Scan file content for embedded malicious payloads
-  const scanSize = Math.min(file.size, MAX_SCAN_BYTES);
-  const textContent = await readFileText(file, scanSize);
-  const maliciousReason = scanForMaliciousContent(textContent, isPdf);
-  if (maliciousReason) {
-    return { safe: false, reason: maliciousReason };
+  // 5. Scan file content for embedded malicious payloads (skip for images — binary data causes false positives)
+  if (!isImage) {
+    const scanSize = Math.min(file.size, MAX_SCAN_BYTES);
+    const textContent = await readFileText(file, scanSize);
+    const maliciousReason = scanForMaliciousContent(textContent, isPdf);
+    if (maliciousReason) {
+      return { safe: false, reason: maliciousReason };
+    }
   }
 
   // 6. For images, verify they're decodable (catches polyglot files)
