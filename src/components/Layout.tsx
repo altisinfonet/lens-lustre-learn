@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import GiftCelebrationModal from "@/components/GiftCelebrationModal";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import AskAnything from "@/components/AskAnything";
+import PageSEO from "@/components/PageSEO";
 
 /** Pages where the Navbar should NOT be shown (auth screens) */
 const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
@@ -15,6 +16,7 @@ const Layout = () => {
 
   return (
     <>
+      <PageSEO />
       {!hideNav && isHome && (
         /* Home page: announcement + navbar float above hero as a single absolute group */
         <div className="absolute top-0 left-0 right-0 z-50">
