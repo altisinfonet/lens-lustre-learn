@@ -184,20 +184,37 @@ Deno.serve(async (req) => {
       const results: Record<string, number> = {};
       const bucketNames = buckets || ["competition-photos", "journal-images", "course-images", "portfolio-images", "avatars", "post-images"];
       
-      for (const bucket of bucketNames) {
-        try {
-          const { data: files } = await adminClient.storage.from(bucket).list("", {
-            limit: 1000,
+      // Recursive file counter
+      async function countFiles(bucket: string, folder: string): Promise<number> {
+        let count = 0;
+        let offset = 0;
+        const batchSize = 1000;
+        let hasMore = true;
+        while (hasMore) {
+          const { data: items } = await adminClient.storage.from(bucket).list(folder, {
+            limit: batchSize,
+            offset,
             sortBy: { column: "created_at", order: "asc" },
           });
-          // Count files recursively (list top-level, count non-folders)
-          let count = 0;
-          if (files) {
-            for (const f of files) {
-              if (f.id) count++; // files have ids, folders don't
+          if (!items || items.length === 0) break;
+          for (const item of items) {
+            if (item.id) {
+              count++; // it's a file
+            } else {
+              // it's a folder — recurse
+              const subPath = folder ? `${folder}/${item.name}` : item.name;
+              count += await countFiles(bucket, subPath);
             }
           }
-          results[bucket] = count;
+          hasMore = items.length === batchSize;
+          offset += items.length;
+        }
+        return count;
+      }
+
+      for (const bucket of bucketNames) {
+        try {
+          results[bucket] = await countFiles(bucket, "");
         } catch {
           results[bucket] = 0;
         }
