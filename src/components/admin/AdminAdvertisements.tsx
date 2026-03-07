@@ -5,6 +5,7 @@ import { Loader2, Save, Megaphone, Plus, Trash2, Eye, EyeOff, Monitor, Smartphon
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ImageCropModal from "@/components/admin/ImageCropModal";
 import { storageUpload } from "@/lib/storageUpload";
+import { compressImageToFiles } from "@/lib/imageCompression";
 import type { User } from "@supabase/supabase-js";
 
 type Placement = "header" | "footer" | "sidebar" | "in-content" | "between-entries" | "lightbox-overlay";
