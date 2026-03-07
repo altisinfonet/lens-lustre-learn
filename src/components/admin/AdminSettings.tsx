@@ -53,6 +53,7 @@ interface LogEntry {
 
 const defaultS3: S3StorageSettings = {
   enabled: false,
+  provider: "aws",
   bucket_name: "",
   region: "us-east-1",
   access_key_id: "",
