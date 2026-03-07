@@ -40,7 +40,7 @@ const DANGEROUS_PATTERNS = [
   /<script[\s>]/i,
   /javascript:/i,
   /vbscript:/i,
-  /on\w+\s*=/i, // onclick=, onerror=, etc.
+  /\bon(click|error|load|mouseover|mouseout|focus|blur|submit|change|keydown|keyup|keypress)\s*=/i, // specific event handlers only
   /eval\s*\(/i,
   /document\.(cookie|write|location)/i,
   /window\.(location|open)/i,
