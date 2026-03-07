@@ -569,15 +569,15 @@ export default function AdminSettings({ user }: Props) {
         </div>
       </div>
 
-      {/* AWS S3 Storage Settings */}
+      {/* Cloud Storage Settings */}
       <div className="border border-border rounded-sm overflow-hidden">
         <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-card/50">
           <Cloud className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-medium tracking-wide uppercase" style={{ fontFamily: "var(--font-heading)" }}>AWS S3 Storage</h3>
+          <h3 className="text-sm font-medium tracking-wide uppercase" style={{ fontFamily: "var(--font-heading)" }}>Cloud Storage (S3-Compatible)</h3>
         </div>
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-3 mb-2">
-            <label className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>Enable S3 Storage</label>
+            <label className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>Enable External Storage</label>
             <button
               type="button"
               onClick={() => setS3({ ...s3, enabled: !s3.enabled })}
@@ -590,32 +590,124 @@ export default function AdminSettings({ user }: Props) {
             </span>
           </div>
           <p className="text-[10px] text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>
-            When enabled, all user-uploaded files (images, documents) will be stored in your AWS S3 bucket instead of the default storage.
-            This includes competition photos, journal images, avatars, portfolio images, course images, and support attachments.
+            When enabled, all user-uploaded files (images, documents) will be stored in your chosen cloud storage provider instead of the default storage.
           </p>
+
+          {/* Provider Preset Selector */}
+          <div>
+            <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Storage Provider</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
+              {[
+                { id: "aws", label: "Amazon S3", endpoint: "", regionLabel: "AWS Region" },
+                { id: "gcs", label: "Google Cloud Storage", endpoint: "https://storage.googleapis.com", regionLabel: "GCS Region" },
+                { id: "azure", label: "Azure Blob Storage", endpoint: "", regionLabel: "Region" },
+                { id: "digitalocean", label: "DigitalOcean Spaces", endpoint: "", regionLabel: "DO Region" },
+                { id: "wasabi", label: "Wasabi", endpoint: "", regionLabel: "Wasabi Region" },
+                { id: "backblaze", label: "Backblaze B2", endpoint: "", regionLabel: "B2 Region" },
+                { id: "cloudflare", label: "Cloudflare R2", endpoint: "", regionLabel: "Auto" },
+                { id: "minio", label: "MinIO (Self-hosted)", endpoint: "", regionLabel: "Region" },
+              ].map((provider) => (
+                <button
+                  key={provider.id}
+                  type="button"
+                  onClick={() => {
+                    const presets: Record<string, Partial<S3StorageSettings>> = {
+                      aws: { endpoint: "", region: s3.region || "us-east-1" },
+                      gcs: { endpoint: "https://storage.googleapis.com", region: "auto" },
+                      azure: { endpoint: `https://${s3.bucket_name || "ACCOUNT"}.blob.core.windows.net`, region: "auto" },
+                      digitalocean: { endpoint: `https://${s3.region || "nyc3"}.digitaloceanspaces.com`, region: s3.region || "nyc3" },
+                      wasabi: { endpoint: `https://s3.${s3.region || "us-east-1"}.wasabisys.com`, region: s3.region || "us-east-1" },
+                      backblaze: { endpoint: `https://s3.${s3.region || "us-west-004"}.backblazeb2.com`, region: s3.region || "us-west-004" },
+                      cloudflare: { endpoint: "", region: "auto" },
+                      minio: { endpoint: s3.endpoint || "http://localhost:9000", region: "us-east-1" },
+                    };
+                    setS3({ ...s3, ...presets[provider.id], provider: provider.id as any });
+                  }}
+                  className={`text-[9px] tracking-[0.1em] uppercase px-3 py-2.5 border rounded-sm transition-colors text-center ${
+                    (s3 as any).provider === provider.id
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  }`}
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  {provider.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Provider-specific help text */}
+          {(s3 as any).provider && (
+            <div className="border border-border/50 rounded-sm px-4 py-3 bg-muted/20 mb-2">
+              <p className="text-[10px] text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+                {(s3 as any).provider === "aws" && "Use your IAM Access Key and Secret. Ensure your S3 bucket has the appropriate CORS and public access policies configured."}
+                {(s3 as any).provider === "gcs" && "Create an HMAC key in Google Cloud Console → Cloud Storage → Settings → Interoperability. Use the Access Key and Secret as credentials."}
+                {(s3 as any).provider === "azure" && "Use Azure Storage Account name as bucket, and a Shared Access Signature (SAS) or Storage Account Key. Set the endpoint to https://ACCOUNT.blob.core.windows.net."}
+                {(s3 as any).provider === "digitalocean" && "Create a Spaces access key in DigitalOcean → API → Spaces Keys. Set the endpoint to https://REGION.digitaloceanspaces.com."}
+                {(s3 as any).provider === "wasabi" && "Use Wasabi access keys from the Wasabi Console. Set the endpoint to https://s3.REGION.wasabisys.com."}
+                {(s3 as any).provider === "backblaze" && "Create an Application Key in Backblaze B2. Use the keyID as Access Key and the applicationKey as Secret. Set the endpoint to https://s3.REGION.backblazeb2.com."}
+                {(s3 as any).provider === "cloudflare" && "Get your R2 API token from Cloudflare Dashboard → R2 → Manage R2 API Tokens. Set endpoint to https://ACCOUNT_ID.r2.cloudflarestorage.com."}
+                {(s3 as any).provider === "minio" && "Use your MinIO server's access key and secret key. Set the endpoint to your MinIO server URL (e.g. http://localhost:9000)."}
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>S3 Bucket Name</label>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Bucket Name</label>
               <input className={inputClass} placeholder="my-50mm-retina-bucket" value={s3.bucket_name} onChange={(e) => setS3({ ...s3, bucket_name: e.target.value })} />
             </div>
             <div>
-              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>AWS Region</label>
-              <select className={inputClass} value={s3.region} onChange={(e) => setS3({ ...s3, region: e.target.value })}>
-                <option value="us-east-1">US East (N. Virginia) — us-east-1</option>
-                <option value="us-east-2">US East (Ohio) — us-east-2</option>
-                <option value="us-west-1">US West (N. California) — us-west-1</option>
-                <option value="us-west-2">US West (Oregon) — us-west-2</option>
-                <option value="eu-west-1">EU (Ireland) — eu-west-1</option>
-                <option value="eu-west-2">EU (London) — eu-west-2</option>
-                <option value="eu-central-1">EU (Frankfurt) — eu-central-1</option>
-                <option value="ap-south-1">Asia Pacific (Mumbai) — ap-south-1</option>
-                <option value="ap-southeast-1">Asia Pacific (Singapore) — ap-southeast-1</option>
-                <option value="ap-southeast-2">Asia Pacific (Sydney) — ap-southeast-2</option>
-                <option value="ap-northeast-1">Asia Pacific (Tokyo) — ap-northeast-1</option>
-                <option value="sa-east-1">South America (São Paulo) — sa-east-1</option>
-                <option value="me-south-1">Middle East (Bahrain) — me-south-1</option>
-                <option value="af-south-1">Africa (Cape Town) — af-south-1</option>
-              </select>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Region</label>
+              {(s3 as any).provider === "digitalocean" ? (
+                <select className={inputClass} value={s3.region} onChange={(e) => setS3({ ...s3, region: e.target.value, endpoint: `https://${e.target.value}.digitaloceanspaces.com` })}>
+                  <option value="nyc3">NYC3 (New York)</option>
+                  <option value="sfo3">SFO3 (San Francisco)</option>
+                  <option value="ams3">AMS3 (Amsterdam)</option>
+                  <option value="sgp1">SGP1 (Singapore)</option>
+                  <option value="fra1">FRA1 (Frankfurt)</option>
+                  <option value="blr1">BLR1 (Bangalore)</option>
+                  <option value="syd1">SYD1 (Sydney)</option>
+                </select>
+              ) : (s3 as any).provider === "backblaze" ? (
+                <select className={inputClass} value={s3.region} onChange={(e) => setS3({ ...s3, region: e.target.value, endpoint: `https://s3.${e.target.value}.backblazeb2.com` })}>
+                  <option value="us-west-004">US West 004</option>
+                  <option value="us-west-002">US West 002</option>
+                  <option value="eu-central-003">EU Central 003</option>
+                </select>
+              ) : (s3 as any).provider === "wasabi" ? (
+                <select className={inputClass} value={s3.region} onChange={(e) => setS3({ ...s3, region: e.target.value, endpoint: `https://s3.${e.target.value}.wasabisys.com` })}>
+                  <option value="us-east-1">US East 1 (Virginia)</option>
+                  <option value="us-east-2">US East 2 (Virginia)</option>
+                  <option value="us-west-1">US West 1 (Oregon)</option>
+                  <option value="us-central-1">US Central 1 (Texas)</option>
+                  <option value="eu-central-1">EU Central 1 (Amsterdam)</option>
+                  <option value="eu-central-2">EU Central 2 (Frankfurt)</option>
+                  <option value="eu-west-1">EU West 1 (London)</option>
+                  <option value="eu-west-2">EU West 2 (Paris)</option>
+                  <option value="ap-northeast-1">AP Northeast 1 (Tokyo)</option>
+                  <option value="ap-southeast-1">AP Southeast 1 (Singapore)</option>
+                  <option value="ap-southeast-2">AP Southeast 2 (Sydney)</option>
+                </select>
+              ) : (
+                <select className={inputClass} value={s3.region} onChange={(e) => setS3({ ...s3, region: e.target.value })}>
+                  <option value="auto">Auto</option>
+                  <option value="us-east-1">US East (N. Virginia) — us-east-1</option>
+                  <option value="us-east-2">US East (Ohio) — us-east-2</option>
+                  <option value="us-west-1">US West (N. California) — us-west-1</option>
+                  <option value="us-west-2">US West (Oregon) — us-west-2</option>
+                  <option value="eu-west-1">EU (Ireland) — eu-west-1</option>
+                  <option value="eu-west-2">EU (London) — eu-west-2</option>
+                  <option value="eu-central-1">EU (Frankfurt) — eu-central-1</option>
+                  <option value="ap-south-1">Asia Pacific (Mumbai) — ap-south-1</option>
+                  <option value="ap-southeast-1">Asia Pacific (Singapore) — ap-southeast-1</option>
+                  <option value="ap-southeast-2">Asia Pacific (Sydney) — ap-southeast-2</option>
+                  <option value="ap-northeast-1">Asia Pacific (Tokyo) — ap-northeast-1</option>
+                  <option value="sa-east-1">South America (São Paulo) — sa-east-1</option>
+                  <option value="me-south-1">Middle East (Bahrain) — me-south-1</option>
+                  <option value="af-south-1">Africa (Cape Town) — af-south-1</option>
+                </select>
+              )}
             </div>
             <div>
               <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Access Key ID</label>
@@ -631,9 +723,9 @@ export default function AdminSettings({ user }: Props) {
               </div>
             </div>
             <div>
-              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Custom Endpoint (Optional)</label>
-              <input className={inputClass} placeholder="https://s3.custom-provider.com" value={s3.endpoint} onChange={(e) => setS3({ ...s3, endpoint: e.target.value })} />
-              <p className="text-[9px] text-muted-foreground mt-1">For S3-compatible services (DigitalOcean Spaces, MinIO, Wasabi, etc.)</p>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Endpoint URL</label>
+              <input className={inputClass} placeholder="https://s3.provider.com" value={s3.endpoint} onChange={(e) => setS3({ ...s3, endpoint: e.target.value })} />
+              <p className="text-[9px] text-muted-foreground mt-1">Leave empty for standard AWS S3. Auto-filled for other providers.</p>
             </div>
             <div>
               <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Path Prefix (Optional)</label>
@@ -649,7 +741,7 @@ export default function AdminSettings({ user }: Props) {
               style={{ fontFamily: "var(--font-heading)" }}
             >
               {savingS3 ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-              Save S3 Settings
+              Save Storage Settings
             </button>
           </div>
         </div>
