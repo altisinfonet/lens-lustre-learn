@@ -14,6 +14,7 @@ interface S3Settings {
   secret_access_key: string;
   endpoint?: string;
   path_prefix?: string;
+  public_url?: string;
 }
 
 // AWS Signature V4 helpers
