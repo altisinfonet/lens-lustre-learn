@@ -127,8 +127,13 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
       toast({ title: "Please enter a slot name", variant: "destructive" });
       return;
     }
-    if (!editingSlot.ad_code.trim()) {
+    const source = editingSlot.image_source || "code";
+    if (source === "code" && !editingSlot.ad_code.trim()) {
       toast({ title: "Please enter the ad code/HTML", variant: "destructive" });
+      return;
+    }
+    if ((source === "upload" || source === "url") && !editingSlot.image_url?.trim()) {
+      toast({ title: "Please provide an image (upload or URL)", variant: "destructive" });
       return;
     }
 
@@ -140,6 +145,32 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
     saveSlots(updated);
     setEditingSlot(null);
   };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setCropSrc(objectUrl);
+    e.target.value = "";
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    setCropSrc(null);
+    if (!editingSlot || !user) return;
+    setUploading(true);
+    try {
+      const path = `ads/${editingSlot.id}-${Date.now()}.png`;
+      const { url } = await storageUpload("journal-images", path, croppedFile);
+      setEditingSlot({ ...editingSlot, image_url: url, image_source: "upload" });
+      toast({ title: "Image uploaded" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
+  const getPlacementInfo = (placement: Placement) =>
+    placementOptions.find((p) => p.value === placement) || placementOptions[0];
 
   const toggleDevice = (device: Device) => {
     if (!editingSlot) return;
