@@ -283,21 +283,18 @@ const AdminPanel = () => {
       const ext = file.name.split('.').pop();
       const filePath = `${Date.now()}-${i}.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("portfolio-images")
-        .upload(filePath, file);
-
-      if (uploadError) {
+      let urlData: { url: string };
+      try {
+        urlData = await storageUpload("portfolio-images", filePath, file, { fileName: file.name });
+      } catch (uploadError: any) {
         toast({ title: `Upload failed: ${file.name}`, description: uploadError.message, variant: "destructive" });
         continue;
       }
 
-      const { data: urlData } = supabase.storage.from("portfolio-images").getPublicUrl(filePath);
-
       await supabase.from("portfolio_images").insert({
         title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
         category: "General",
-        image_url: urlData.publicUrl,
+        image_url: urlData.url,
         sort_order: currentMax + i + 1,
         uploaded_by: user.id,
       });
@@ -314,7 +311,7 @@ const AdminPanel = () => {
     const filePath = urlParts.length > 1 ? urlParts[urlParts.length - 1] : null;
 
     if (filePath) {
-      await supabase.storage.from("portfolio-images").remove([filePath]);
+      await storageRemove("portfolio-images", [filePath]);
     }
     await supabase.from("portfolio_images").delete().eq("id", id);
     toast({ title: "Image deleted" });

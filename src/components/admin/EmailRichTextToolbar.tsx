@@ -279,16 +279,9 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
     setUploading(true);
     try {
       const baseName = `email-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const ext = "png";
-      const path = `email-templates/${baseName}.${ext}`;
-      const { error } = await supabase.storage.from("journal-images").upload(path, croppedFile);
-      if (error) {
-        toast({ title: "Upload failed", description: error.message, variant: "destructive" });
-        setUploading(false);
-        return;
-      }
-      const { data } = supabase.storage.from("journal-images").getPublicUrl(path);
-      insertImageHtml(data.publicUrl);
+      const path = `email-templates/${baseName}.png`;
+      const result = await storageUpload("journal-images", path, croppedFile, { fileName: `${baseName}.png` });
+      insertImageHtml(result.url);
       if (showGallery) loadGallery();
     } catch {
       toast({ title: "Upload failed", variant: "destructive" });

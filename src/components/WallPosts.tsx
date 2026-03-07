@@ -235,17 +235,10 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
         const { webpFile, jpegFile } = await compressImageToFiles(selectedImages[i], baseName);
         const webpPath = `${user.id}/${baseName}.webp`;
         const jpegPath = `${user.id}/${baseName}.jpg`;
-        const [webpUpload] = await Promise.all([
-          supabase.storage.from("post-images").upload(webpPath, webpFile, { cacheControl: "3600", upsert: false }),
-          supabase.storage.from("post-images").upload(jpegPath, jpegFile, { cacheControl: "3600", upsert: false }),
-        ]);
-        if (webpUpload.error) {
-          toast({ title: `Upload failed for photo ${i + 1}`, description: webpUpload.error.message, variant: "destructive" });
-          setPosting(false);
-          return;
-        }
-        const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(webpPath);
-        uploadedUrls.push(urlData.publicUrl);
+        const uploadResult = await storageUploadImagePair(
+          "post-images", webpPath, jpegPath, webpFile, jpegFile, { cacheControl: "3600" }
+        );
+        uploadedUrls.push(uploadResult.url);
       }
 
       const { error } = await supabase.from("posts").insert({

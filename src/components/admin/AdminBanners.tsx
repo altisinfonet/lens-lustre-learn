@@ -76,13 +76,8 @@ const AdminBanners = ({ user }: { user: User | null }) => {
       const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
       const webpPath = `banners/${baseName}.webp`;
       const jpegPath = `banners/${baseName}.jpg`;
-      const [webpRes] = await Promise.all([
-        supabase.storage.from("portfolio-images").upload(webpPath, webpFile),
-        supabase.storage.from("portfolio-images").upload(jpegPath, jpegFile),
-      ]);
-      if (webpRes.error) { toast({ title: "Upload failed", variant: "destructive" }); setUploading(false); return; }
-      const { data: urlData } = supabase.storage.from("portfolio-images").getPublicUrl(webpPath);
-      setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
+      const result = await storageUploadImagePair("portfolio-images", webpPath, jpegPath, webpFile, jpegFile);
+      setForm((f) => ({ ...f, image_url: result.url }));
     } catch {
       toast({ title: "Compression failed", variant: "destructive" });
     }

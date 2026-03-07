@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Plus, Upload } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { compressImageToFiles } from "@/lib/imageCompression";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
+import { storageUploadImagePair } from "@/lib/storageUpload";
 
 interface Props {
   onImageInserted: (url: string) => void;
@@ -31,17 +31,8 @@ const InlineImageDropZone = ({ onImageInserted }: Props) => {
       const { webpFile, jpegFile } = await compressImageToFiles(file, baseName);
       const webpPath = `inline/${baseName}.webp`;
       const jpegPath = `inline/${baseName}.jpg`;
-      const [webpRes] = await Promise.all([
-        supabase.storage.from("journal-images").upload(webpPath, webpFile),
-        supabase.storage.from("journal-images").upload(jpegPath, jpegFile),
-      ]);
-      if (webpRes.error) {
-        toast({ title: "Upload failed", description: webpRes.error.message, variant: "destructive" });
-        setUploading(false);
-        return;
-      }
-      const { data } = supabase.storage.from("journal-images").getPublicUrl(webpPath);
-      onImageInserted(data.publicUrl);
+      const result = await storageUploadImagePair("journal-images", webpPath, jpegPath, webpFile, jpegFile);
+      onImageInserted(result.url);
     } catch {
       toast({ title: "Compression failed", variant: "destructive" });
     }

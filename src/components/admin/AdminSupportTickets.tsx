@@ -95,13 +95,13 @@ const AdminSupportTickets = ({ user }: Props) => {
     if (!safe) return null;
     const ext = file.name.split(".").pop() || "bin";
     const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from("support-attachments").upload(path, file);
-    if (error) {
+    try {
+      const result = await storageUpload("support-attachments", path, file, { fileName: file.name });
+      return { url: result.url, name: file.name };
+    } catch (error: any) {
       toast({ title: "Upload failed", description: error.message, variant: "destructive" });
       return null;
     }
-    const { data: urlData } = supabase.storage.from("support-attachments").getPublicUrl(path);
-    return { url: urlData.publicUrl, name: file.name };
   };
 
   const handleSendReply = async (ticketId: string) => {
