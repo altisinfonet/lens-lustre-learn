@@ -524,76 +524,227 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
                 />
               </div>
 
-              {/* Live Preview */}
+              {/* Live Preview — In-Context */}
               <div className="border border-border rounded-sm overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/20">
                   <Eye className="h-4 w-4 text-primary" />
                   <span className="text-[10px] tracking-[0.2em] uppercase text-foreground" style={headingFont}>
-                    Live Preview — {placementOptions.find(p => p.value === editingSlot.placement)?.label}
+                    Live Preview — How it appears on the site
                   </span>
                   <span className="text-[9px] text-muted-foreground ml-auto" style={bodyFont}>
                     {getPlacementInfo(editingSlot.placement).width} × {getPlacementInfo(editingSlot.placement).height}px
                   </span>
                 </div>
-                <div className="p-4 bg-muted/5 flex items-center justify-center min-h-[120px]">
+                <div className="bg-muted/5 p-4 overflow-x-auto">
                   {(() => {
                     const source = editingSlot.image_source || "code";
                     const pInfo = getPlacementInfo(editingSlot.placement);
                     const hasImage = !!editingSlot.image_url?.trim();
                     const hasCode = !!editingSlot.ad_code?.trim();
+                    const hasContent = (source === "code" && hasCode) || ((source === "upload" || source === "url") && hasImage);
 
-                    if ((source === "upload" || source === "url") && hasImage) {
-                      return (
-                        <div
-                          className="border border-dashed border-border/50 bg-background relative overflow-hidden"
-                          style={{ width: "100%", maxWidth: pInfo.width, aspectRatio: `${pInfo.width}/${pInfo.height}` }}
-                        >
+                    const adRender = hasContent ? (
+                      source === "code" ? (
+                        <div dangerouslySetInnerHTML={{ __html: editingSlot.ad_code }} className="[&_img]:max-w-full" />
+                      ) : (
+                        <div className="relative">
                           {editingSlot.click_url ? (
-                            <a href={editingSlot.click_url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                              <img
-                                src={editingSlot.image_url}
-                                alt={editingSlot.alt_text || "Ad"}
-                                className="w-full h-full object-cover"
-                              />
+                            <a href={editingSlot.click_url} target="_blank" rel="noopener noreferrer" className="block">
+                              <img src={editingSlot.image_url} alt={editingSlot.alt_text || "Ad"} className="w-full h-full object-cover" />
                             </a>
                           ) : (
-                            <img
-                              src={editingSlot.image_url}
-                              alt={editingSlot.alt_text || "Ad"}
-                              className="w-full h-full object-cover"
-                            />
+                            <img src={editingSlot.image_url} alt={editingSlot.alt_text || "Ad"} className="w-full h-full object-cover" />
                           )}
-                          <div className="absolute top-1 right-1 bg-background/80 px-1.5 py-0.5 text-[8px] tracking-wider uppercase text-muted-foreground rounded-sm" style={headingFont}>
-                            Sponsored
+                          <div className="absolute top-1 right-1 bg-background/80 px-1.5 py-0.5 text-[7px] tracking-wider uppercase text-muted-foreground rounded-sm" style={headingFont}>Sponsored</div>
+                        </div>
+                      )
+                    ) : null;
+
+                    // SIDEBAR placement — show feed page mockup with right sidebar
+                    if (editingSlot.placement === "sidebar") {
+                      return (
+                        <div className="border border-border rounded-sm bg-background overflow-hidden" style={{ maxWidth: 700 }}>
+                          {/* Mock navbar */}
+                          <div className="h-8 bg-card border-b border-border flex items-center px-3 gap-2">
+                            <div className="w-16 h-3 bg-primary/20 rounded-sm" />
+                            <div className="flex-1" />
+                            <div className="w-5 h-5 rounded-full bg-muted" />
+                          </div>
+                          <div className="flex gap-4 p-3">
+                            {/* Mock feed column */}
+                            <div className="flex-1 min-w-0 space-y-2">
+                              {[1, 2].map((i) => (
+                                <div key={i} className="border border-border rounded-sm p-3">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-6 h-6 rounded-full bg-muted" />
+                                    <div className="w-20 h-2.5 bg-muted rounded-sm" />
+                                  </div>
+                                  <div className="w-full h-24 bg-muted/50 rounded-sm mb-2" />
+                                  <div className="w-3/4 h-2 bg-muted/30 rounded-sm" />
+                                </div>
+                              ))}
+                            </div>
+                            {/* Mock right sidebar with ad */}
+                            <div className="w-44 shrink-0 space-y-2">
+                              <div className="border border-border rounded-sm overflow-hidden">
+                                <div className="px-2 py-1.5 border-b border-border">
+                                  <span className="text-[7px] tracking-[0.2em] uppercase text-muted-foreground" style={headingFont}>Sponsored</span>
+                                </div>
+                                <div className="p-1.5">
+                                  {adRender ? (
+                                    <div className="rounded-sm overflow-hidden border border-border/30">{adRender}</div>
+                                  ) : (
+                                    <div className="border border-dashed border-border p-4 text-center">
+                                      <ImageIcon className="h-5 w-5 text-primary/30 mx-auto mb-1" />
+                                      <p className="text-[7px] text-muted-foreground">Your ad here</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {/* Mock People You May Know */}
+                              <div className="border border-border rounded-sm p-2">
+                                <div className="text-[7px] tracking-[0.15em] uppercase text-muted-foreground mb-2" style={headingFont}>People You May Know</div>
+                                {[1, 2, 3].map((i) => (
+                                  <div key={i} className="flex items-center gap-1.5 py-1">
+                                    <div className="w-4 h-4 rounded-full bg-muted" />
+                                    <div className="w-14 h-2 bg-muted/50 rounded-sm" />
+                                  </div>
+                                ))}
+                              </div>
+                              {/* Mock Trending */}
+                              <div className="border border-border rounded-sm p-2">
+                                <div className="text-[7px] tracking-[0.15em] uppercase text-muted-foreground mb-2" style={headingFont}>Trending This Week</div>
+                                <div className="grid grid-cols-2 gap-1">
+                                  {[1, 2, 3, 4].map((i) => (
+                                    <div key={i} className="aspect-square bg-muted/40 rounded-sm" />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );
                     }
 
-                    if (source === "code" && hasCode) {
+                    // HEADER / FOOTER — full-width bar mockup
+                    if (editingSlot.placement === "header" || editingSlot.placement === "footer") {
                       return (
-                        <div
-                          className="border border-dashed border-border/50 bg-background overflow-hidden"
-                          style={{ width: "100%", maxWidth: pInfo.width, minHeight: pInfo.height > 200 ? 200 : pInfo.height }}
-                          dangerouslySetInnerHTML={{ __html: editingSlot.ad_code }}
-                        />
+                        <div className="border border-border rounded-sm bg-background overflow-hidden" style={{ maxWidth: 700 }}>
+                          {editingSlot.placement === "header" && (
+                            <>
+                              {/* Ad banner at top */}
+                              <div className="border-b border-border">
+                                {adRender ? (
+                                  <div style={{ maxHeight: 80 }} className="overflow-hidden">{adRender}</div>
+                                ) : (
+                                  <div className="border-b border-dashed border-border px-4 py-3 text-center">
+                                    <p className="text-[8px] text-muted-foreground">↑ Your header ad will appear here ↑</p>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Mock navbar */}
+                              <div className="h-8 bg-card border-b border-border flex items-center px-3 gap-2">
+                                <div className="w-16 h-3 bg-primary/20 rounded-sm" />
+                                <div className="flex-1" />
+                                <div className="w-5 h-5 rounded-full bg-muted" />
+                              </div>
+                            </>
+                          )}
+                          {/* Mock page content */}
+                          <div className="p-4 space-y-3">
+                            {[1, 2].map((i) => (
+                              <div key={i} className="flex gap-3">
+                                <div className="w-20 h-14 bg-muted/40 rounded-sm shrink-0" />
+                                <div className="flex-1 space-y-1.5">
+                                  <div className="w-3/4 h-2.5 bg-muted/50 rounded-sm" />
+                                  <div className="w-1/2 h-2 bg-muted/30 rounded-sm" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {editingSlot.placement === "footer" && (
+                            <div className="border-t border-border">
+                              {adRender ? (
+                                <div style={{ maxHeight: 80 }} className="overflow-hidden">{adRender}</div>
+                              ) : (
+                                <div className="border-t border-dashed border-border px-4 py-3 text-center">
+                                  <p className="text-[8px] text-muted-foreground">↓ Your footer ad will appear here ↓</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       );
                     }
 
+                    // IN-CONTENT / BETWEEN-ENTRIES — show ad between content blocks
+                    if (editingSlot.placement === "in-content" || editingSlot.placement === "between-entries") {
+                      return (
+                        <div className="border border-border rounded-sm bg-background overflow-hidden" style={{ maxWidth: 700 }}>
+                          <div className="h-8 bg-card border-b border-border flex items-center px-3 gap-2">
+                            <div className="w-16 h-3 bg-primary/20 rounded-sm" />
+                            <div className="flex-1" />
+                            <div className="w-5 h-5 rounded-full bg-muted" />
+                          </div>
+                          <div className="p-4 space-y-3">
+                            <div className="border border-border rounded-sm p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-6 h-6 rounded-full bg-muted" />
+                                <div className="w-24 h-2.5 bg-muted rounded-sm" />
+                              </div>
+                              <div className="w-full h-20 bg-muted/40 rounded-sm" />
+                            </div>
+                            {/* Ad between content */}
+                            <div className="border border-primary/20 rounded-sm overflow-hidden bg-primary/5">
+                              {adRender ? (
+                                adRender
+                              ) : (
+                                <div className="px-4 py-4 text-center">
+                                  <ImageIcon className="h-5 w-5 text-primary/30 mx-auto mb-1" />
+                                  <p className="text-[8px] text-muted-foreground">Your ad appears between content</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="border border-border rounded-sm p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-6 h-6 rounded-full bg-muted" />
+                                <div className="w-20 h-2.5 bg-muted rounded-sm" />
+                              </div>
+                              <div className="w-full h-20 bg-muted/40 rounded-sm" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // LIGHTBOX OVERLAY
                     return (
-                      <div className="text-center py-6">
-                        <ImageIcon className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
-                        <p className="text-[10px] text-muted-foreground" style={bodyFont}>
-                          {source === "code"
-                            ? "Add HTML code above to see a live preview"
-                            : "Upload or enter an image URL above to see a live preview"}
-                        </p>
-                        <p className="text-[9px] text-muted-foreground/60 mt-1" style={bodyFont}>
-                          Preview shows how the ad will appear in the {placementOptions.find(p => p.value === editingSlot.placement)?.label?.toLowerCase()} zone
-                        </p>
+                      <div className="border border-border rounded-sm bg-background overflow-hidden relative" style={{ maxWidth: 500, minHeight: 280 }}>
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+                          {adRender ? (
+                            <div className="bg-background rounded-sm overflow-hidden shadow-2xl" style={{ maxWidth: pInfo.width * 0.5, width: "80%" }}>
+                              {adRender}
+                            </div>
+                          ) : (
+                            <div className="bg-background rounded-sm p-6 text-center shadow-2xl">
+                              <ImageIcon className="h-6 w-6 text-primary/30 mx-auto mb-2" />
+                              <p className="text-[9px] text-muted-foreground">Lightbox overlay ad</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4 space-y-3 opacity-40">
+                          <div className="w-full h-32 bg-muted/40 rounded-sm" />
+                          <div className="w-2/3 h-3 bg-muted/30 rounded-sm" />
+                        </div>
                       </div>
                     );
                   })()}
+                  {/* Placement label */}
+                  <div className="mt-3 flex items-center gap-2 text-[9px] text-muted-foreground" style={bodyFont}>
+                    <span className="inline-block w-2 h-2 rounded-full bg-primary/60" />
+                    Ad placement: <strong className="text-foreground">{placementOptions.find(p => p.value === editingSlot.placement)?.label}</strong>
+                    — shown on the right sidebar of Feed, Dashboard, Profile & other internal pages
+                  </div>
                 </div>
               </div>
 
