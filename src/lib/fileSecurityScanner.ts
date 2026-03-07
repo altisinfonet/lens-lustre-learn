@@ -234,12 +234,14 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
     }
   }
 
-  // 5. Scan file content for embedded malicious payloads
-  const scanSize = Math.min(file.size, MAX_SCAN_BYTES);
-  const textContent = await readFileText(file, scanSize);
-  const maliciousReason = scanForMaliciousContent(textContent, isPdf);
-  if (maliciousReason) {
-    return { safe: false, reason: maliciousReason };
+  // 5. Scan file content for embedded malicious payloads (skip for images — binary data causes false positives)
+  if (!isImage) {
+    const scanSize = Math.min(file.size, MAX_SCAN_BYTES);
+    const textContent = await readFileText(file, scanSize);
+    const maliciousReason = scanForMaliciousContent(textContent, isPdf);
+    if (maliciousReason) {
+      return { safe: false, reason: maliciousReason };
+    }
   }
 
   // 6. For images, verify they're decodable (catches polyglot files)
