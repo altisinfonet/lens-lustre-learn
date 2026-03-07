@@ -629,7 +629,6 @@ const Feed = () => {
         </div>
         </div>
       </div>
-      </div>
 
       {/* Back to top */}
       <AnimatePresence>
