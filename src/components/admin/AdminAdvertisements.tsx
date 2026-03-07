@@ -160,10 +160,15 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
     if (!editingSlot || !user) return;
     setUploading(true);
     try {
-      const path = `ads/${editingSlot.id}-${Date.now()}.png`;
-      const { url } = await storageUpload("journal-images", path, croppedFile);
+      const baseName = `ads/${editingSlot.id}-${Date.now()}`;
+      const { webpFile } = await compressImageToFiles(croppedFile, baseName.split("/").pop(), {
+        maxDimension: 1920,
+        webpQuality: 0.8,
+      });
+      const path = `ads/${webpFile.name}`;
+      const { url } = await storageUpload("journal-images", path, webpFile);
       setEditingSlot({ ...editingSlot, image_url: url, image_source: "upload" });
-      toast({ title: "Image uploaded" });
+      toast({ title: "Image compressed & uploaded (WebP)" });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
     }
