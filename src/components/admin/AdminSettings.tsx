@@ -4,6 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion, Cloud } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { clearS3Cache } from "@/lib/s3Upload";
 
 interface Props {
@@ -580,13 +581,10 @@ export default function AdminSettings({ user }: Props) {
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-3 mb-2">
             <label className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>Enable External Storage</label>
-            <button
-              type="button"
-              onClick={() => setS3({ ...s3, enabled: !s3.enabled })}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${s3.enabled ? "bg-primary" : "bg-muted"}`}
-            >
-              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${s3.enabled ? "translate-x-4.5" : "translate-x-1"}`} />
-            </button>
+            <Switch
+              checked={s3.enabled}
+              onCheckedChange={(checked) => setS3({ ...s3, enabled: checked })}
+            />
             <span className={`text-[9px] tracking-wider uppercase ${s3.enabled ? "text-primary" : "text-muted-foreground"}`} style={{ fontFamily: "var(--font-heading)" }}>
               {s3.enabled ? "Active" : "Disabled"}
             </span>
