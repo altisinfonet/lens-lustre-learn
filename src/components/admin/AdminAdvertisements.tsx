@@ -524,6 +524,103 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
                 />
               </div>
 
+              {/* Live Preview */}
+              <div className="border border-border rounded-sm overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/20">
+                  <Eye className="h-4 w-4 text-primary" />
+                  <span className="text-[10px] tracking-[0.2em] uppercase text-foreground" style={headingFont}>
+                    Live Preview — {placementOptions.find(p => p.value === editingSlot.placement)?.label}
+                  </span>
+                  <span className="text-[9px] text-muted-foreground ml-auto" style={bodyFont}>
+                    {getPlacementInfo(editingSlot.placement).width} × {getPlacementInfo(editingSlot.placement).height}px
+                  </span>
+                </div>
+                <div className="p-4 bg-muted/5 flex items-center justify-center min-h-[120px]">
+                  {(() => {
+                    const source = editingSlot.image_source || "code";
+                    const pInfo = getPlacementInfo(editingSlot.placement);
+                    const hasImage = !!editingSlot.image_url?.trim();
+                    const hasCode = !!editingSlot.ad_code?.trim();
+
+                    if ((source === "upload" || source === "url") && hasImage) {
+                      return (
+                        <div
+                          className="border border-dashed border-border/50 bg-background relative overflow-hidden"
+                          style={{ width: "100%", maxWidth: pInfo.width, aspectRatio: `${pInfo.width}/${pInfo.height}` }}
+                        >
+                          {editingSlot.click_url ? (
+                            <a href={editingSlot.click_url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                              <img
+                                src={editingSlot.image_url}
+                                alt={editingSlot.alt_text || "Ad"}
+                                className="w-full h-full object-cover"
+                              />
+                            </a>
+                          ) : (
+                            <img
+                              src={editingSlot.image_url}
+                              alt={editingSlot.alt_text || "Ad"}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                          <div className="absolute top-1 right-1 bg-background/80 px-1.5 py-0.5 text-[8px] tracking-wider uppercase text-muted-foreground rounded-sm" style={headingFont}>
+                            Sponsored
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (source === "code" && hasCode) {
+                      return (
+                        <div
+                          className="border border-dashed border-border/50 bg-background overflow-hidden"
+                          style={{ width: "100%", maxWidth: pInfo.width, minHeight: pInfo.height > 200 ? 200 : pInfo.height }}
+                          dangerouslySetInnerHTML={{ __html: editingSlot.ad_code }}
+                        />
+                      );
+                    }
+
+                    return (
+                      <div className="text-center py-6">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
+                        <p className="text-[10px] text-muted-foreground" style={bodyFont}>
+                          {source === "code"
+                            ? "Add HTML code above to see a live preview"
+                            : "Upload or enter an image URL above to see a live preview"}
+                        </p>
+                        <p className="text-[9px] text-muted-foreground/60 mt-1" style={bodyFont}>
+                          Preview shows how the ad will appear in the {placementOptions.find(p => p.value === editingSlot.placement)?.label?.toLowerCase()} zone
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Quick Start Guide */}
+              <div className="border border-primary/20 rounded-sm bg-primary/5 px-5 py-4">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-primary mb-3 flex items-center gap-2" style={headingFont}>
+                  <Megaphone className="h-3.5 w-3.5" /> Quick Guide
+                </p>
+                <div className="grid md:grid-cols-3 gap-4 text-[11px] text-muted-foreground leading-relaxed" style={bodyFont}>
+                  <div>
+                    <p className="text-foreground font-medium mb-1">① Upload Image</p>
+                    <p>Fastest option. Pick a file, crop it to the exact placement size, and add a click URL. No coding needed.</p>
+                  </div>
+                  <div>
+                    <p className="text-foreground font-medium mb-1">② Image URL</p>
+                    <p>Already have a hosted banner? Paste the image URL and add a click-through link. Great for external ad networks.</p>
+                  </div>
+                  <div>
+                    <p className="text-foreground font-medium mb-1">③ HTML / Code</p>
+                    <p>For Google Ads, affiliate networks, or custom HTML. Paste the embed code directly — supports scripts & iframes.</p>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-primary/10 text-[10px] text-muted-foreground" style={bodyFont}>
+                  <strong className="text-foreground">Tip:</strong> Use the <em>recommended dimensions</em> shown for each placement to ensure your ad looks crisp on all devices. The crop tool will help you resize any image to fit perfectly.
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={saveEditingSlot}
