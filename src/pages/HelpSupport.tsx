@@ -367,7 +367,7 @@ const HelpSupport = () => {
                           <div className={`max-w-[80%] px-4 py-3 rounded-lg ${reply.is_admin ? "bg-primary/10 border border-primary/20" : "bg-muted/50 border border-border"}`}>
                             <p className="text-[9px] tracking-[0.15em] uppercase mb-1.5 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                               {reply.is_admin ? (
-                                <span className="text-primary">50mm Retina Support</span>
+                                <span className="text-primary">50mm Retina World Support</span>
                               ) : (
                                 <span className="text-muted-foreground">You</span>
                               )}

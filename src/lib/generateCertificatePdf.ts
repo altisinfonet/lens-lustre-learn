@@ -72,7 +72,7 @@ export const generateCertificatePdf = async ({
   // --- "50mm Retina" ---
   doc.setFontSize(8);
   doc.setTextColor(140, 140, 140);
-  doc.text("50MM RETINA", W / 2, 50, { align: "center" });
+  doc.text("50MM RETINA WORLD", W / 2, 50, { align: "center" });
 
   // --- "This is to certify that" ---
   doc.setFontSize(10);

@@ -180,7 +180,7 @@ const AskAnything = () => {
                     >
                       Ask Anything
                     </h3>
-                    <p className="text-[10px] text-muted-foreground">Photography & 50mm Retina</p>
+                    <p className="text-[10px] text-muted-foreground">Photography & 50mm Retina World</p>
                   </div>
                 </div>
                 <button
@@ -198,7 +198,7 @@ const AskAnything = () => {
                   <div className="flex flex-col items-center justify-center h-full text-center gap-3 opacity-60">
                     <MessageCircleQuestion className="h-10 w-10 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground max-w-[260px]">
-                      Ask me anything about photography, competitions, courses, or how to use 50mm Retina!
+                      Ask me anything about photography, competitions, courses, or how to use 50mm Retina World!
                     </p>
                   </div>
                 )}

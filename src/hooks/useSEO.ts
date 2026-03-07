@@ -35,11 +35,11 @@ interface SEOMeta {
 }
 
 const defaultMeta: SEOMeta = {
-  title: "50mm Retina — Competitions, Education & Journal for Photographers",
-  description: "Join 50mm Retina — the ultimate platform for photographers.",
+  title: "50mm Retina World — Competitions, Education & Journal for Photographers",
+  description: "Join 50mm Retina World — the ultimate platform for photographers.",
   ogImage: "",
   noindex: false,
-  siteName: "50mm Retina",
+  siteName: "50mm Retina World",
   twitterHandle: "",
   canonicalUrl: "",
   googleVerification: "",

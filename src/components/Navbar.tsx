@@ -39,13 +39,13 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
       >
         <div className="container mx-auto px-6 md:px-12 py-5 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 shrink-0 relative z-10" aria-label="50mm Retina Home">
-            <img src="/images/logo.png" alt="50mm Retina" className="h-7 w-7 object-contain" />
+          <Link to="/" className="flex items-center gap-3 shrink-0 relative z-10" aria-label="50mm Retina World Home">
+            <img src="/images/logo.png" alt="50mm Retina World" className="h-7 w-7 object-contain" />
             <span
               className="text-sm font-semibold tracking-[0.2em] uppercase"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              50mm Retina
+              50mm Retina World
             </span>
           </Link>
 

@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export const BRAND_NAME = "50mm Retina";
+export const BRAND_NAME = "50mm Retina World";
 
 // Cache admin IDs in memory for the session
 let adminIdsCache: Set<string> | null = null;

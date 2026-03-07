@@ -552,7 +552,7 @@ const AdminPanel = () => {
           <Link to="/" className="flex items-center gap-2 mb-1">
             <img src="/images/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
             <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-              50mm Retina
+              50mm Retina World
             </span>
           </Link>
           <h2 className="text-lg font-light mt-3" style={{ fontFamily: "var(--font-display)" }}>

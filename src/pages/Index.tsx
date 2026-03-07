@@ -680,7 +680,7 @@ const Index = () => {
               >
                 <img
                   src={slide.src}
-                  alt={`${slide.title} — ${slide.category} photography by 50mm Retina`}
+                  alt={`${slide.title} — ${slide.category} photography by 50mm Retina World`}
                   className="w-full h-full object-cover"
                   loading={i === 0 ? "eager" : "lazy"}
                   fetchPriority={i === 0 ? "high" : "auto"}
@@ -2169,7 +2169,7 @@ const Index = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-24 md:py-32" aria-label="Join 50mm Retina">
+      <section className="py-24 md:py-32" aria-label="Join 50mm Retina World">
         <div className="container mx-auto px-6 md:px-12 text-center">
           <motion.div
             initial="hidden"
@@ -2204,9 +2204,9 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-12 items-start">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <img src="/images/logo.png" alt="50mm Retina" className="h-7 w-7 object-contain" />
+                <img src="/images/logo.png" alt="50mm Retina World" className="h-7 w-7 object-contain" />
                 <span className="text-sm tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
-                  50mm Retina
+                  50mm Retina World
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
@@ -2256,7 +2256,7 @@ const Index = () => {
                 </button>
               </form>
               <p className="text-[10px] text-muted-foreground mt-6" style={{ fontFamily: "var(--font-body)" }}>
-                © 2026 50mm Retina. All rights reserved.
+                © 2026 50mm Retina World. All rights reserved.
               </p>
             </div>
           </div>
