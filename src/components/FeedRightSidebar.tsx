@@ -115,20 +115,37 @@ const FeedRightSidebar = () => {
   };
 
   const loadAds = async () => {
-    const { data } = await supabase.from("site_settings").select("value").eq("key", "advertisements").maybeSingle();
-    if (!data?.value) return;
-    const settings = data.value as any;
-    const slots = settings.slots || [];
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["ad_slots", "advertisements"]);
+
+    const adSlotsSetting = data?.find((row) => row.key === "ad_slots")?.value;
+    const legacyAdsSetting = data?.find((row) => row.key === "advertisements")?.value as any;
+
+    const slots = Array.isArray(adSlotsSetting)
+      ? adSlotsSetting
+      : Array.isArray(legacyAdsSetting?.slots)
+        ? legacyAdsSetting.slots
+        : [];
+
+    if (slots.length === 0) {
+      setAds([]);
+      return;
+    }
+
     const sidebarAds = slots.filter((s: any) => s.is_active && s.placement === "sidebar");
-    setAds(sidebarAds.map((s: any) => ({
-      id: s.id,
-      html: s.html_code || s.ad_code || "",
-      placement: s.placement,
-      image_url: s.image_url || "",
-      click_url: s.click_url || "",
-      alt_text: s.alt_text || "",
-      image_source: s.image_source || "code",
-    })));
+    setAds(
+      sidebarAds.map((s: any) => ({
+        id: s.id,
+        html: s.html_code || s.ad_code || "",
+        placement: s.placement,
+        image_url: s.image_url || "",
+        click_url: s.click_url || "",
+        alt_text: s.alt_text || "",
+        image_source: s.image_source || "code",
+      }))
+    );
   };
 
   const loadTrendingPhotos = async () => {
