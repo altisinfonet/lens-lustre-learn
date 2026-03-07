@@ -184,37 +184,34 @@ Deno.serve(async (req) => {
       const results: Record<string, number> = {};
       const bucketNames = buckets || ["competition-photos", "journal-images", "course-images", "portfolio-images", "avatars", "post-images"];
       
-      // Recursive file counter
-      async function countFiles(bucket: string, folder: string): Promise<number> {
-        let count = 0;
-        let offset = 0;
-        const batchSize = 1000;
-        let hasMore = true;
-        while (hasMore) {
-          const { data: items } = await adminClient.storage.from(bucket).list(folder, {
-            limit: batchSize,
-            offset,
-            sortBy: { column: "created_at", order: "asc" },
-          });
-          if (!items || items.length === 0) break;
-          for (const item of items) {
-            if (item.id) {
-              count++; // it's a file
-            } else {
-              // it's a folder — recurse
-              const subPath = folder ? `${folder}/${item.name}` : item.name;
-              count += await countFiles(bucket, subPath);
-            }
-          }
-          hasMore = items.length === batchSize;
-          offset += items.length;
-        }
-        return count;
-      }
-
       for (const bucket of bucketNames) {
         try {
-          results[bucket] = await countFiles(bucket, "");
+          // Count root files + count subfolders (one level only for speed)
+          const { data: items } = await adminClient.storage.from(bucket).list("", {
+            limit: 1000,
+            sortBy: { column: "created_at", order: "asc" },
+          });
+          let count = 0;
+          const folders: string[] = [];
+          if (items) {
+            for (const f of items) {
+              if (f.id) count++;
+              else folders.push(f.name);
+            }
+          }
+          // Count files inside each top-level subfolder (one level deep)
+          for (const folder of folders) {
+            try {
+              const { data: subItems } = await adminClient.storage.from(bucket).list(folder, {
+                limit: 1000,
+                sortBy: { column: "created_at", order: "asc" },
+              });
+              if (subItems) {
+                count += subItems.filter(f => f.id).length;
+              }
+            } catch { /* skip */ }
+          }
+          results[bucket] = count;
         } catch {
           results[bucket] = 0;
         }
