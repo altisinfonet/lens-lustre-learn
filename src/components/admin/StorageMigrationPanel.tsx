@@ -12,6 +12,8 @@ const ALL_BUCKETS = [
   "portfolio-images",
   "avatars",
   "post-images",
+  "national-ids",
+  "support-attachments",
 ];
 
 interface MigrationLog {
