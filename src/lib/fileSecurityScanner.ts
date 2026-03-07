@@ -49,7 +49,6 @@ const DANGEROUS_PATTERNS = [
   /<embed/i,
   /<svg[^>]*on\w+/i,
   /data:text\/html/i,
-  /\\x[0-9a-f]{2}/i, // hex-encoded payloads
   /base64[^a-z0-9]*,(.*<script)/i,
 ];
 
