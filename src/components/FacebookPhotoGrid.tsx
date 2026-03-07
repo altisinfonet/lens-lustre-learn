@@ -47,37 +47,36 @@ const FacebookPhotoGrid = ({ urls, onPhotoClick }: FacebookPhotoGridProps) => {
   );
 
   const grid = count === 1 ? (
-    <div className="mt-2 max-h-[480px] overflow-hidden">
-      <Photo src={urls[0]} index={0} className="max-h-[480px]" />
+    <div className="mt-2 max-w-[480px]">
+      <Photo src={urls[0]} index={0} />
     </div>
   ) : count === 2 ? (
-    <div className="mt-2 grid grid-cols-2 gap-0.5 max-h-[400px] overflow-hidden">
-      <Photo src={urls[0]} index={0} className="h-[400px]" />
-      <Photo src={urls[1]} index={1} className="h-[400px]" />
+    <div className="mt-2 grid grid-cols-2 gap-0.5">
+      <Photo src={urls[0]} index={0} />
+      <Photo src={urls[1]} index={1} />
     </div>
   ) : count === 3 ? (
-    <div className="mt-2 grid grid-cols-2 gap-0.5 max-h-[400px] overflow-hidden">
-      <Photo src={urls[0]} index={0} className="row-span-2 h-[400px]" />
-      <Photo src={urls[1]} index={1} className="h-[199px]" />
-      <Photo src={urls[2]} index={2} className="h-[199px]" />
+    <div className="mt-2 grid grid-cols-3 gap-0.5">
+      <Photo src={urls[0]} index={0} />
+      <Photo src={urls[1]} index={1} />
+      <Photo src={urls[2]} index={2} />
     </div>
   ) : count === 4 ? (
-    <div className="mt-2 grid grid-cols-2 gap-0.5 max-h-[400px] overflow-hidden">
-      <Photo src={urls[0]} index={0} className="h-[199px]" />
-      <Photo src={urls[1]} index={1} className="h-[199px]" />
-      <Photo src={urls[2]} index={2} className="h-[199px]" />
-      <Photo src={urls[3]} index={3} className="h-[199px]" />
+    <div className="mt-2 grid grid-cols-2 gap-0.5">
+      <Photo src={urls[0]} index={0} />
+      <Photo src={urls[1]} index={1} />
+      <Photo src={urls[2]} index={2} />
+      <Photo src={urls[3]} index={3} />
     </div>
   ) : (
-    <div className="mt-2 grid grid-cols-6 gap-0.5 max-h-[400px] overflow-hidden">
-      <Photo src={urls[0]} index={0} className="col-span-3 h-[266px]" />
-      <Photo src={urls[1]} index={1} className="col-span-3 h-[266px]" />
-      <Photo src={urls[2]} index={2} className="col-span-2 h-[132px]" />
-      <Photo src={urls[3]} index={3} className="col-span-2 h-[132px]" />
+    <div className="mt-2 grid grid-cols-3 gap-0.5">
+      <Photo src={urls[0]} index={0} />
+      <Photo src={urls[1]} index={1} />
+      <Photo src={urls[2]} index={2} />
+      <Photo src={urls[3]} index={3} />
       <Photo
         src={urls[4]}
         index={4}
-        className="col-span-2 h-[132px]"
         overlay={count - 5 > 0 ? String(count - 5) : undefined}
       />
     </div>
@@ -193,7 +192,7 @@ const PostLightbox = ({ urls, currentIndex, onClose, onNavigate }: PostLightboxP
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="max-w-[90vw] max-h-[85vh] object-contain rounded-sm shadow-2xl"
+              className="max-w-[95vw] max-h-[92vh] object-contain rounded-sm shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             />
           </AnimatePresence>
