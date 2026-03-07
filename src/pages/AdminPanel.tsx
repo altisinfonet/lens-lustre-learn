@@ -652,6 +652,9 @@ const AdminPanel = () => {
         {/* Email Templates Tab */}
         {tab === "email_templates" && <AdminEmailTemplates user={user} />}
 
+        {/* Activity Logs Tab */}
+        {tab === "activity_logs" && <AdminActivityLogs />}
+
         {/* Engagement Tab */}
         {tab === "engagement" && <AdminEngagement user={user} />}
 
