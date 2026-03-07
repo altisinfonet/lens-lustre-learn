@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2, AlertCircle, ExternalLink, Twitter, Youtube, CloudOff, Cloud } from "lucide-react";
+import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, User, X, Building2, AlertCircle, ExternalLink, Twitter, Youtube, CloudOff, Cloud } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import T from "@/components/T";
@@ -86,9 +86,6 @@ const EditProfile = () => {
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [bankName, setBankName] = useState("");
   const [bankIfsc, setBankIfsc] = useState("");
-  const [nationalIdUrl, setNationalIdUrl] = useState<string | null>(null);
-  const [uploadingId, setUploadingId] = useState(false);
-  const idFileRef = useRef<HTMLInputElement>(null);
   const [privacySettings, setPrivacySettings] = useState<Record<string, PrivacyLevel>>({ ...DEFAULT_PRIVACY });
 
   const setFieldPrivacy = (field: string, value: PrivacyLevel) => {
@@ -266,7 +263,6 @@ const EditProfile = () => {
         setPhone((data as any).phone || "");
         setWhatsapp((data as any).whatsapp || "");
         // Bank details loaded separately below
-        setNationalIdUrl((data as any).national_id_url || null);
         setPreferredLanguage((data as any).preferred_language || "English");
         if ((data as any).privacy_settings) {
           setPrivacySettings({ ...DEFAULT_PRIVACY, ...(data as any).privacy_settings });
@@ -313,35 +309,6 @@ const EditProfile = () => {
     setUploadingAvatar(false);
   };
 
-  const handleIdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-    if (!allowed.includes(file.type)) {
-      toast({ title: "Please upload JPG, PNG, WebP or PDF", variant: "destructive" });
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "File must be under 10MB", variant: "destructive" });
-      return;
-    }
-    const safe = await scanFileWithToast(file, toast, { allowedTypes: "image+pdf" });
-    if (!safe) return;
-    setUploadingId(true);
-    const ext = file.name.split(".").pop();
-    const filePath = `${user.id}/national-id.${ext}`;
-    try {
-      await storageUpload("national-ids", filePath, file, { upsert: true, fileName: file.name });
-    } catch (uploadError: any) {
-      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
-      setUploadingId(false);
-      return;
-    }
-    setNationalIdUrl(filePath);
-    setUploadingId(false);
-    toast({ title: "National ID uploaded" });
-  };
-
   const toggleInterest = (interest: string) => {
     setInterests((prev) =>
       prev.includes(interest) ? prev.filter((i) => i !== interest) : [...prev, interest]
@@ -367,8 +334,7 @@ const EditProfile = () => {
     bank_account_name: bankAccountName,
     bank_account_number: bankAccountNumber,
     bank_name: bankName,
-    bank_ifsc: bankIfsc,  // from bank_details table
-    national_id_url: nationalIdUrl,
+    bank_ifsc: bankIfsc,
   };
 
   const performSave = useCallback(async () => {
@@ -410,7 +376,6 @@ const EditProfile = () => {
         postal_code: postalCode.trim() || null,
         phone: phone.trim() || null,
         whatsapp: whatsapp.trim() || null,
-        national_id_url: nationalIdUrl || null,
         preferred_language: preferredLanguage,
         privacy_settings: privacySettings,
         updated_at: new Date().toISOString(),
@@ -438,7 +403,7 @@ const EditProfile = () => {
       // Reset to idle after 2s
       setTimeout(() => setSaveStatus("idle"), 2000);
     }
-  }, [user, fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, nationalIdUrl, preferredLanguage, privacySettings, bankAccountName, bankAccountNumber, bankName, bankIfsc, setGlobalLanguage]);
+  }, [user, fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, preferredLanguage, privacySettings, bankAccountName, bankAccountNumber, bankName, bankIfsc, setGlobalLanguage]);
 
   // Debounced auto-save: triggers 1.5s after any field change
   const triggerAutoSave = useCallback(() => {
@@ -456,7 +421,7 @@ const EditProfile = () => {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, bankAccountName, bankAccountNumber, bankName, bankIfsc, nationalIdUrl, preferredLanguage, privacySettings]);
+  }, [fullName, bio, portfolioUrl, interests, facebookUrl, instagramUrl, twitterUrl, youtubeUrl, websiteUrl, addressLine1, addressLine2, city, state, country, postalCode, phone, whatsapp, bankAccountName, bankAccountNumber, bankName, bankIfsc, preferredLanguage, privacySettings]);
 
   // Mark initial load as done after profile is fetched
   useEffect(() => {
@@ -706,33 +671,6 @@ const EditProfile = () => {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* National ID Upload */}
-          <div className="border border-border p-8">
-            <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}>
-              <Shield className="inline h-3 w-3 mr-2" /><T>Identity Verification</T>
-            </span>
-            <p className="text-xs text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>
-              <T>Upload a government-issued photo ID (Aadhaar, Passport, Driving Licence, etc.). This is kept private and secure.</T>
-            </p>
-            <div className="flex items-center gap-4">
-              {nationalIdUrl ? (
-                <span className="text-xs text-green-500 flex items-center gap-1" style={{ fontFamily: "var(--font-body)" }}>
-                  ✓ <T>National ID uploaded</T>
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>No file uploaded</T></span>
-              )}
-              <button type="button" onClick={() => idFileRef.current?.click()} disabled={uploadingId}
-                className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase px-5 py-2.5 border border-border hover:border-primary hover:text-primary transition-all duration-500 disabled:opacity-50"
-                style={{ fontFamily: "var(--font-heading)" }}>
-                {uploadingId ? <Loader2 className="h-3 w-3 animate-spin" /> : <Shield className="h-3 w-3" />}
-                {nationalIdUrl ? <T>Replace</T> : <T>Upload</T>} ID
-              </button>
-              <input ref={idFileRef} type="file" accept="image/*,application/pdf" onChange={handleIdUpload} className="hidden" />
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}><T>JPG, PNG, WebP or PDF. Max 10MB.</T></p>
           </div>
 
           {/* Social Media Links */}
