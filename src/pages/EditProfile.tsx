@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, Shield, User, X, Building2, AlertCircle, ExternalLink, Twitter, Youtube, CloudOff, Cloud } from "lucide-react";
+import { Camera, CheckCircle2, Facebook, Instagram, Globe, KeyRound, Languages, Loader2, Mail, MapPin, Phone, Save, User, X, Building2, AlertCircle, ExternalLink, Twitter, Youtube, CloudOff, Cloud } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ProfileCompletionBar from "@/components/ProfileCompletionBar";
 import T from "@/components/T";
