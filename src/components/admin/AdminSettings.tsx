@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { clearS3Cache } from "@/lib/s3Upload";
 import { Progress } from "@/components/ui/progress";
+import StorageMigrationPanel from "@/components/admin/StorageMigrationPanel";
 
 interface Props {
   user: User | null;
