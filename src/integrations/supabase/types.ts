@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action_category: string
+          action_type: string
+          created_at: string
+          description: string | null
+          id: string
+          ip_address: string | null
+          is_archived: boolean
+          metadata: Json | null
+          page_path: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action_category?: string
+          action_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          is_archived?: boolean
+          metadata?: Json | null
+          page_path?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action_category?: string
+          action_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          is_archived?: boolean
+          metadata?: Json | null
+          page_path?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_notifications: {
         Row: {
           created_at: string
