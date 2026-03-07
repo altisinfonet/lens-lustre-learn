@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion, Cloud } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion, Cloud, ArrowRightLeft, FolderSync } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { clearS3Cache } from "@/lib/s3Upload";
+import { Progress } from "@/components/ui/progress";
 
 interface Props {
   user: User | null;
