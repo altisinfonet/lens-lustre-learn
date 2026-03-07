@@ -6,6 +6,9 @@ interface StorageUploadResult {
   path: string;
 }
 
+/** Buckets that contain sensitive/private files */
+const PRIVATE_BUCKETS = ["national-ids", "support-attachments"];
+
 let _s3Enabled: boolean | null = null;
 let _s3CheckTime = 0;
 
@@ -20,6 +23,7 @@ async function checkS3(): Promise<boolean> {
 /**
  * Upload a file to external S3 (if enabled) or default Supabase storage.
  * Returns { url, path } where path is the storage key.
+ * For private buckets, url will be the storage path (not a public URL).
  */
 export async function storageUpload(
   bucket: string,
@@ -28,12 +32,14 @@ export async function storageUpload(
   options?: { upsert?: boolean; cacheControl?: string; fileName?: string }
 ): Promise<StorageUploadResult> {
   const useS3 = await checkS3();
+  const isPrivate = PRIVATE_BUCKETS.includes(bucket);
 
   if (useS3) {
     const s3Path = `${bucket}/${path}`;
     const fileName = options?.fileName || (file instanceof File ? file.name : path.split("/").pop() || "file");
-    const result = await uploadToS3(file, s3Path, fileName);
-    return { url: result.url, path: s3Path };
+    const result = await uploadToS3(file, s3Path, fileName, isPrivate);
+    // For private files, store path instead of URL
+    return { url: isPrivate ? s3Path : result.url, path: s3Path };
   }
 
   // Default Supabase storage
@@ -42,6 +48,12 @@ export async function storageUpload(
     cacheControl: options?.cacheControl,
   });
   if (error) throw error;
+
+  if (isPrivate) {
+    // Don't return public URL for private buckets - return the path
+    return { url: path, path };
+  }
+
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return { url: data.publicUrl, path };
 }
@@ -83,14 +95,46 @@ export async function storageUploadImagePair(
  * S3 deletes would need a separate edge function.
  */
 export async function storageRemove(bucket: string, paths: string[]): Promise<void> {
-  // For now, attempt Supabase storage removal (works if file is there)
   await supabase.storage.from(bucket).remove(paths);
 }
 
 /**
- * Get public URL for a file in storage.
+ * Get public URL for a file in storage (public buckets only).
  */
 export function storageGetPublicUrl(bucket: string, path: string): string {
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
+}
+
+/**
+ * Get a signed/temporary URL for a private file.
+ * Works for both Supabase storage and S3 (via edge function).
+ * @param bucket - storage bucket name
+ * @param path - file path within the bucket (or full S3 key for S3)
+ * @param expiresIn - seconds until URL expires (default 900 = 15 min)
+ */
+export async function storageGetSignedUrl(
+  bucket: string,
+  path: string,
+  expiresIn = 900
+): Promise<string> {
+  const useS3 = await checkS3();
+
+  if (useS3) {
+    // Use edge function to generate presigned S3 URL
+    const s3Path = path.startsWith(`${bucket}/`) ? path : `${bucket}/${path}`;
+    const { data, error } = await supabase.functions.invoke("s3-signed-url", {
+      body: { path: s3Path },
+    });
+    if (error) throw new Error(error.message || "Failed to get signed URL");
+    if (data?.error) throw new Error(data.error);
+    return data.url;
+  }
+
+  // Default Supabase storage signed URL
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(path, expiresIn);
+  if (error) throw error;
+  return data.signedUrl;
 }

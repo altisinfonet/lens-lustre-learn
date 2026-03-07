@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const filePath = formData.get("path") as string | null;
+    const isPrivate = formData.get("private") === "true";
 
     if (!file || !filePath) {
       return new Response(JSON.stringify({ error: "Missing file or path" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -169,6 +170,14 @@ Deno.serve(async (req) => {
       const errText = await s3Response.text();
       console.error("S3 upload error:", errText);
       return new Response(JSON.stringify({ error: "S3 upload failed", detail: errText }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // For private files, return only the key (no public URL)
+    if (isPrivate) {
+      return new Response(
+        JSON.stringify({ success: true, url: null, key: s3Key, private: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Build public URL - use public_url if configured, otherwise use the upload URL
