@@ -14,6 +14,8 @@ import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
 import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
+import FeedRightSidebar from "@/components/FeedRightSidebar";
+import { useActivityLog } from "@/hooks/useActivityLog";
 
 const headingFont = { fontFamily: "var(--font-heading)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
@@ -86,6 +88,7 @@ const Feed = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
+  const { log } = useActivityLog();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -421,8 +424,11 @@ const Feed = () => {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 md:px-8 py-8 md:py-14 max-w-2xl">
+      <div className="container mx-auto px-4 md:px-8 py-8 md:py-14 max-w-6xl">
         <Breadcrumbs items={[{ label: "News Feed" }]} className="mb-6" />
+        <div className="flex gap-8">
+        {/* Main feed column */}
+        <div className="flex-1 max-w-2xl min-w-0">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -621,6 +627,12 @@ const Feed = () => {
             </div>
           </>
         )}
+        </div>
+        {/* Right sidebar */}
+        <aside className="hidden lg:block w-72 shrink-0 sticky top-24 self-start">
+          <FeedRightSidebar />
+        </aside>
+        </div>
       </div>
 
       {/* Back to top */}
