@@ -329,17 +329,188 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
                 </div>
               </div>
 
-              {/* Ad Code */}
+              {/* Ad Creative Source */}
               <div>
-                <label className={labelClass} style={headingFont}>Ad Code / HTML *</label>
-                <textarea
-                  value={editingSlot.ad_code}
-                  onChange={(e) => setEditingSlot({ ...editingSlot, ad_code: e.target.value })}
-                  className={`${inputClass} resize-none border border-border rounded-sm p-3 font-mono`}
-                  rows={6}
-                  placeholder={'<!-- Paste your ad code here -->\n<div class="ad-banner">\n  <a href="https://...">\n    <img src="https://..." alt="Ad" />\n  </a>\n</div>'}
-                />
+                <label className={labelClass} style={headingFont}>Ad Creative Type</label>
+                <div className="flex gap-3 mb-4">
+                  {([
+                    { value: "upload" as AdImageSource, label: "Upload Image", icon: Upload },
+                    { value: "url" as AdImageSource, label: "Image URL", icon: Link },
+                    { value: "code" as AdImageSource, label: "HTML / Code", icon: CropIcon },
+                  ]).map(({ value, label, icon: Icon }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setEditingSlot({ ...editingSlot, image_source: value })}
+                      className={`flex items-center gap-2 px-4 py-2.5 border text-xs tracking-[0.1em] uppercase transition-all ${
+                        (editingSlot.image_source || "code") === value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-foreground/30"
+                      }`}
+                      style={headingFont}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {(() => {
+                  const source = editingSlot.image_source || "code";
+                  const pInfo = getPlacementInfo(editingSlot.placement);
+
+                  if (source === "upload") {
+                    return (
+                      <div className="space-y-4">
+                        <div className="border border-dashed border-border rounded-sm p-5 bg-muted/10">
+                          <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-3" style={headingFont}>
+                            <ImageIcon className="h-4 w-4 text-primary" />
+                            <span>Recommended: {pInfo.width} × {pInfo.height}px ({pInfo.label})</span>
+                          </div>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-xs tracking-[0.15em] uppercase hover:border-primary hover:text-primary transition-all disabled:opacity-50"
+                            style={headingFont}
+                          >
+                            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                            {uploading ? "Uploading…" : "Choose & Crop Image"}
+                          </button>
+                        </div>
+
+                        {editingSlot.image_url && (
+                          <div className="border border-border rounded-sm p-3">
+                            <p className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={headingFont}>Preview</p>
+                            <img
+                              src={editingSlot.image_url}
+                              alt="Ad preview"
+                              className="max-h-40 object-contain rounded-sm border border-border/50"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditingSlot({ ...editingSlot, image_url: "" })}
+                              className="mt-2 text-[9px] tracking-wider uppercase text-destructive hover:underline"
+                              style={headingFont}
+                            >
+                              Remove Image
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <label className={labelClass} style={headingFont}>Click URL (where ad links to)</label>
+                            <input
+                              value={editingSlot.click_url || ""}
+                              onChange={(e) => setEditingSlot({ ...editingSlot, click_url: e.target.value })}
+                              className={inputClass}
+                              style={bodyFont}
+                              placeholder="https://example.com/landing-page"
+                            />
+                          </div>
+                          <div>
+                            <label className={labelClass} style={headingFont}>Alt Text</label>
+                            <input
+                              value={editingSlot.alt_text || ""}
+                              onChange={(e) => setEditingSlot({ ...editingSlot, alt_text: e.target.value })}
+                              className={inputClass}
+                              style={bodyFont}
+                              placeholder="Description of the ad"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (source === "url") {
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-1" style={headingFont}>
+                          <ImageIcon className="h-4 w-4 text-primary" />
+                          <span>Recommended: {pInfo.width} × {pInfo.height}px ({pInfo.label})</span>
+                        </div>
+                        <div>
+                          <label className={labelClass} style={headingFont}>Image URL *</label>
+                          <input
+                            value={editingSlot.image_url || ""}
+                            onChange={(e) => setEditingSlot({ ...editingSlot, image_url: e.target.value })}
+                            className={inputClass}
+                            style={bodyFont}
+                            placeholder="https://example.com/ad-banner.jpg"
+                          />
+                        </div>
+
+                        {editingSlot.image_url && (
+                          <div className="border border-border rounded-sm p-3">
+                            <p className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={headingFont}>Preview</p>
+                            <img
+                              src={editingSlot.image_url}
+                              alt="Ad preview"
+                              className="max-h-40 object-contain rounded-sm border border-border/50"
+                              onError={(e) => (e.currentTarget.style.display = "none")}
+                            />
+                          </div>
+                        )}
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <label className={labelClass} style={headingFont}>Click URL (where ad links to)</label>
+                            <input
+                              value={editingSlot.click_url || ""}
+                              onChange={(e) => setEditingSlot({ ...editingSlot, click_url: e.target.value })}
+                              className={inputClass}
+                              style={bodyFont}
+                              placeholder="https://example.com/landing-page"
+                            />
+                          </div>
+                          <div>
+                            <label className={labelClass} style={headingFont}>Alt Text</label>
+                            <input
+                              value={editingSlot.alt_text || ""}
+                              onChange={(e) => setEditingSlot({ ...editingSlot, alt_text: e.target.value })}
+                              className={inputClass}
+                              style={bodyFont}
+                              placeholder="Description of the ad"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // code mode
+                  return (
+                    <div>
+                      <label className={labelClass} style={headingFont}>Ad Code / HTML *</label>
+                      <textarea
+                        value={editingSlot.ad_code}
+                        onChange={(e) => setEditingSlot({ ...editingSlot, ad_code: e.target.value })}
+                        className={`${inputClass} resize-none border border-border rounded-sm p-3 font-mono`}
+                        rows={6}
+                        placeholder={'<!-- Paste your ad code here -->\n<div class="ad-banner">\n  <a href="https://...">\n    <img src="https://..." alt="Ad" />\n  </a>\n</div>'}
+                      />
+                    </div>
+                  );
+                })()}
               </div>
+
+              {/* Crop Modal */}
+              {cropSrc && (
+                <ImageCropModal
+                  imageSrc={cropSrc}
+                  onCropComplete={handleCropComplete}
+                  onCancel={() => setCropSrc(null)}
+                />
+              )}
 
               {/* Notes */}
               <div>
