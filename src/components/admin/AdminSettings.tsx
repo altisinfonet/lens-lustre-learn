@@ -35,6 +35,7 @@ interface WhatsAppSettings {
 
 interface S3StorageSettings {
   enabled: boolean;
+  provider: string;
   bucket_name: string;
   region: string;
   access_key_id: string;
