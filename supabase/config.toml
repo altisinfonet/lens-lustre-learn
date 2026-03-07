@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.ask-anything]
 verify_jwt = false
+
+[functions.s3-upload]
+verify_jwt = false

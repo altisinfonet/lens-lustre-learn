@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion, Cloud } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { clearS3Cache } from "@/lib/s3Upload";
 
 interface Props {
   user: User | null;
@@ -32,12 +33,32 @@ interface WhatsAppSettings {
   webhook_url: string;
 }
 
+interface S3StorageSettings {
+  enabled: boolean;
+  bucket_name: string;
+  region: string;
+  access_key_id: string;
+  secret_access_key: string;
+  endpoint: string;
+  path_prefix: string;
+}
+
 interface LogEntry {
   timestamp: string;
   step: string;
   status: "ok" | "error" | "info" | "warn";
   detail: string;
 }
+
+const defaultS3: S3StorageSettings = {
+  enabled: false,
+  bucket_name: "",
+  region: "us-east-1",
+  access_key_id: "",
+  secret_access_key: "",
+  endpoint: "",
+  path_prefix: "",
+};
 
 const defaultSmtp: SmtpSettings = {
   provider: "brevo",
@@ -72,6 +93,10 @@ function LogIcon({ status }: { status: LogEntry["status"] }) {
 export default function AdminSettings({ user }: Props) {
   const [smtp, setSmtp] = useState<SmtpSettings>(defaultSmtp);
   const [whatsapp, setWhatsapp] = useState<WhatsAppSettings>(defaultWhatsApp);
+  const [s3, setS3] = useState<S3StorageSettings>(defaultS3);
+  const [savingS3, setSavingS3] = useState(false);
+  const [showS3Secret, setShowS3Secret] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [savingSmtp, setSavingSmtp] = useState(false);
   const [savingWa, setSavingWa] = useState(false);
@@ -90,7 +115,7 @@ export default function AdminSettings({ user }: Props) {
       const { data } = await supabase
         .from("site_settings")
         .select("key, value")
-        .in("key", ["smtp_settings", "whatsapp_settings"]);
+        .in("key", ["smtp_settings", "whatsapp_settings", "s3_storage_settings"]);
 
       if (data) {
         for (const row of data) {
@@ -99,6 +124,9 @@ export default function AdminSettings({ user }: Props) {
           }
           if (row.key === "whatsapp_settings") {
             setWhatsapp({ ...defaultWhatsApp, ...(row.value as any) });
+          }
+          if (row.key === "s3_storage_settings") {
+            setS3({ ...defaultS3, ...(row.value as any) });
           }
         }
       }
@@ -205,6 +233,27 @@ export default function AdminSettings({ user }: Props) {
       toast({ title: "Failed to save WhatsApp settings", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "WhatsApp settings saved" });
+    }
+  };
+
+  const saveS3 = async () => {
+    if (!user) return;
+    setSavingS3(true);
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({
+        key: "s3_storage_settings",
+        value: s3 as any,
+        updated_by: user.id,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "key" });
+
+    setSavingS3(false);
+    clearS3Cache();
+    if (error) {
+      toast({ title: "Failed to save S3 settings", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "S3 storage settings saved" });
     }
   };
 
@@ -515,6 +564,92 @@ export default function AdminSettings({ user }: Props) {
             >
               {savingWa ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
               Save WhatsApp Settings
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* AWS S3 Storage Settings */}
+      <div className="border border-border rounded-sm overflow-hidden">
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-card/50">
+          <Cloud className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-medium tracking-wide uppercase" style={{ fontFamily: "var(--font-heading)" }}>AWS S3 Storage</h3>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <label className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>Enable S3 Storage</label>
+            <button
+              type="button"
+              onClick={() => setS3({ ...s3, enabled: !s3.enabled })}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${s3.enabled ? "bg-primary" : "bg-muted"}`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-background transition-transform ${s3.enabled ? "translate-x-4.5" : "translate-x-1"}`} />
+            </button>
+            <span className={`text-[9px] tracking-wider uppercase ${s3.enabled ? "text-primary" : "text-muted-foreground"}`} style={{ fontFamily: "var(--font-heading)" }}>
+              {s3.enabled ? "Active" : "Disabled"}
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-4" style={{ fontFamily: "var(--font-body)" }}>
+            When enabled, all user-uploaded files (images, documents) will be stored in your AWS S3 bucket instead of the default storage.
+            This includes competition photos, journal images, avatars, portfolio images, course images, and support attachments.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>S3 Bucket Name</label>
+              <input className={inputClass} placeholder="my-50mm-retina-bucket" value={s3.bucket_name} onChange={(e) => setS3({ ...s3, bucket_name: e.target.value })} />
+            </div>
+            <div>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>AWS Region</label>
+              <select className={inputClass} value={s3.region} onChange={(e) => setS3({ ...s3, region: e.target.value })}>
+                <option value="us-east-1">US East (N. Virginia) — us-east-1</option>
+                <option value="us-east-2">US East (Ohio) — us-east-2</option>
+                <option value="us-west-1">US West (N. California) — us-west-1</option>
+                <option value="us-west-2">US West (Oregon) — us-west-2</option>
+                <option value="eu-west-1">EU (Ireland) — eu-west-1</option>
+                <option value="eu-west-2">EU (London) — eu-west-2</option>
+                <option value="eu-central-1">EU (Frankfurt) — eu-central-1</option>
+                <option value="ap-south-1">Asia Pacific (Mumbai) — ap-south-1</option>
+                <option value="ap-southeast-1">Asia Pacific (Singapore) — ap-southeast-1</option>
+                <option value="ap-southeast-2">Asia Pacific (Sydney) — ap-southeast-2</option>
+                <option value="ap-northeast-1">Asia Pacific (Tokyo) — ap-northeast-1</option>
+                <option value="sa-east-1">South America (São Paulo) — sa-east-1</option>
+                <option value="me-south-1">Middle East (Bahrain) — me-south-1</option>
+                <option value="af-south-1">Africa (Cape Town) — af-south-1</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Access Key ID</label>
+              <input className={inputClass} placeholder="AKIA..." value={s3.access_key_id} onChange={(e) => setS3({ ...s3, access_key_id: e.target.value })} />
+            </div>
+            <div>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Secret Access Key</label>
+              <div className="relative">
+                <input className={inputClass + " pr-10"} type={showS3Secret ? "text" : "password"} placeholder="••••••••" value={s3.secret_access_key} onChange={(e) => setS3({ ...s3, secret_access_key: e.target.value })} />
+                <button onClick={() => setShowS3Secret(!showS3Secret)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  {showS3Secret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Custom Endpoint (Optional)</label>
+              <input className={inputClass} placeholder="https://s3.custom-provider.com" value={s3.endpoint} onChange={(e) => setS3({ ...s3, endpoint: e.target.value })} />
+              <p className="text-[9px] text-muted-foreground mt-1">For S3-compatible services (DigitalOcean Spaces, MinIO, Wasabi, etc.)</p>
+            </div>
+            <div>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Path Prefix (Optional)</label>
+              <input className={inputClass} placeholder="uploads/50mm-retina" value={s3.path_prefix} onChange={(e) => setS3({ ...s3, path_prefix: e.target.value })} />
+              <p className="text-[9px] text-muted-foreground mt-1">Files will be stored under this prefix in the bucket</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              onClick={saveS3}
+              disabled={savingS3}
+              className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 border border-primary bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {savingS3 ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              Save S3 Settings
             </button>
           </div>
         </div>
