@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoredReferralCode, clearStoredReferralCode } from "@/hooks/useReferral";
+import { logAuthEvent } from "@/hooks/useActivityLog";
 
 interface AuthContextType {
   session: Session | null;
@@ -68,6 +69,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setTimeout(() => syncProfile(session.user), 0);
         if (_event === 'SIGNED_IN') {
           setTimeout(() => linkReferral(session.user), 100);
+          setTimeout(() => logAuthEvent(session.user.id, 'login'), 0);
+        }
+        if (_event === 'SIGNED_UP') {
+          setTimeout(() => logAuthEvent(session.user.id, 'signup'), 0);
+        }
+        if (_event === 'PASSWORD_RECOVERY') {
+          setTimeout(() => logAuthEvent(session.user.id, 'password_recovery'), 0);
         }
       }
     });
@@ -102,6 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    if (user) logAuthEvent(user.id, 'logout');
     await supabase.auth.signOut();
   };
 
