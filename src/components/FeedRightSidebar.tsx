@@ -22,6 +22,10 @@ interface AdSlot {
   id: string;
   html: string;
   placement: string;
+  image_url?: string;
+  click_url?: string;
+  alt_text?: string;
+  image_source?: string;
 }
 
 interface TrendingPhoto {
@@ -116,7 +120,15 @@ const FeedRightSidebar = () => {
     const settings = data.value as any;
     const slots = settings.slots || [];
     const sidebarAds = slots.filter((s: any) => s.is_active && s.placement === "sidebar");
-    setAds(sidebarAds.map((s: any) => ({ id: s.id, html: s.html_code, placement: s.placement })));
+    setAds(sidebarAds.map((s: any) => ({
+      id: s.id,
+      html: s.html_code || s.ad_code || "",
+      placement: s.placement,
+      image_url: s.image_url || "",
+      click_url: s.click_url || "",
+      alt_text: s.alt_text || "",
+      image_source: s.image_source || "code",
+    })));
   };
 
   const loadTrendingPhotos = async () => {
@@ -238,9 +250,24 @@ const FeedRightSidebar = () => {
             </span>
           </div>
           <div className="p-4 space-y-4">
-            {ads.map((ad) => (
-              <div key={ad.id} dangerouslySetInnerHTML={{ __html: ad.html }} className="text-xs [&_img]:max-w-full [&_img]:rounded-sm" />
-            ))}
+            {ads.map((ad) => {
+              const hasImage = ad.image_source !== "code" && ad.image_url;
+              if (hasImage) {
+                const imgEl = <img src={ad.image_url} alt={ad.alt_text || "Sponsored"} className="w-full rounded-sm object-cover" />;
+                return (
+                  <div key={ad.id}>
+                    {ad.click_url ? (
+                      <a href={ad.click_url} target="_blank" rel="noopener noreferrer" className="block">
+                        {imgEl}
+                      </a>
+                    ) : imgEl}
+                  </div>
+                );
+              }
+              return ad.html ? (
+                <div key={ad.id} dangerouslySetInnerHTML={{ __html: ad.html }} className="text-xs [&_img]:max-w-full [&_img]:rounded-sm" />
+              ) : null;
+            })}
           </div>
         </div>
       )}
