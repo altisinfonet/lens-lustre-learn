@@ -22,6 +22,10 @@ interface AdSlot {
   id: string;
   html: string;
   placement: string;
+  image_url?: string;
+  click_url?: string;
+  alt_text?: string;
+  image_source?: string;
 }
 
 interface TrendingPhoto {
