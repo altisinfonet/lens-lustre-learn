@@ -62,51 +62,39 @@ export default function StorageMigrationPanel() {
     setLogs((prev) => [...prev, log]);
   };
 
-  const migrateBucket = async (bucket: string): Promise<{ migrated: number; failed: number }> => {
-    // First list folders
-    const { data: folderData } = await supabase.functions.invoke("migrate-storage", {
-      body: { action: "list-folders", bucket },
+  /** Recursively discover all folders in a bucket via lightweight per-level calls */
+  const discoverFolders = async (bucket: string, parent: string = ""): Promise<string[]> => {
+    const { data, error } = await supabase.functions.invoke("migrate-storage", {
+      body: { action: "list-folders", bucket, folder: parent },
     });
+    if (error || !data) return [];
+    const directFolders: string[] = data.folders || [];
+    // Recurse into each discovered subfolder
+    const nested: string[] = [];
+    for (const folder of directFolders) {
+      if (abortRef.current) break;
+      const sub = await discoverFolders(bucket, folder);
+      nested.push(...sub);
+    }
+    return [...directFolders, ...nested];
+  };
 
-    const folders = folderData?.folders || [];
-    const hasRootFiles = (folderData?.rootFiles || 0) > 0;
+  const migrateBucket = async (bucket: string): Promise<{ migrated: number; failed: number }> => {
+    // Discover all folders recursively via client-side orchestration
+    addLog({ bucket, message: "Discovering folders…", status: "info" });
+    const allFolders = await discoverFolders(bucket);
+    
+    // Check for root files
+    const { data: rootData } = await supabase.functions.invoke("migrate-storage", {
+      body: { action: "list-folders", bucket, folder: "" },
+    });
+    const hasRootFiles = (rootData?.rootFiles || 0) > 0;
+
     let totalMigrated = 0;
     let totalFailed = 0;
 
-    // Migrate root files
-    if (hasRootFiles) {
-      let offset = 0;
-      let hasMore = true;
-      while (hasMore && !abortRef.current) {
-        const { data, error } = await supabase.functions.invoke("migrate-storage", {
-          body: { action: "migrate", bucket, folder: "", limit: 50, offset },
-        });
-        if (error) {
-          addLog({ bucket, message: `Error migrating root: ${error.message}`, status: "error" });
-          break;
-        }
-        totalMigrated += data.migrated || 0;
-        totalFailed += data.failed || 0;
-        setMigratedCount((p) => p + (data.migrated || 0));
-        setFailedCount((p) => p + (data.failed || 0));
-
-        if (data.failedFiles?.length) {
-          for (const f of data.failedFiles) {
-            addLog({ bucket, message: `Failed: ${f.name} — ${f.error}`, status: "error" });
-          }
-        }
-        if (data.migrated > 0) {
-          addLog({ bucket, message: `Migrated ${data.migrated} root files (batch offset ${offset})`, status: "ok" });
-        }
-
-        hasMore = data.hasMore;
-        offset = data.nextOffset;
-      }
-    }
-
-    // Migrate each subfolder
-    for (const folder of folders) {
-      if (abortRef.current) break;
+    // Helper to migrate a single folder
+    const migrateFolder = async (folder: string) => {
       let offset = 0;
       let hasMore = true;
       while (hasMore && !abortRef.current) {
@@ -114,7 +102,7 @@ export default function StorageMigrationPanel() {
           body: { action: "migrate", bucket, folder, limit: 50, offset },
         });
         if (error) {
-          addLog({ bucket, message: `Error migrating ${folder}/: ${error.message}`, status: "error" });
+          addLog({ bucket, message: `Error migrating ${folder || "root"}: ${error.message}`, status: "error" });
           break;
         }
         totalMigrated += data.migrated || 0;
@@ -124,16 +112,27 @@ export default function StorageMigrationPanel() {
 
         if (data.failedFiles?.length) {
           for (const f of data.failedFiles) {
-            addLog({ bucket, message: `Failed: ${folder}/${f.name} — ${f.error}`, status: "error" });
+            addLog({ bucket, message: `Failed: ${folder ? folder + "/" : ""}${f.name} — ${f.error}`, status: "error" });
           }
         }
         if (data.migrated > 0) {
-          addLog({ bucket, message: `Migrated ${data.migrated} files from ${folder}/ (batch offset ${offset})`, status: "ok" });
+          addLog({ bucket, message: `Migrated ${data.migrated} files from ${folder || "root"} (batch offset ${offset})`, status: "ok" });
         }
 
         hasMore = data.hasMore;
         offset = data.nextOffset;
       }
+    };
+
+    // Migrate root files
+    if (hasRootFiles) {
+      await migrateFolder("");
+    }
+
+    // Migrate each discovered folder
+    for (const folder of allFolders) {
+      if (abortRef.current) break;
+      await migrateFolder(folder);
     }
 
     return { migrated: totalMigrated, failed: totalFailed };

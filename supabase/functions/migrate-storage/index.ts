@@ -184,37 +184,34 @@ Deno.serve(async (req) => {
       const results: Record<string, number> = {};
       const bucketNames = buckets || ["competition-photos", "journal-images", "course-images", "portfolio-images", "avatars", "post-images"];
       
-      // Recursive file counter
-      async function countFiles(bucket: string, folder: string): Promise<number> {
-        let count = 0;
-        let offset = 0;
-        const batchSize = 1000;
-        let hasMore = true;
-        while (hasMore) {
-          const { data: items } = await adminClient.storage.from(bucket).list(folder, {
-            limit: batchSize,
-            offset,
-            sortBy: { column: "created_at", order: "asc" },
-          });
-          if (!items || items.length === 0) break;
-          for (const item of items) {
-            if (item.id) {
-              count++; // it's a file
-            } else {
-              // it's a folder — recurse
-              const subPath = folder ? `${folder}/${item.name}` : item.name;
-              count += await countFiles(bucket, subPath);
-            }
-          }
-          hasMore = items.length === batchSize;
-          offset += items.length;
-        }
-        return count;
-      }
-
       for (const bucket of bucketNames) {
         try {
-          results[bucket] = await countFiles(bucket, "");
+          // Count root files + count subfolders (one level only for speed)
+          const { data: items } = await adminClient.storage.from(bucket).list("", {
+            limit: 1000,
+            sortBy: { column: "created_at", order: "asc" },
+          });
+          let count = 0;
+          const folders: string[] = [];
+          if (items) {
+            for (const f of items) {
+              if (f.id) count++;
+              else folders.push(f.name);
+            }
+          }
+          // Count files inside each top-level subfolder (one level deep)
+          for (const folder of folders) {
+            try {
+              const { data: subItems } = await adminClient.storage.from(bucket).list(folder, {
+                limit: 1000,
+                sortBy: { column: "created_at", order: "asc" },
+              });
+              if (subItems) {
+                count += subItems.filter(f => f.id).length;
+              }
+            } catch { /* skip */ }
+          }
+          results[bucket] = count;
         } catch {
           results[bucket] = 0;
         }
@@ -295,31 +292,21 @@ Deno.serve(async (req) => {
     // Action: "migrate-folder" - list subfolders then migrate each
     if (action === "list-folders") {
       const targetBucket = body.bucket;
+      const parentFolder = body.folder || "";
       
-      // Recursively collect all folders
-      async function collectFolders(bucket: string, prefix: string): Promise<string[]> {
-        const { data: items } = await adminClient.storage.from(bucket).list(prefix, { limit: 1000 });
-        const folders: string[] = [];
-        let rootFileCount = 0;
-        for (const item of (items || [])) {
-          if (!item.id) {
-            const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
-            folders.push(fullPath);
-            // Recurse into subfolder
-            const subFolders = await collectFolders(bucket, fullPath);
-            folders.push(...subFolders);
-          } else if (!prefix) {
-            rootFileCount++;
-          }
+      const { data: items } = await adminClient.storage.from(targetBucket).list(parentFolder, { limit: 1000 });
+      const folders: string[] = [];
+      let rootFiles = 0;
+      for (const item of (items || [])) {
+        if (!item.id) {
+          const fullPath = parentFolder ? `${parentFolder}/${item.name}` : item.name;
+          folders.push(fullPath);
+        } else {
+          rootFiles++;
         }
-        return folders;
       }
-
-      const allFolders = await collectFolders(targetBucket, "");
-      const { data: rootItems } = await adminClient.storage.from(targetBucket).list("", { limit: 1000 });
-      const rootFiles = (rootItems || []).filter(f => f.id).length;
       
-      return new Response(JSON.stringify({ folders: allFolders, rootFiles }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ folders, rootFiles }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(JSON.stringify({ error: "Invalid action. Use 'list', 'migrate', or 'list-folders'" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
