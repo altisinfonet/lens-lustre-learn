@@ -250,9 +250,24 @@ const FeedRightSidebar = () => {
             </span>
           </div>
           <div className="p-4 space-y-4">
-            {ads.map((ad) => (
-              <div key={ad.id} dangerouslySetInnerHTML={{ __html: ad.html }} className="text-xs [&_img]:max-w-full [&_img]:rounded-sm" />
-            ))}
+            {ads.map((ad) => {
+              const hasImage = ad.image_source !== "code" && ad.image_url;
+              if (hasImage) {
+                const imgEl = <img src={ad.image_url} alt={ad.alt_text || "Sponsored"} className="w-full rounded-sm object-cover" />;
+                return (
+                  <div key={ad.id}>
+                    {ad.click_url ? (
+                      <a href={ad.click_url} target="_blank" rel="noopener noreferrer" className="block">
+                        {imgEl}
+                      </a>
+                    ) : imgEl}
+                  </div>
+                );
+              }
+              return ad.html ? (
+                <div key={ad.id} dangerouslySetInnerHTML={{ __html: ad.html }} className="text-xs [&_img]:max-w-full [&_img]:rounded-sm" />
+              ) : null;
+            })}
           </div>
         </div>
       )}
