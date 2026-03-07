@@ -74,7 +74,12 @@ const FileUploadDropZone = ({
   const [showGalleryPanel, setShowGalleryPanel] = useState(false);
   const [galleryFiles, setGalleryFiles] = useState<GalleryFile[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
+  const [useS3, setUseS3] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    isS3Enabled().then(setUseS3);
+  }, []);
 
   const uploadSingleFile = useCallback(async (file: File) => {
     // Security scan
