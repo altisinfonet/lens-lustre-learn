@@ -229,6 +229,33 @@ const FeedRightSidebar = () => {
 
   return (
     <div className="space-y-5">
+      {/* Sponsored / Ads — Top */}
+      {ads.length > 0 && (
+        <div className="border border-border bg-card/50 rounded-sm">
+          <div className="px-4 py-3 border-b border-border">
+            <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={headingFont}>
+              <T>Sponsored</T>
+            </span>
+          </div>
+          <div className="p-4 space-y-4">
+            {ads.map((ad) => (
+              <div key={ad.id} dangerouslySetInnerHTML={{ __html: ad.html }} className="text-xs [&_img]:max-w-full [&_img]:rounded-sm" />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {ads.length === 0 && (
+        <div className="border border-dashed border-border p-6 text-center rounded-sm">
+          <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground/50 block mb-2" style={headingFont}>
+            Sponsored
+          </span>
+          <p className="text-[10px] text-muted-foreground/40" style={bodyFont}>
+            Ad space available
+          </p>
+        </div>
+      )}
+
       {/* People You May Know */}
       <div className="border border-border bg-card/50 rounded-sm">
         <div className="px-4 py-3 border-b border-border">
@@ -424,33 +451,6 @@ const FeedRightSidebar = () => {
               <T>Read More →</T>
             </Link>
           </div>
-        </div>
-      )}
-
-      {/* Sponsored / Ads */}
-      {ads.length > 0 && (
-        <div className="border border-border bg-card/50 rounded-sm">
-          <div className="px-4 py-3 border-b border-border">
-            <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={headingFont}>
-              <T>Sponsored</T>
-            </span>
-          </div>
-          <div className="p-4 space-y-4">
-            {ads.map((ad) => (
-              <div key={ad.id} dangerouslySetInnerHTML={{ __html: ad.html }} className="text-xs [&_img]:max-w-full [&_img]:rounded-sm" />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {ads.length === 0 && (
-        <div className="border border-dashed border-border p-6 text-center rounded-sm">
-          <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground/50 block mb-2" style={headingFont}>
-            Sponsored
-          </span>
-          <p className="text-[10px] text-muted-foreground/40" style={bodyFont}>
-            Ad space available
-          </p>
         </div>
       )}
     </div>

@@ -4,15 +4,22 @@ import GiftCelebrationModal from "@/components/GiftCelebrationModal";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import AskAnything from "@/components/AskAnything";
 import PageSEO from "@/components/PageSEO";
+import FeedRightSidebar from "@/components/FeedRightSidebar";
+import { useAuth } from "@/hooks/useAuth";
 
 /** Pages where the Navbar should NOT be shown (auth screens) */
 const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
 
+/** Pages where the right sidebar should NOT be shown */
+const hideSidebarRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
+
 /** Home page gets a transparent overlay navbar */
 const Layout = () => {
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const hideNav = hideNavRoutes.includes(pathname);
   const isHome = pathname === "/";
+  const showSidebar = user && !hideSidebarRoutes.includes(pathname) && !pathname.startsWith("/admin");
 
   return (
     <>
@@ -31,7 +38,20 @@ const Layout = () => {
         </>
       )}
       <GiftCelebrationModal />
-      <Outlet />
+
+      {showSidebar ? (
+        <div className="flex gap-8 container mx-auto px-4 md:px-8">
+          <div className="flex-1 min-w-0">
+            <Outlet />
+          </div>
+          <aside className="hidden lg:block w-72 shrink-0 sticky top-24 self-start py-6">
+            <FeedRightSidebar />
+          </aside>
+        </div>
+      ) : (
+        <Outlet />
+      )}
+
       {!hideNav && <AskAnything />}
     </>
   );
