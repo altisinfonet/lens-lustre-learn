@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, FolderOpen, FileText, Image, FileSpreadsheet, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { scanFileWithToast, type AllowedFileType } from "@/lib/fileSecurityScanner";
 import { compressImageToFiles } from "@/lib/imageCompression";
+import { isS3Enabled, uploadToS3 } from "@/lib/s3Upload";
 
 export interface UploadedFile {
   url: string;
