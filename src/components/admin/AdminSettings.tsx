@@ -236,6 +236,27 @@ export default function AdminSettings({ user }: Props) {
     }
   };
 
+  const saveS3 = async () => {
+    if (!user) return;
+    setSavingS3(true);
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({
+        key: "s3_storage_settings",
+        value: s3 as any,
+        updated_by: user.id,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "key" });
+
+    setSavingS3(false);
+    clearS3Cache();
+    if (error) {
+      toast({ title: "Failed to save S3 settings", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "S3 storage settings saved" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-20 justify-center text-muted-foreground">
