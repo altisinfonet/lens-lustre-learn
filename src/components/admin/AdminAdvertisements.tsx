@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Save, Megaphone, Plus, Trash2, Eye, EyeOff, Monitor, Smartphone, Tablet } from "lucide-react";
+import { Loader2, Save, Megaphone, Plus, Trash2, Eye, EyeOff, Monitor, Smartphone, Tablet, Upload, Link, Image as ImageIcon, Crop as CropIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import ImageCropModal from "@/components/admin/ImageCropModal";
+import { uploadFile } from "@/lib/storageUpload";
 import type { User } from "@supabase/supabase-js";
 
 type Placement = "header" | "footer" | "sidebar" | "in-content" | "between-entries" | "lightbox-overlay";
 type Device = "desktop" | "mobile" | "tablet";
+type AdImageSource = "upload" | "url" | "code";
 
 interface AdSlot {
   id: string;
@@ -19,15 +22,19 @@ interface AdSlot {
   start_date: string;
   end_date: string;
   notes: string;
+  image_url?: string;
+  image_source?: AdImageSource;
+  click_url?: string;
+  alt_text?: string;
 }
 
-const placementOptions: { value: Placement; label: string }[] = [
-  { value: "header", label: "Header (Top Banner)" },
-  { value: "footer", label: "Footer (Bottom Banner)" },
-  { value: "sidebar", label: "Sidebar" },
-  { value: "in-content", label: "In-Content (Between Sections)" },
-  { value: "between-entries", label: "Between Entries / Cards" },
-  { value: "lightbox-overlay", label: "Lightbox Overlay" },
+const placementOptions: { value: Placement; label: string; width: number; height: number; aspect: number }[] = [
+  { value: "header", label: "Header (Top Banner)", width: 970, height: 90, aspect: 970 / 90 },
+  { value: "footer", label: "Footer (Bottom Banner)", width: 970, height: 90, aspect: 970 / 90 },
+  { value: "sidebar", label: "Sidebar", width: 300, height: 250, aspect: 300 / 250 },
+  { value: "in-content", label: "In-Content (Between Sections)", width: 728, height: 90, aspect: 728 / 90 },
+  { value: "between-entries", label: "Between Entries / Cards", width: 600, height: 200, aspect: 600 / 200 },
+  { value: "lightbox-overlay", label: "Lightbox Overlay", width: 640, height: 480, aspect: 640 / 480 },
 ];
 
 const deviceOptions: { value: Device; label: string; icon: typeof Monitor }[] = [
@@ -47,6 +54,10 @@ const emptySlot = (): AdSlot => ({
   start_date: "",
   end_date: "",
   notes: "",
+  image_url: "",
+  image_source: "upload",
+  click_url: "",
+  alt_text: "",
 });
 
 export default function AdminAdvertisements({ user }: { user: User | null }) {
