@@ -45,6 +45,7 @@ interface S3StorageSettings {
   secret_access_key: string;
   endpoint: string;
   path_prefix: string;
+  public_url: string;
 }
 
 interface LogEntry {
@@ -63,6 +64,7 @@ const defaultS3: S3StorageSettings = {
   secret_access_key: "",
   endpoint: "",
   path_prefix: "",
+  public_url: "",
 };
 
 const defaultSmtp: SmtpSettings = {
@@ -728,6 +730,11 @@ export default function AdminSettings({ user }: Props) {
               <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Endpoint URL</label>
               <input className={inputClass} placeholder="https://s3.provider.com" value={s3.endpoint} onChange={(e) => setS3({ ...s3, endpoint: e.target.value })} />
               <p className="text-[9px] text-muted-foreground mt-1">Leave empty for standard AWS S3. Auto-filled for other providers.</p>
+            </div>
+            <div>
+              <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Public / CDN URL</label>
+              <input className={inputClass} placeholder="https://cdn.example.com" value={s3.public_url || ""} onChange={(e) => setS3({ ...s3, public_url: e.target.value })} />
+              <p className="text-[9px] text-muted-foreground mt-1">Public URL where uploaded files are served. Required for Cloudflare R2 and providers where the API endpoint differs from the public URL. Leave empty for AWS S3.</p>
             </div>
             <div>
               <label className={labelClass} style={{ fontFamily: "var(--font-heading)" }}>Path Prefix (Optional)</label>

@@ -15,6 +15,7 @@ interface S3Settings {
   secret_access_key: string;
   endpoint?: string; // For S3-compatible services like DigitalOcean Spaces, MinIO
   path_prefix?: string;
+  public_url?: string; // Public/CDN URL for serving files (e.g. R2.dev or custom domain)
 }
 
 // AWS Signature V4 helpers
@@ -170,8 +171,12 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "S3 upload failed", detail: errText }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Build public URL
-    const publicUrl = url;
+    // Build public URL - use public_url if configured, otherwise use the upload URL
+    let publicUrl = url;
+    if (s3.public_url) {
+      const cleanPublicUrl = s3.public_url.replace(/\/+$/, "");
+      publicUrl = `${cleanPublicUrl}/${s3Key}`;
+    }
 
     return new Response(
       JSON.stringify({ success: true, url: publicUrl, key: s3Key }),
