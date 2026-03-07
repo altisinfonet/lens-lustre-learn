@@ -66,6 +66,9 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("slots");
   const [editingSlot, setEditingSlot] = useState<AdSlot | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetch = async () => {
