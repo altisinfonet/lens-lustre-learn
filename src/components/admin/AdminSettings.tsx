@@ -33,12 +33,32 @@ interface WhatsAppSettings {
   webhook_url: string;
 }
 
+interface S3StorageSettings {
+  enabled: boolean;
+  bucket_name: string;
+  region: string;
+  access_key_id: string;
+  secret_access_key: string;
+  endpoint: string;
+  path_prefix: string;
+}
+
 interface LogEntry {
   timestamp: string;
   step: string;
   status: "ok" | "error" | "info" | "warn";
   detail: string;
 }
+
+const defaultS3: S3StorageSettings = {
+  enabled: false,
+  bucket_name: "",
+  region: "us-east-1",
+  access_key_id: "",
+  secret_access_key: "",
+  endpoint: "",
+  path_prefix: "",
+};
 
 const defaultSmtp: SmtpSettings = {
   provider: "brevo",
