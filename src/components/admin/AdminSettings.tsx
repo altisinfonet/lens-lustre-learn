@@ -93,6 +93,10 @@ function LogIcon({ status }: { status: LogEntry["status"] }) {
 export default function AdminSettings({ user }: Props) {
   const [smtp, setSmtp] = useState<SmtpSettings>(defaultSmtp);
   const [whatsapp, setWhatsapp] = useState<WhatsAppSettings>(defaultWhatsApp);
+  const [s3, setS3] = useState<S3StorageSettings>(defaultS3);
+  const [savingS3, setSavingS3] = useState(false);
+  const [showS3Secret, setShowS3Secret] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [savingSmtp, setSavingSmtp] = useState(false);
   const [savingWa, setSavingWa] = useState(false);
@@ -111,7 +115,7 @@ export default function AdminSettings({ user }: Props) {
       const { data } = await supabase
         .from("site_settings")
         .select("key, value")
-        .in("key", ["smtp_settings", "whatsapp_settings"]);
+        .in("key", ["smtp_settings", "whatsapp_settings", "s3_storage_settings"]);
 
       if (data) {
         for (const row of data) {
@@ -120,6 +124,9 @@ export default function AdminSettings({ user }: Props) {
           }
           if (row.key === "whatsapp_settings") {
             setWhatsapp({ ...defaultWhatsApp, ...(row.value as any) });
+          }
+          if (row.key === "s3_storage_settings") {
+            setS3({ ...defaultS3, ...(row.value as any) });
           }
         }
       }
