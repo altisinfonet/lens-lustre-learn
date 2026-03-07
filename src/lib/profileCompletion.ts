@@ -21,7 +21,6 @@ interface ProfileFields {
   bank_account_number?: string | null;
   bank_name?: string | null;
   bank_ifsc?: string | null;
-  national_id_url?: string | null;
 }
 
 interface CompletionSection {
@@ -45,9 +44,8 @@ export function calcProfileCompletion(p: ProfileFields): {
     { label: "Postal Code", percentage: 5, completed: !!p.postal_code?.trim() },
     { label: "Phone Number", percentage: 10, completed: !!p.phone?.trim() },
     { label: "WhatsApp Number", percentage: 5, completed: !!p.whatsapp?.trim() },
-    { label: "Bank Details", percentage: 10, completed: !!(p.bank_account_name?.trim() && p.bank_account_number?.trim() && p.bank_name?.trim()) },
+    { label: "Bank Details", percentage: 15, completed: !!(p.bank_account_name?.trim() && p.bank_account_number?.trim() && p.bank_name?.trim()) },
     { label: "Bank IFSC", percentage: 5, completed: !!p.bank_ifsc?.trim() },
-    { label: "National ID", percentage: 10, completed: !!p.national_id_url },
   ];
 
   const total = sections.reduce((sum, s) => sum + (s.completed ? s.percentage : 0), 0);
