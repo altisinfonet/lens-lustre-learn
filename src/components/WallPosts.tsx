@@ -12,6 +12,7 @@ import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
 import FacebookPhotoGrid from "@/components/FacebookPhotoGrid";
+import AdPlacement from "@/components/AdPlacement";
 import { Textarea } from "@/components/ui/textarea";
 import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
 import {
