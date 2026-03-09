@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { profilesPublic } from "@/lib/profilesPublic";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import AdPlacement from "@/components/AdPlacement";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
