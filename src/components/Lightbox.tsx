@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import ImageEngagement from "@/components/ImageEngagement";
+import AdPlacement from "@/components/AdPlacement";
 import { getJpegDownloadUrl } from "@/lib/imageCompression";
 
 interface LightboxProps {
