@@ -28,10 +28,6 @@ const placementStyles: Record<AdPlacementKey, { wrapper: string; image: string }
     wrapper: "w-full overflow-hidden rounded-sm",
     image: "w-full h-auto object-cover",
   },
-  footer: {
-    wrapper: "w-full overflow-hidden rounded-sm",
-    image: "w-full h-auto object-cover",
-  },
   "above-journal": {
     wrapper: "w-full overflow-hidden rounded-sm",
     image: "w-full h-auto object-cover",
