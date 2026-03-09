@@ -1671,6 +1671,11 @@ const Index = () => {
           </div>
         </section>
 
+      {/* Above Journal Ad Zone */}
+      <div className="container mx-auto px-6 md:px-12 pb-6">
+        <AdPlacement placement="above-journal" variant="plain" />
+      </div>
+
       {/* Journal Preview */}
       <section className="py-24 md:py-32" aria-label="Latest from the journal">
           <div className="container mx-auto px-6 md:px-12">
