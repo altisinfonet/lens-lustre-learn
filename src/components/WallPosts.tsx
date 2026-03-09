@@ -577,8 +577,8 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       ) : (
         <AnimatePresence mode="popLayout">
           {posts.map((post, i) => (
-            <motion.div
-              key={post.id}
+            <Fragment key={post.id}>
+              <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
