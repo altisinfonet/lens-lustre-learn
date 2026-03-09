@@ -14,6 +14,9 @@ const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password
 /** Pages where the right sidebar should NOT be shown */
 const hideSidebarRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
 
+/** Pages where ads should NOT be shown */
+const hideAdRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
+
 /** Home page gets a transparent overlay navbar */
 const Layout = () => {
   const { pathname } = useLocation();
@@ -21,6 +24,7 @@ const Layout = () => {
   const hideNav = hideNavRoutes.includes(pathname);
   const isHome = pathname === "/";
   const showSidebar = user && !hideSidebarRoutes.includes(pathname) && !pathname.startsWith("/admin");
+  const showAds = !hideAdRoutes.includes(pathname) && !pathname.startsWith("/admin");
 
   return (
     <>
