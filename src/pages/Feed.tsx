@@ -470,144 +470,149 @@ const Feed = () => {
           <>
             <AnimatePresence mode="popLayout">
               {posts.map((post, i) => (
-                <motion.div
-                  key={post.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: Math.min(i, 5) * 0.03 }}
-                  className="border border-border mb-4"
-                >
-                  {/* Header */}
-                  <div className="flex items-center gap-3 p-4 pb-0">
-                    <Link to={`/profile/${post.user_id}`} className="shrink-0">
-                      {post.author_avatar ? (
-                        <img src={post.author_avatar} alt="" className="w-9 h-9 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-xs text-primary" style={displayFont}>{(post.author_name || "?")[0]?.toUpperCase()}</span>
-                        </div>
-                      )}
-                    </Link>
-                    <div className="flex-1 min-w-0">
-                      <span className="flex items-center gap-1">
-                        <Link to={`/profile/${post.user_id}`} className="text-sm font-light hover:text-primary transition-colors truncate" style={headingFont}>
-                          {post.author_name || "User"}
-                        </Link>
-                        {post.author_badges.length > 0 && <UserBadgeInline badges={post.author_badges} />}
-                      </span>
-                      <div className="flex items-center gap-2 text-[9px] text-muted-foreground" style={headingFont}>
-                        <span>{timeAgo(post.created_at)}</span>
-                        <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="px-4 py-3">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap" style={bodyFont}>{post.content}</p>
-                    {post.image_url && <FeedImage src={post.image_url} />}
-                  </div>
-
-                  {/* Counts */}
-                  {(post.like_count > 0 || post.comment_count > 0) && (
-                    <div className="flex items-center gap-4 px-4 pb-2 text-[10px] text-muted-foreground" style={headingFont}>
-                      {post.like_count > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          {(post.top_reactions.length > 0 ? post.top_reactions : ["like"]).map((type) => (
-                            <span key={type} className="text-sm">{REACTION_EMOJI_MAP[type] || "👍"}</span>
-                          ))}
-                          {post.like_count}
-                        </span>
-                      )}
-                      {post.comment_count > 0 && (
-                        <button onClick={() => toggleComments(post.id)} className="hover:text-foreground transition-colors">
-                          {post.comment_count} <T>{post.comment_count === 1 ? "comment" : "comments"}</T>
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex border-t border-border divide-x divide-border">
-                    <ReactionPicker
-                      currentReaction={post.user_reaction}
-                      onReact={(type) => handleReact(post.id, type)}
-                      onUnreact={() => handleUnreact(post.id)}
-                      disabled={!user}
-                    />
-                    <button onClick={() => toggleComments(post.id)} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
-                      <MessageCircle className="h-3.5 w-3.5" /><T>Comment</T>
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
-                          <Share2 className="h-3.5 w-3.5" /><T>Share</T>
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuItem onClick={() => shareToWall(post)} className="py-2.5 cursor-pointer">
-                          <Share2 className="h-4 w-4 mr-2.5" />
-                          <T>Share to your wall</T>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => copyPostLink(post)} className="py-2.5 cursor-pointer">
-                          <Copy className="h-4 w-4 mr-2.5" />
-                          <T>Copy link</T>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {/* Comments section */}
-                  {expandedComments.has(post.id) && (
-                    <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-3">
-                      {(commentsByPost[post.id] || []).map((c) => (
-                        <div key={c.id} className="flex gap-2">
-                          <Link to={`/profile/${c.user_id}`} className="shrink-0">
-                            {c.author_avatar ? (
-                              <img src={c.author_avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="text-[8px] text-primary">{(c.author_name || "?")[0]?.toUpperCase()}</span>
-                              </div>
-                            )}
-                          </Link>
-                          <div className="flex-1 min-w-0">
-                            <div className="bg-muted/50 px-3 py-2 rounded-sm">
-                              <span className="flex items-center gap-1">
-                                <Link to={`/profile/${c.user_id}`} className="text-[11px] font-medium hover:text-primary transition-colors" style={headingFont}>
-                                  {c.author_name || "User"}
-                                </Link>
-                                {c.author_badges.length > 0 && <UserBadgeInline badges={c.author_badges} />}
-                              </span>
-                              <p className="text-xs leading-relaxed" style={bodyFont}>{c.content}</p>
-                            </div>
-                            <span className="text-[9px] text-muted-foreground ml-3" style={headingFont}>{timeAgo(c.created_at)}</span>
+                <Fragment key={post.id}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: Math.min(i, 5) * 0.03 }}
+                    className="border border-border mb-4"
+                  >
+                    {/* Header */}
+                    <div className="flex items-center gap-3 p-4 pb-0">
+                      <Link to={`/profile/${post.user_id}`} className="shrink-0">
+                        {post.author_avatar ? (
+                          <img src={post.author_avatar} alt="" className="w-9 h-9 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-xs text-primary" style={displayFont}>{(post.author_name || "?")[0]?.toUpperCase()}</span>
                           </div>
+                        )}
+                      </Link>
+                      <div className="flex-1 min-w-0">
+                        <span className="flex items-center gap-1">
+                          <Link to={`/profile/${post.user_id}`} className="text-sm font-light hover:text-primary transition-colors truncate" style={headingFont}>
+                            {post.author_name || "User"}
+                          </Link>
+                          {post.author_badges.length > 0 && <UserBadgeInline badges={post.author_badges} />}
+                        </span>
+                        <div className="flex items-center gap-2 text-[9px] text-muted-foreground" style={headingFont}>
+                          <span>{timeAgo(post.created_at)}</span>
+                          <span className="inline-flex items-center gap-1">{privacyIcon(post.privacy)}</span>
                         </div>
-                      ))}
-                      {/* Comment input */}
-                      <div className="flex gap-2 pt-1">
-                        <input
-                          type="text"
-                          value={commentInputs[post.id] || ""}
-                          onChange={(e) => setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                          placeholder="Write a comment..."
-                          maxLength={1000}
-                          className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-1.5 text-xs transition-colors"
-                          style={bodyFont}
-                          onKeyDown={(e) => e.key === "Enter" && submitComment(post.id)}
-                        />
-                        <button
-                          onClick={() => submitComment(post.id)}
-                          disabled={commentLoading === post.id || !commentInputs[post.id]?.trim()}
-                          className="p-1.5 text-primary hover:opacity-70 transition-opacity disabled:opacity-30"
-                        >
-                          <Send className="h-3.5 w-3.5" />
-                        </button>
                       </div>
                     </div>
+
+                    {/* Content */}
+                    <div className="px-4 py-3">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap" style={bodyFont}>{post.content}</p>
+                      {post.image_url && <FeedImage src={post.image_url} />}
+                    </div>
+
+                    {/* Counts */}
+                    {(post.like_count > 0 || post.comment_count > 0) && (
+                      <div className="flex items-center gap-4 px-4 pb-2 text-[10px] text-muted-foreground" style={headingFont}>
+                        {post.like_count > 0 && (
+                          <span className="inline-flex items-center gap-1">
+                            {(post.top_reactions.length > 0 ? post.top_reactions : ["like"]).map((type) => (
+                              <span key={type} className="text-sm">{REACTION_EMOJI_MAP[type] || "👍"}</span>
+                            ))}
+                            {post.like_count}
+                          </span>
+                        )}
+                        {post.comment_count > 0 && (
+                          <button onClick={() => toggleComments(post.id)} className="hover:text-foreground transition-colors">
+                            {post.comment_count} <T>{post.comment_count === 1 ? "comment" : "comments"}</T>
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex border-t border-border divide-x divide-border">
+                      <ReactionPicker
+                        currentReaction={post.user_reaction}
+                        onReact={(type) => handleReact(post.id, type)}
+                        onUnreact={() => handleUnreact(post.id)}
+                        disabled={!user}
+                      />
+                      <button onClick={() => toggleComments(post.id)} className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
+                        <MessageCircle className="h-3.5 w-3.5" /><T>Comment</T>
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-all duration-300" style={headingFont}>
+                            <Share2 className="h-3.5 w-3.5" /><T>Share</T>
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuItem onClick={() => shareToWall(post)} className="py-2.5 cursor-pointer">
+                            <Share2 className="h-4 w-4 mr-2.5" />
+                            <T>Share to your wall</T>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => copyPostLink(post)} className="py-2.5 cursor-pointer">
+                            <Copy className="h-4 w-4 mr-2.5" />
+                            <T>Copy link</T>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Comments section */}
+                    {expandedComments.has(post.id) && (
+                      <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-3">
+                        {(commentsByPost[post.id] || []).map((c) => (
+                          <div key={c.id} className="flex gap-2">
+                            <Link to={`/profile/${c.user_id}`} className="shrink-0">
+                              {c.author_avatar ? (
+                                <img src={c.author_avatar} alt="" className="w-6 h-6 rounded-full object-cover" />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <span className="text-[8px] text-primary">{(c.author_name || "?")[0]?.toUpperCase()}</span>
+                                </div>
+                              )}
+                            </Link>
+                            <div className="flex-1 min-w-0">
+                              <div className="bg-muted/50 px-3 py-2 rounded-sm">
+                                <span className="flex items-center gap-1">
+                                  <Link to={`/profile/${c.user_id}`} className="text-[11px] font-medium hover:text-primary transition-colors" style={headingFont}>
+                                    {c.author_name || "User"}
+                                  </Link>
+                                  {c.author_badges.length > 0 && <UserBadgeInline badges={c.author_badges} />}
+                                </span>
+                                <p className="text-xs leading-relaxed" style={bodyFont}>{c.content}</p>
+                              </div>
+                              <span className="text-[9px] text-muted-foreground ml-3" style={headingFont}>{timeAgo(c.created_at)}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {/* Comment input */}
+                        <div className="flex gap-2 pt-1">
+                          <input
+                            type="text"
+                            value={commentInputs[post.id] || ""}
+                            onChange={(e) => setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                            placeholder="Write a comment..."
+                            maxLength={1000}
+                            className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-1.5 text-xs transition-colors"
+                            style={bodyFont}
+                            onKeyDown={(e) => e.key === "Enter" && submitComment(post.id)}
+                          />
+                          <button
+                            onClick={() => submitComment(post.id)}
+                            disabled={commentLoading === post.id || !commentInputs[post.id]?.trim()}
+                            className="p-1.5 text-primary hover:opacity-70 transition-opacity disabled:opacity-30"
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+
+                  {i === 1 && (
+                    <AdPlacement placement="between-entries" className="mb-4" />
                   )}
-                </motion.div>
+                </Fragment>
               ))}
             </AnimatePresence>
 
