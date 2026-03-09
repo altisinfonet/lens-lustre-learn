@@ -44,8 +44,8 @@ const Layout = () => {
       )}
 
       {showAds && (
-        <div className={`container mx-auto px-4 md:px-8 ${isHome ? "pt-24 md:pt-28" : "pt-3"}`}>
-          <AdPlacement placement="header" />
+        <div className={`container mx-auto px-4 md:px-8 ${isHome ? "pt-24 md:pt-28" : "pt-2"}`}>
+          <AdPlacement placement="header" variant="plain" />
         </div>
       )}
 
