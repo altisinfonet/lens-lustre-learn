@@ -9,7 +9,7 @@ import { compressImageToFiles } from "@/lib/imageCompression";
 import type { User } from "@supabase/supabase-js";
 import type { AdSource } from "@/lib/adSlots";
 
-type Placement = "header" | "footer" | "sidebar" | "in-content" | "between-entries" | "lightbox-overlay" | "above-journal" | "below-journal";
+type Placement = "header" | "sidebar" | "in-content" | "between-entries" | "lightbox-overlay" | "above-journal" | "below-journal";
 type Device = "desktop" | "mobile" | "tablet";
 type AdImageSource = "upload" | "url" | "code";
 
@@ -55,7 +55,6 @@ interface ImpressionRow {
 
 const placementOptions: { value: Placement; label: string }[] = [
   { value: "header", label: "Header (Leaderboard)" },
-  { value: "footer", label: "Footer (Leaderboard)" },
   { value: "above-journal", label: "Above Journal Section" },
   { value: "below-journal", label: "Below Journal Section" },
   { value: "sidebar", label: "Sidebar (Rectangle)" },
