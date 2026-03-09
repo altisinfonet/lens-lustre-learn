@@ -32,6 +32,14 @@ const placementStyles: Record<AdPlacementKey, { wrapper: string; image: string }
     wrapper: "w-full overflow-hidden rounded-sm",
     image: "w-full h-auto object-cover",
   },
+  "above-journal": {
+    wrapper: "w-full overflow-hidden rounded-sm",
+    image: "w-full h-auto object-cover",
+  },
+  "below-journal": {
+    wrapper: "w-full overflow-hidden rounded-sm",
+    image: "w-full h-auto object-cover",
+  },
   sidebar: {
     wrapper: "w-full rounded-sm overflow-hidden",
     image: "w-full h-auto object-cover rounded-sm",
@@ -160,6 +168,8 @@ const AdPlacement = ({
     const placementLabels: Record<AdPlacementKey, { label: string; hint: string }> = {
       header: { label: "Header Ad Zone", hint: "Leaderboard · Responsive" },
       footer: { label: "Footer Ad Zone", hint: "Leaderboard · Responsive" },
+      "above-journal": { label: "Above Journal Ad Zone", hint: "Banner · Responsive" },
+      "below-journal": { label: "Below Journal Ad Zone", hint: "Banner · Responsive" },
       sidebar: { label: "Sidebar Ad Zone", hint: "Rectangle · Responsive" },
       "in-content": { label: "In-Content Ad Zone", hint: "Native · Responsive" },
       "between-entries": { label: "Between Entries Ad Zone", hint: "Banner · Responsive" },

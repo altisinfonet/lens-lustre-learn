@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type AdPlacement = "header" | "footer" | "sidebar" | "in-content" | "between-entries" | "lightbox-overlay";
+export type AdPlacement = "header" | "footer" | "sidebar" | "in-content" | "between-entries" | "lightbox-overlay" | "above-journal" | "below-journal";
 export type AdDevice = "desktop" | "mobile" | "tablet";
 export type AdImageSource = "upload" | "url" | "code";
 export type AdSource = "internal" | "adsense";

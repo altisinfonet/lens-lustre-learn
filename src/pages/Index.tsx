@@ -1,4 +1,5 @@
 import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand, Calendar, Rss, Users, Globe, MessageCircle } from "lucide-react";
+import AdPlacement from "@/components/AdPlacement";
 import T from "@/components/T";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
@@ -1670,6 +1671,11 @@ const Index = () => {
           </div>
         </section>
 
+      {/* Above Journal Ad Zone */}
+      <div className="container mx-auto px-6 md:px-12 pb-6">
+        <AdPlacement placement="above-journal" variant="plain" />
+      </div>
+
       {/* Journal Preview */}
       <section className="py-24 md:py-32" aria-label="Latest from the journal">
           <div className="container mx-auto px-6 md:px-12">
@@ -1858,6 +1864,11 @@ const Index = () => {
           )}
           </div>
         </section>
+
+      {/* Below Journal Ad Zone */}
+      <div className="container mx-auto px-6 md:px-12 pt-6">
+        <AdPlacement placement="below-journal" variant="plain" />
+      </div>
 
       {/* Social Engagement Showcase */}
       <section className="relative py-20 md:py-28 overflow-hidden" aria-label="Community and social features" style={{ background: "hsl(var(--scroll-bg-2))" }}>
