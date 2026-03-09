@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Fragment, useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X, Download, Share2, Link2, Copy } from "lucide-react";
 import { compressImageToFiles, getJpegDownloadUrl } from "@/lib/imageCompression";
@@ -12,6 +12,7 @@ import T from "@/components/T";
 import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
 import FacebookPhotoGrid from "@/components/FacebookPhotoGrid";
+import AdPlacement from "@/components/AdPlacement";
 import { Textarea } from "@/components/ui/textarea";
 import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
 import {
@@ -576,8 +577,8 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
       ) : (
         <AnimatePresence mode="popLayout">
           {posts.map((post, i) => (
-            <motion.div
-              key={post.id}
+            <Fragment key={post.id}>
+              <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
@@ -792,7 +793,10 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+              </motion.div>
+
+              {i === 1 && <AdPlacement placement="between-entries" className="my-4" />}
+            </Fragment>
           ))}
         </AnimatePresence>
       )}

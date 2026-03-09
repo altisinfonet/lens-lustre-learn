@@ -5,6 +5,7 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import AskAnything from "@/components/AskAnything";
 import PageSEO from "@/components/PageSEO";
 import FeedRightSidebar from "@/components/FeedRightSidebar";
+import AdPlacement from "@/components/AdPlacement";
 import { useAuth } from "@/hooks/useAuth";
 
 /** Pages where the Navbar should NOT be shown (auth screens) */
@@ -13,6 +14,9 @@ const hideNavRoutes = ["/login", "/signup", "/forgot-password", "/reset-password
 /** Pages where the right sidebar should NOT be shown */
 const hideSidebarRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/admin"];
 
+/** Pages where ads should NOT be shown */
+const hideAdRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
+
 /** Home page gets a transparent overlay navbar */
 const Layout = () => {
   const { pathname } = useLocation();
@@ -20,6 +24,7 @@ const Layout = () => {
   const hideNav = hideNavRoutes.includes(pathname);
   const isHome = pathname === "/";
   const showSidebar = user && !hideSidebarRoutes.includes(pathname) && !pathname.startsWith("/admin");
+  const showAds = !hideAdRoutes.includes(pathname) && !pathname.startsWith("/admin");
 
   return (
     <>
@@ -37,19 +42,44 @@ const Layout = () => {
           <Navbar />
         </>
       )}
+
+      {showAds && (
+        <div className={`container mx-auto px-4 md:px-8 ${isHome ? "pt-24 md:pt-28" : "pt-3"}`}>
+          <AdPlacement placement="header" />
+        </div>
+      )}
+
       <GiftCelebrationModal />
 
       {showSidebar ? (
         <div className="flex gap-8 container mx-auto px-4 md:px-8">
           <div className="flex-1 min-w-0">
             <Outlet />
+            {showAds && (
+              <div className="py-6">
+                <AdPlacement placement="in-content" />
+              </div>
+            )}
           </div>
           <aside className="hidden lg:block w-72 shrink-0 sticky top-24 self-start py-6">
             <FeedRightSidebar />
           </aside>
         </div>
       ) : (
-        <Outlet />
+        <>
+          <Outlet />
+          {showAds && (
+            <div className="container mx-auto px-4 md:px-8 py-6">
+              <AdPlacement placement="in-content" />
+            </div>
+          )}
+        </>
+      )}
+
+      {showAds && (
+        <div className="container mx-auto px-4 md:px-8 pb-6">
+          <AdPlacement placement="footer" />
+        </div>
       )}
 
       {!hideNav && <AskAnything />}
