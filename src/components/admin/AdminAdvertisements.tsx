@@ -56,6 +56,8 @@ interface ImpressionRow {
 const placementOptions: { value: Placement; label: string }[] = [
   { value: "header", label: "Header (Leaderboard)" },
   { value: "footer", label: "Footer (Leaderboard)" },
+  { value: "above-journal", label: "Above Journal Section" },
+  { value: "below-journal", label: "Below Journal Section" },
   { value: "sidebar", label: "Sidebar (Rectangle)" },
   { value: "in-content", label: "In-Content (Banner)" },
   { value: "between-entries", label: "Between Entries" },
