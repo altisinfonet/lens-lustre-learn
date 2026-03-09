@@ -5,6 +5,7 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import AskAnything from "@/components/AskAnything";
 import PageSEO from "@/components/PageSEO";
 import FeedRightSidebar from "@/components/FeedRightSidebar";
+import AdPlacement from "@/components/AdPlacement";
 import { useAuth } from "@/hooks/useAuth";
 
 /** Pages where the Navbar should NOT be shown (auth screens) */
