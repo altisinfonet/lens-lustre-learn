@@ -88,6 +88,10 @@ const Lightbox = memo(({ images, currentIndex, isOpen, onClose, onPrev, onNext, 
             <ChevronRight className="h-6 w-6" />
           </button>
 
+          <div className="absolute bottom-4 left-1/2 z-20 w-[min(92vw,640px)] -translate-x-1/2" onClick={(e) => e.stopPropagation()}>
+            <AdPlacement placement="lightbox-overlay" variant="plain" />
+          </div>
+
           {/* Image */}
           <AnimatePresence mode="wait">
             <motion.div
