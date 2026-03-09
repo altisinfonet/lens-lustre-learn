@@ -153,9 +153,36 @@ const AdPlacement = ({
     });
   }, [visibleAds, placement, device]);
 
-  if (visibleAds.length === 0) return null;
-
   const ps = placementStyles[placement] ?? placementStyles.sidebar;
+
+  // Show placeholder when no ads configured
+  if (visibleAds.length === 0) {
+    const placementLabels: Record<AdPlacementKey, { label: string; hint: string }> = {
+      header: { label: "Header Ad Zone", hint: "Leaderboard · Responsive" },
+      footer: { label: "Footer Ad Zone", hint: "Leaderboard · Responsive" },
+      sidebar: { label: "Sidebar Ad Zone", hint: "Rectangle · Responsive" },
+      "in-content": { label: "In-Content Ad Zone", hint: "Native · Responsive" },
+      "between-entries": { label: "Between Entries Ad Zone", hint: "Banner · Responsive" },
+      "lightbox-overlay": { label: "Lightbox Ad Zone", hint: "Compact Strip · Responsive" },
+    };
+    const info = placementLabels[placement] ?? { label: "Ad Zone", hint: "Responsive" };
+
+    return (
+      <div
+        className={cn(
+          "border-2 border-dashed border-muted-foreground/20 rounded-sm flex flex-col items-center justify-center gap-1 bg-muted/10 select-none",
+          placement === "lightbox-overlay" ? "py-3" : "py-6",
+          ps.wrapper,
+          className,
+        )}
+      >
+        <span className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground/50 font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+          {info.label}
+        </span>
+        <span className="text-[8px] text-muted-foreground/30">{info.hint}</span>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
