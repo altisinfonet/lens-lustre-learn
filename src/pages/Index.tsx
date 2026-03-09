@@ -813,6 +813,11 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Header Ad Zone — below Spotlight */}
+      <div className="container mx-auto px-6 md:px-12 py-4">
+        <AdPlacement placement="header" variant="plain" />
+      </div>
+
       {/* All Competitions Showcase — Grouped by Status */}
       <section className="py-24 md:py-32" aria-label="Competitions">
         <div className="container mx-auto px-6 md:px-12">
