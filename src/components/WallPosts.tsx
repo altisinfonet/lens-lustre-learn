@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Fragment, useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { MessageCircle, Send, Trash2, Globe, Users, Lock, MoreHorizontal, ChevronDown, ImagePlus, X, Download, Share2, Link2, Copy } from "lucide-react";
 import { compressImageToFiles, getJpegDownloadUrl } from "@/lib/imageCompression";
