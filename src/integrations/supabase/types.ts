@@ -56,6 +56,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_impressions: {
+        Row: {
+          ad_source: string
+          country: string | null
+          created_at: string
+          device: string
+          event_type: string
+          id: string
+          placement: string
+          slot_id: string
+        }
+        Insert: {
+          ad_source?: string
+          country?: string | null
+          created_at?: string
+          device?: string
+          event_type?: string
+          id?: string
+          placement: string
+          slot_id: string
+        }
+        Update: {
+          ad_source?: string
+          country?: string | null
+          created_at?: string
+          device?: string
+          event_type?: string
+          id?: string
+          placement?: string
+          slot_id?: string
+        }
+        Relationships: []
+      }
       admin_notifications: {
         Row: {
           created_at: string
