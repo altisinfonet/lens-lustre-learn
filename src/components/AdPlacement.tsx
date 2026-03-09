@@ -163,7 +163,6 @@ const AdPlacement = ({
   if (visibleAds.length === 0) {
     const placementLabels: Record<AdPlacementKey, { label: string; hint: string }> = {
       header: { label: "Header Ad Zone", hint: "Leaderboard · Responsive" },
-      footer: { label: "Footer Ad Zone", hint: "Leaderboard · Responsive" },
       "above-journal": { label: "Above Journal Ad Zone", hint: "Banner · Responsive" },
       "below-journal": { label: "Below Journal Ad Zone", hint: "Banner · Responsive" },
       sidebar: { label: "Sidebar Ad Zone", hint: "Rectangle · Responsive" },
