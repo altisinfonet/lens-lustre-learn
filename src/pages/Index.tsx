@@ -1,4 +1,5 @@
 import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand, Calendar, Rss, Users, Globe, MessageCircle } from "lucide-react";
+import AdPlacement from "@/components/AdPlacement";
 import T from "@/components/T";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, type Variants, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
