@@ -1865,6 +1865,11 @@ const Index = () => {
           </div>
         </section>
 
+      {/* Below Journal Ad Zone */}
+      <div className="container mx-auto px-6 md:px-12 pt-6">
+        <AdPlacement placement="below-journal" variant="plain" />
+      </div>
+
       {/* Social Engagement Showcase */}
       <section className="relative py-20 md:py-28 overflow-hidden" aria-label="Community and social features" style={{ background: "hsl(var(--scroll-bg-2))" }}>
         {/* Subtle diagonal line accent */}
