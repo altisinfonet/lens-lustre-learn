@@ -18,6 +18,34 @@ interface AdPlacementProps {
   variant?: "card" | "plain";
 }
 
+/** Placement-specific wrapper + image styles */
+const placementStyles: Record<AdPlacementKey, { wrapper: string; image: string }> = {
+  header: {
+    wrapper: "w-full max-h-[120px] overflow-hidden rounded-sm",
+    image: "w-full h-auto max-h-[120px] object-cover",
+  },
+  footer: {
+    wrapper: "w-full max-h-[120px] overflow-hidden rounded-sm",
+    image: "w-full h-auto max-h-[120px] object-cover",
+  },
+  sidebar: {
+    wrapper: "w-full rounded-sm overflow-hidden",
+    image: "w-full h-auto object-cover rounded-sm",
+  },
+  "in-content": {
+    wrapper: "w-full max-h-[150px] overflow-hidden rounded-sm mx-auto max-w-3xl",
+    image: "w-full h-auto max-h-[150px] object-cover",
+  },
+  "between-entries": {
+    wrapper: "w-full max-h-[200px] overflow-hidden rounded-sm",
+    image: "w-full h-auto max-h-[200px] object-cover",
+  },
+  "lightbox-overlay": {
+    wrapper: "w-full rounded-sm overflow-hidden",
+    image: "w-full h-auto max-h-[100px] object-cover rounded-sm",
+  },
+};
+
 const AdPlacement = ({
   placement,
   className,
@@ -60,17 +88,23 @@ const AdPlacement = ({
 
   if (visibleAds.length === 0) return null;
 
+  const ps = placementStyles[placement] ?? placementStyles.sidebar;
+
   return (
-    <div className={cn(variant === "card" && "border border-border bg-card/50 rounded-sm", className)}>
+    <div className={cn(
+      variant === "card" && "border border-border bg-card/50 rounded-sm",
+      ps.wrapper,
+      className,
+    )}>
       {variant === "card" && label && (
-        <div className="px-4 py-3 border-b border-border">
+        <div className="px-4 py-2 border-b border-border">
           <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
             {label}
           </span>
         </div>
       )}
 
-      <div className={cn("space-y-3", variant === "card" && "p-4")}>
+      <div className={cn("space-y-3", variant === "card" && "p-3")}>
         {visibleAds.map((ad) => {
           const hasImage = ad.image_source !== "code" && ad.image_url;
 
@@ -79,7 +113,7 @@ const AdPlacement = ({
               <img
                 src={ad.image_url}
                 alt={ad.alt_text || "Sponsored"}
-                className={cn("w-full rounded-sm object-cover", imageClassName)}
+                className={cn(ps.image, imageClassName)}
                 loading="lazy"
               />
             );

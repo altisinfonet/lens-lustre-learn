@@ -78,7 +78,7 @@ const Layout = () => {
 
       {showAds && (
         <div className="container mx-auto px-4 md:px-8 pb-6">
-          <AdPlacement placement="footer" />
+          <AdPlacement placement="footer" variant="plain" />
         </div>
       )}
 
