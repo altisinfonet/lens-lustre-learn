@@ -42,19 +42,44 @@ const Layout = () => {
           <Navbar />
         </>
       )}
+
+      {showAds && (
+        <div className={`container mx-auto px-4 md:px-8 ${isHome ? "pt-24 md:pt-28" : "pt-3"}`}>
+          <AdPlacement placement="header" />
+        </div>
+      )}
+
       <GiftCelebrationModal />
 
       {showSidebar ? (
         <div className="flex gap-8 container mx-auto px-4 md:px-8">
           <div className="flex-1 min-w-0">
             <Outlet />
+            {showAds && (
+              <div className="py-6">
+                <AdPlacement placement="in-content" />
+              </div>
+            )}
           </div>
           <aside className="hidden lg:block w-72 shrink-0 sticky top-24 self-start py-6">
             <FeedRightSidebar />
           </aside>
         </div>
       ) : (
-        <Outlet />
+        <>
+          <Outlet />
+          {showAds && (
+            <div className="container mx-auto px-4 md:px-8 py-6">
+              <AdPlacement placement="in-content" />
+            </div>
+          )}
+        </>
+      )}
+
+      {showAds && (
+        <div className="container mx-auto px-4 md:px-8 pb-6">
+          <AdPlacement placement="footer" />
+        </div>
       )}
 
       {!hideNav && <AskAnything />}
