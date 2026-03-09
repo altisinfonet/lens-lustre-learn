@@ -793,7 +793,10 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+              </motion.div>
+
+              {i === 1 && <AdPlacement placement="between-entries" className="my-4" />}
+            </Fragment>
           ))}
         </AnimatePresence>
       )}
