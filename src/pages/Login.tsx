@@ -267,7 +267,7 @@ const Login = () => {
 
         {/* Lockout timer */}
         {isLockedOut && (
-          <div className="mb-6 flex items-center gap-3 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
+          <div className="mb-6 flex items-center gap-3 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm w-full" style={{ fontFamily: "var(--font-body)" }}>
             <Timer className="h-5 w-5 flex-shrink-0 animate-pulse" />
             <div>
               <span className="font-medium"><T>Account locked</T></span>
