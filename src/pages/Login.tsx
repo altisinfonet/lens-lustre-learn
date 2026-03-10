@@ -284,7 +284,7 @@ const Login = () => {
           </div>
         )}
 
-        <div className="space-y-4 max-w-sm">
+        <div className="space-y-4 max-w-sm w-full">
           {/* OAuth buttons */}
           <button
             onClick={() => handleOAuth("google")}
