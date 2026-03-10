@@ -633,6 +633,10 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
                     className="p-1.5 hover:text-amber-600 transition-colors rounded-sm hover:bg-amber-500/10" title="Manage Badges" disabled={actionLoading === u.id}>
                     <Award className="h-3.5 w-3.5" />
                   </button>
+                  <a href={`/profile/${u.id}`} target="_blank" rel="noopener noreferrer"
+                    className="p-1.5 hover:text-blue-600 transition-colors rounded-sm hover:bg-blue-500/10" title="View Profile">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
                   <button onClick={() => { setEditTarget(u); setEditName(u.full_name || ""); setEditBio(u.bio || ""); }}
                     className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit" disabled={actionLoading === u.id}>
                     <Pencil className="h-3.5 w-3.5" />
