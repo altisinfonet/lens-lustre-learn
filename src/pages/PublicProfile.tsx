@@ -433,10 +433,12 @@ const PublicProfile = () => {
               )}
 
               <div className="space-y-2.5 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2.5">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
-                  <span style={bodyFont}>Member since {memberSince}</span>
-                </div>
+                {canView("member_since") && (
+                  <div className="flex items-center gap-2.5">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" />
+                    <span style={bodyFont}>Member since {memberSince}</span>
+                  </div>
+                )}
                 {entries.length > 0 && (
                   <div className="flex items-center gap-2.5">
                     <Image className="h-3.5 w-3.5 text-muted-foreground/60" />
