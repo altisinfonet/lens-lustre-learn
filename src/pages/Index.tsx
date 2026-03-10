@@ -480,7 +480,7 @@ const Index = () => {
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
       try {
-      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes, bannersRes, heroContentRes] = await Promise.all([
+      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes, bannersRes, heroContentRes, socialLinksRes] = await Promise.all([
         supabase
           .from("competition_entries")
           .select("id, title, photos, competition_id, user_id")
