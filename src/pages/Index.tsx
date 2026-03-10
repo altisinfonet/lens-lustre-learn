@@ -526,6 +526,11 @@ const Index = () => {
           .select("value")
           .eq("key", "hero_content")
           .maybeSingle(),
+        supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "social_media_links")
+          .maybeSingle(),
       ]);
 
       if (heroContentRes.data?.value) {
