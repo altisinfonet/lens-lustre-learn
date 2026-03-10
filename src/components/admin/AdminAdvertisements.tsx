@@ -434,13 +434,21 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
 
                   {(editingSlot.image_source === "upload" || !editingSlot.image_source) && editingSlot.image_source !== "code" && editingSlot.image_source !== "url" && (
                     <div className="space-y-4">
+                      {/* Required dimensions info */}
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-sm bg-primary/5 border border-primary/20">
+                        <span className="text-[9px] tracking-[0.15em] uppercase text-primary" style={headingFont}>Required size:</span>
+                        <span className="text-[10px] text-foreground font-medium" style={headingFont}>
+                          {PLACEMENT_DIMENSIONS[editingSlot.placement]?.label || "—"}
+                        </span>
+                      </div>
                       <div className="border border-dashed border-border rounded-sm p-5 bg-muted/10">
                         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
                           className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-xs tracking-[0.15em] uppercase hover:border-primary hover:text-primary transition-all disabled:opacity-50" style={headingFont}>
                           {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                          {uploading ? "Uploading…" : "Choose & Crop Image"}
+                          {uploading ? "Uploading…" : "Choose & Position Image"}
                         </button>
+                        <p className="mt-2 text-[9px] text-muted-foreground/60">Upload any image — you'll position & zoom it to fit the required frame</p>
                       </div>
                       {editingSlot.image_url && (
                         <div className="border border-border rounded-sm p-3">
