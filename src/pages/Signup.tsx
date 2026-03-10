@@ -127,27 +127,26 @@ const Signup = () => {
       </div>
 
       {/* Right — Content */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12">
-        <Link to="/" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12" style={{ fontFamily: "var(--font-heading)" }}>
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-8 md:px-16 lg:px-24 py-12">
+        <Link to="/" className="self-start inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12" style={{ fontFamily: "var(--font-heading)" }}>
           <ArrowLeft className="h-3 w-3" /> <T>Back</T>
         </Link>
 
-        <div className="flex justify-center mb-8">
-          <img src="/images/logo.png" alt="50mm Retina World" className="h-48 w-48 object-contain" />
+        <div className="flex flex-col items-center text-center mb-10">
+          <img src="/images/logo.png" alt="50mm Retina World" className="h-48 w-48 object-contain mb-8" />
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
+            <T>Join the</T> <em className="italic text-primary"><T>Community</T></em>
+          </h1>
+          <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>Create your account and start sharing your vision.</T></p>
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-          <T>Join the</T> <em className="italic text-primary"><T>Community</T></em>
-        </h1>
-        <p className="text-sm text-muted-foreground mb-10" style={{ fontFamily: "var(--font-body)" }}><T>Create your account and start sharing your vision.</T></p>
-
         {error && (
-          <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
+          <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm w-full text-center" style={{ fontFamily: "var(--font-body)" }}>
             {error}
           </div>
         )}
 
-        <div className="space-y-4 max-w-sm">
+        <div className="space-y-4 max-w-sm w-full">
           {/* OAuth buttons */}
           <button
             onClick={() => handleOAuth("google")}
