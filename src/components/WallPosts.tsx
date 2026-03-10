@@ -675,6 +675,9 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                 </div>
               )}
 
+              {/* ── Engagement Stats ── */}
+              <EngagementFooter id={post.id} createdAt={post.created_at} className="border-t border-border mx-3" />
+
               {/* ── Action Bar (React / Comment / Share) ── */}
               <div className="mx-3 border-t border-border">
                 <div className="flex">
