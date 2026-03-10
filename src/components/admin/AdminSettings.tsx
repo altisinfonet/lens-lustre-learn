@@ -157,6 +157,8 @@ export default function AdminSettings({ user }: Props) {
   const [showLogs, setShowLogs] = useState(false);
   const [apiKeyStatus, setApiKeyStatus] = useState<{ valid: boolean; message: string } | null>(null);
   const [verifyingKey, setVerifyingKey] = useState(false);
+  const [social, setSocial] = useState<SocialMediaLinks>(defaultSocial);
+  const [savingSocial, setSavingSocial] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
