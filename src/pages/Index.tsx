@@ -402,6 +402,7 @@ const Index = () => {
     cta_text: "Begin Your Journey",
     cta_link: "/signup",
   });
+  const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
 
   // Scroll-linked background for middle sections
   const middleRef = useRef<HTMLDivElement>(null);
