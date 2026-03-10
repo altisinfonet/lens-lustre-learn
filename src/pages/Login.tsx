@@ -260,7 +260,7 @@ const Login = () => {
         </div>
 
         {error && (
-          <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
+          <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm w-full text-center" style={{ fontFamily: "var(--font-body)" }}>
             {error}
           </div>
         )}
