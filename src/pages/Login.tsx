@@ -251,14 +251,13 @@ const Login = () => {
           <ArrowLeft className="h-3 w-3" /> <T>Back</T>
         </Link>
 
-        <div className="flex justify-center mb-8">
-          <img src="/images/logo.png" alt="50mm Retina World" className="h-48 w-48 object-contain" />
+        <div className="flex flex-col items-center text-center mb-10">
+          <img src="/images/logo.png" alt="50mm Retina World" className="h-48 w-48 object-contain mb-8" />
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
+            <T>Welcome</T> <em className="italic text-primary"><T>Back</T></em>
+          </h1>
+          <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>Sign in to continue your journey.</T></p>
         </div>
-
-        <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-          <T>Welcome</T> <em className="italic text-primary"><T>Back</T></em>
-        </h1>
-        <p className="text-sm text-muted-foreground mb-10" style={{ fontFamily: "var(--font-body)" }}><T>Sign in to continue your journey.</T></p>
 
         {error && (
           <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
