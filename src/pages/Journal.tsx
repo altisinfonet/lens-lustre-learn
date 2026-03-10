@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Clock, Tag, PenLine } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import T from "@/components/T";
+import EngagementFooter from "@/components/EngagementFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
