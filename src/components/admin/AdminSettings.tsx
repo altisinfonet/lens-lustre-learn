@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion, Cloud, ArrowRightLeft, FolderSync } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion, Cloud, ArrowRightLeft, FolderSync, Facebook, Instagram, Twitter, Youtube, Globe, Linkedin, Github, Music2, MapPin, Phone as PhoneIcon, Share2 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
@@ -36,6 +36,47 @@ interface WhatsAppSettings {
   webhook_url: string;
 }
 
+interface SocialMediaLinks {
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  youtube: string;
+  linkedin: string;
+  github: string;
+  tiktok: string;
+  pinterest: string;
+  whatsapp_link: string;
+  telegram: string;
+  website: string;
+}
+
+const defaultSocial: SocialMediaLinks = {
+  facebook: "",
+  instagram: "",
+  twitter: "",
+  youtube: "",
+  linkedin: "",
+  github: "",
+  tiktok: "",
+  pinterest: "",
+  whatsapp_link: "",
+  telegram: "",
+  website: "",
+};
+
+const SOCIAL_FIELDS: { key: keyof SocialMediaLinks; label: string; icon: any; placeholder: string; hoverColor: string }[] = [
+  { key: "facebook", label: "Facebook", icon: Facebook, placeholder: "https://facebook.com/yourpage", hoverColor: "hover:text-[#1877F2]" },
+  { key: "instagram", label: "Instagram", icon: Instagram, placeholder: "https://instagram.com/yourhandle", hoverColor: "hover:text-[#E4405F]" },
+  { key: "twitter", label: "X (Twitter)", icon: Twitter, placeholder: "https://x.com/yourhandle", hoverColor: "hover:text-foreground" },
+  { key: "youtube", label: "YouTube", icon: Youtube, placeholder: "https://youtube.com/@yourchannel", hoverColor: "hover:text-[#FF0000]" },
+  { key: "linkedin", label: "LinkedIn", icon: Linkedin, placeholder: "https://linkedin.com/company/yourco", hoverColor: "hover:text-[#0A66C2]" },
+  { key: "github", label: "GitHub", icon: Github, placeholder: "https://github.com/yourorg", hoverColor: "hover:text-foreground" },
+  { key: "tiktok", label: "TikTok", icon: Music2, placeholder: "https://tiktok.com/@yourhandle", hoverColor: "hover:text-foreground" },
+  { key: "pinterest", label: "Pinterest", icon: MapPin, placeholder: "https://pinterest.com/yourprofile", hoverColor: "hover:text-[#E60023]" },
+  { key: "whatsapp_link", label: "WhatsApp", icon: PhoneIcon, placeholder: "https://wa.me/1234567890", hoverColor: "hover:text-[#25D366]" },
+  { key: "telegram", label: "Telegram", icon: Send, placeholder: "https://t.me/yourchannel", hoverColor: "hover:text-[#0088CC]" },
+  { key: "website", label: "Website", icon: Globe, placeholder: "https://yourwebsite.com", hoverColor: "hover:text-primary" },
+];
 interface S3StorageSettings {
   enabled: boolean;
   provider: string;
@@ -116,13 +157,15 @@ export default function AdminSettings({ user }: Props) {
   const [showLogs, setShowLogs] = useState(false);
   const [apiKeyStatus, setApiKeyStatus] = useState<{ valid: boolean; message: string } | null>(null);
   const [verifyingKey, setVerifyingKey] = useState(false);
+  const [social, setSocial] = useState<SocialMediaLinks>(defaultSocial);
+  const [savingSocial, setSavingSocial] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
       const { data } = await supabase
         .from("site_settings")
         .select("key, value")
-        .in("key", ["smtp_settings", "whatsapp_settings", "s3_storage_settings"]);
+        .in("key", ["smtp_settings", "whatsapp_settings", "s3_storage_settings", "social_media_links"]);
 
       if (data) {
         for (const row of data) {
@@ -135,12 +178,34 @@ export default function AdminSettings({ user }: Props) {
           if (row.key === "s3_storage_settings") {
             setS3({ ...defaultS3, ...(row.value as any) });
           }
+          if (row.key === "social_media_links") {
+            setSocial({ ...defaultSocial, ...(row.value as any) });
+          }
         }
       }
       setLoading(false);
     };
     fetchSettings();
   }, []);
+
+  const saveSocial = async () => {
+    if (!user) return;
+    setSavingSocial(true);
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({
+        key: "social_media_links",
+        value: social as any,
+        updated_by: user.id,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "key" });
+    setSavingSocial(false);
+    if (error) {
+      toast({ title: "Failed to save social media links", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Social media links saved", description: "Links will now appear in the website footer." });
+    }
+  };
 
   const saveSmtp = async () => {
     if (!user) return;
@@ -793,6 +858,79 @@ export default function AdminSettings({ user }: Props) {
           {s3.enabled && s3.bucket_name && s3.access_key_id && (
             <StorageMigrationPanel />
           )}
+        </div>
+      </div>
+
+      {/* Social Media Links */}
+      <div className="border border-border rounded-sm overflow-hidden">
+        <button
+          type="button"
+          className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-muted/30 transition-colors"
+          onClick={() => {}}
+        >
+          <div className="flex items-center gap-3">
+            <Share2 className="h-4 w-4 text-primary" />
+            <div>
+              <span className="text-xs tracking-[0.15em] uppercase font-medium" style={{ fontFamily: "var(--font-heading)" }}>Social Media Links</span>
+              <p className="text-[10px] text-muted-foreground mt-0.5" style={{ fontFamily: "var(--font-body)" }}>
+                Add your social media URLs — they will appear in the website footer with icons
+              </p>
+            </div>
+          </div>
+        </button>
+
+        <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {SOCIAL_FIELDS.map(({ key, label, icon: Icon, placeholder }) => (
+              <div key={key}>
+                <label className="flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </label>
+                <input
+                  type="url"
+                  value={social[key]}
+                  onChange={(e) => setSocial((prev) => ({ ...prev, [key]: e.target.value }))}
+                  placeholder={placeholder}
+                  className="w-full h-9 rounded-sm border border-input bg-background px-3 text-[11px] placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring transition-colors"
+                  style={{ fontFamily: "var(--font-body)" }}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Preview */}
+          {Object.values(social).some((v) => v.trim()) && (
+            <div className="border border-border/50 rounded-sm px-4 py-3 bg-muted/20">
+              <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>Footer Preview</span>
+              <div className="flex flex-wrap gap-3">
+                {SOCIAL_FIELDS.filter(({ key }) => social[key].trim()).map(({ key, label, icon: Icon, hoverColor }) => (
+                  <a
+                    key={key}
+                    href={social[key]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-2 rounded-full border border-border text-muted-foreground transition-all duration-300 ${hoverColor} hover:border-current hover:scale-110`}
+                    title={label}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              onClick={saveSocial}
+              disabled={savingSocial}
+              className="inline-flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 border border-primary bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {savingSocial ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              Save Social Links
+            </button>
+          </div>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand, Calendar, Rss, Users, Globe, MessageCircle } from "lucide-react";
+import { Camera, ArrowRight, ArrowDown, Trophy, BookOpen, Newspaper, Aperture, Eye, Layers, Award, User, Expand, Calendar, Rss, Users, Globe, MessageCircle, Facebook, Instagram, Twitter, Youtube, Linkedin, Github, Music2, MapPin, Phone as PhoneIcon, Send as SendIcon } from "lucide-react";
 import AdPlacement from "@/components/AdPlacement";
 import T from "@/components/T";
 import { Link, useNavigate } from "react-router-dom";
@@ -402,6 +402,7 @@ const Index = () => {
     cta_text: "Begin Your Journey",
     cta_link: "/signup",
   });
+  const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
 
   // Scroll-linked background for middle sections
   const middleRef = useRef<HTMLDivElement>(null);
@@ -479,7 +480,7 @@ const Index = () => {
     // Fetch winners and certificates in parallel — single round-trip each
     const fetchShowcaseData = async () => {
       try {
-      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes, bannersRes, heroContentRes] = await Promise.all([
+      const [winnersRes, certsRes, articlesRes, compsListRes, coursesRes, portfolioRes, bannersRes, heroContentRes, socialLinksRes] = await Promise.all([
         supabase
           .from("competition_entries")
           .select("id, title, photos, competition_id, user_id")
@@ -525,10 +526,18 @@ const Index = () => {
           .select("value")
           .eq("key", "hero_content")
           .maybeSingle(),
+        supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "social_media_links")
+          .maybeSingle(),
       ]);
 
       if (heroContentRes.data?.value) {
         setHeroContent(heroContentRes.data.value as any);
+      }
+      if (socialLinksRes.data?.value) {
+        setSocialLinks(socialLinksRes.data.value as Record<string, string>);
       }
 
       const winnerData = winnersRes.data || [];
@@ -2225,9 +2234,44 @@ const Index = () => {
                   50mm Retina World
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+              <p className="text-xs text-muted-foreground leading-relaxed mb-5" style={{ fontFamily: "var(--font-body)" }}>
                 <T>A curated platform for photographers who see the world differently.</T>
               </p>
+              {/* Social Media Icons */}
+              {(() => {
+                const socialConfig: { key: string; icon: any; hoverClass: string; label: string }[] = [
+                  { key: "facebook", icon: Facebook, hoverClass: "hover:text-[#1877F2] hover:border-[#1877F2]", label: "Facebook" },
+                  { key: "instagram", icon: Instagram, hoverClass: "hover:text-[#E4405F] hover:border-[#E4405F]", label: "Instagram" },
+                  { key: "twitter", icon: Twitter, hoverClass: "hover:text-foreground hover:border-foreground", label: "X (Twitter)" },
+                  { key: "youtube", icon: Youtube, hoverClass: "hover:text-[#FF0000] hover:border-[#FF0000]", label: "YouTube" },
+                  { key: "linkedin", icon: Linkedin, hoverClass: "hover:text-[#0A66C2] hover:border-[#0A66C2]", label: "LinkedIn" },
+                  { key: "github", icon: Github, hoverClass: "hover:text-foreground hover:border-foreground", label: "GitHub" },
+                  { key: "tiktok", icon: Music2, hoverClass: "hover:text-foreground hover:border-foreground", label: "TikTok" },
+                  { key: "pinterest", icon: MapPin, hoverClass: "hover:text-[#E60023] hover:border-[#E60023]", label: "Pinterest" },
+                  { key: "whatsapp_link", icon: PhoneIcon, hoverClass: "hover:text-[#25D366] hover:border-[#25D366]", label: "WhatsApp" },
+                  { key: "telegram", icon: SendIcon, hoverClass: "hover:text-[#0088CC] hover:border-[#0088CC]", label: "Telegram" },
+                  { key: "website", icon: Globe, hoverClass: "hover:text-primary hover:border-primary", label: "Website" },
+                ];
+                const activeLinks = socialConfig.filter(({ key }) => socialLinks[key]?.trim());
+                if (activeLinks.length === 0) return null;
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {activeLinks.map(({ key, icon: Icon, hoverClass, label }) => (
+                      <a
+                        key={key}
+                        href={socialLinks[key]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`p-2 rounded-full border border-border text-muted-foreground transition-all duration-300 hover:scale-110 ${hoverClass}`}
+                        title={label}
+                        aria-label={label}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </a>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
             <nav className="flex flex-col gap-3" aria-label="Footer navigation">
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}><T>Navigate</T></span>
