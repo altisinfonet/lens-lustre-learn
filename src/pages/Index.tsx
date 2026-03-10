@@ -2234,9 +2234,44 @@ const Index = () => {
                   50mm Retina World
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
+              <p className="text-xs text-muted-foreground leading-relaxed mb-5" style={{ fontFamily: "var(--font-body)" }}>
                 <T>A curated platform for photographers who see the world differently.</T>
               </p>
+              {/* Social Media Icons */}
+              {(() => {
+                const socialConfig: { key: string; icon: any; hoverClass: string; label: string }[] = [
+                  { key: "facebook", icon: Facebook, hoverClass: "hover:text-[#1877F2] hover:border-[#1877F2]", label: "Facebook" },
+                  { key: "instagram", icon: Instagram, hoverClass: "hover:text-[#E4405F] hover:border-[#E4405F]", label: "Instagram" },
+                  { key: "twitter", icon: Twitter, hoverClass: "hover:text-foreground hover:border-foreground", label: "X (Twitter)" },
+                  { key: "youtube", icon: Youtube, hoverClass: "hover:text-[#FF0000] hover:border-[#FF0000]", label: "YouTube" },
+                  { key: "linkedin", icon: Linkedin, hoverClass: "hover:text-[#0A66C2] hover:border-[#0A66C2]", label: "LinkedIn" },
+                  { key: "github", icon: Github, hoverClass: "hover:text-foreground hover:border-foreground", label: "GitHub" },
+                  { key: "tiktok", icon: Music2, hoverClass: "hover:text-foreground hover:border-foreground", label: "TikTok" },
+                  { key: "pinterest", icon: MapPin, hoverClass: "hover:text-[#E60023] hover:border-[#E60023]", label: "Pinterest" },
+                  { key: "whatsapp_link", icon: PhoneIcon, hoverClass: "hover:text-[#25D366] hover:border-[#25D366]", label: "WhatsApp" },
+                  { key: "telegram", icon: SendIcon, hoverClass: "hover:text-[#0088CC] hover:border-[#0088CC]", label: "Telegram" },
+                  { key: "website", icon: Globe, hoverClass: "hover:text-primary hover:border-primary", label: "Website" },
+                ];
+                const activeLinks = socialConfig.filter(({ key }) => socialLinks[key]?.trim());
+                if (activeLinks.length === 0) return null;
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {activeLinks.map(({ key, icon: Icon, hoverClass, label }) => (
+                      <a
+                        key={key}
+                        href={socialLinks[key]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`p-2 rounded-full border border-border text-muted-foreground transition-all duration-300 hover:scale-110 ${hoverClass}`}
+                        title={label}
+                        aria-label={label}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </a>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
             <nav className="flex flex-col gap-3" aria-label="Footer navigation">
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}><T>Navigate</T></span>
