@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Download, Loader2, Database, CheckCircle2 } from "lucide-react";
+import { Download, Loader2, Database, Clock } from "lucide-react";
 
 const EXPORTABLE_TABLES = [
   "profiles",
@@ -73,6 +73,20 @@ export default function DatabaseBackup() {
   const [exporting, setExporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTable, setCurrentTable] = useState("");
+  const [lastBackup, setLastBackup] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "last_db_backup")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.value && typeof data.value === "object" && "timestamp" in (data.value as any)) {
+          setLastBackup((data.value as any).timestamp);
+        }
+      });
+  }, []);
 
   const exportDB = async () => {
     setExporting(true);
@@ -136,6 +150,15 @@ export default function DatabaseBackup() {
     setProgress(100);
     setCurrentTable("");
     setExporting(false);
+
+    // Save last backup timestamp
+    const now = new Date().toISOString();
+    setLastBackup(now);
+    await supabase.from("site_settings").upsert(
+      { key: "last_db_backup", value: { timestamp: now } as any, updated_at: now },
+      { onConflict: "key" }
+    );
+
     toast({ title: "Backup downloaded", description: `${totalRows} rows across ${EXPORTABLE_TABLES.length} tables` });
   };
 
@@ -178,9 +201,15 @@ export default function DatabaseBackup() {
           {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
           {exporting ? "Exporting..." : "Download SQL Backup"}
         </button>
+        {lastBackup && (
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+            <Clock className="h-3 w-3" />
+            <span>Last backup: {new Date(lastBackup).toLocaleString()}</span>
+          </div>
+        )}
 
         <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-          <strong className="text-foreground">Note:</strong> Exports up to 10,000 rows per table. Large tables may be truncated. The file includes all {EXPORTABLE_TABLES.length} core tables.
+          <strong className="text-foreground">Note:</strong> Exports up to 10,000 rows per table. Large tables may be truncated. The file includes all {EXPORTABLE_TABLES.length} core tables. A weekly reminder notification is sent if no backup is recorded.
         </p>
       </div>
     </div>
