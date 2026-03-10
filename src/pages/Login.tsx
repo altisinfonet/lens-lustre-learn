@@ -246,8 +246,8 @@ const Login = () => {
       </div>
 
       {/* Right — Content */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 md:px-16 lg:px-24 py-12">
-        <Link to="/" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12" style={{ fontFamily: "var(--font-heading)" }}>
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-8 md:px-16 lg:px-24 py-12">
+        <Link to="/" className="self-start inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12" style={{ fontFamily: "var(--font-heading)" }}>
           <ArrowLeft className="h-3 w-3" /> <T>Back</T>
         </Link>
 
@@ -260,14 +260,14 @@ const Login = () => {
         </div>
 
         {error && (
-          <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
+          <div className="mb-6 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm w-full text-center" style={{ fontFamily: "var(--font-body)" }}>
             {error}
           </div>
         )}
 
         {/* Lockout timer */}
         {isLockedOut && (
-          <div className="mb-6 flex items-center gap-3 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm" style={{ fontFamily: "var(--font-body)" }}>
+          <div className="mb-6 flex items-center gap-3 text-sm text-destructive border border-destructive/30 px-4 py-3 max-w-sm w-full" style={{ fontFamily: "var(--font-body)" }}>
             <Timer className="h-5 w-5 flex-shrink-0 animate-pulse" />
             <div>
               <span className="font-medium"><T>Account locked</T></span>
@@ -279,12 +279,12 @@ const Login = () => {
         )}
 
         {!isLockedOut && failedAttempts > 0 && failedAttempts < 3 && (
-          <div className="mb-4 text-[10px] tracking-[0.15em] uppercase text-muted-foreground max-w-sm" style={{ fontFamily: "var(--font-heading)" }}>
+          <div className="mb-4 text-[10px] tracking-[0.15em] uppercase text-muted-foreground max-w-sm w-full text-center" style={{ fontFamily: "var(--font-heading)" }}>
             {3 - failedAttempts} <T>{`attempt${3 - failedAttempts > 1 ? "s" : ""} remaining before security check`}</T>
           </div>
         )}
 
-        <div className="space-y-4 max-w-sm">
+        <div className="space-y-4 max-w-sm w-full">
           {/* OAuth buttons */}
           <button
             onClick={() => handleOAuth("google")}
@@ -396,12 +396,12 @@ const Login = () => {
           </form>
         </div>
 
-        <p className="text-xs text-muted-foreground mt-10" style={{ fontFamily: "var(--font-body)" }}>
+        <p className="text-xs text-muted-foreground mt-10 text-center" style={{ fontFamily: "var(--font-body)" }}>
           <T>Don't have an account?</T>{" "}
           <Link to="/signup" className="text-primary hover:underline"><T>Create one</T></Link>
         </p>
 
-        <p className="text-[10px] text-muted-foreground/60 mt-4" style={{ fontFamily: "var(--font-body)" }}>
+        <p className="text-[10px] text-muted-foreground/60 mt-4 text-center" style={{ fontFamily: "var(--font-body)" }}>
           <T>By continuing, you agree to our terms of service and privacy policy.</T>
         </p>
       </div>
