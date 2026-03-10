@@ -583,8 +583,8 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
                 <input value={editingSlot.notes} onChange={(e) => setEditingSlot({ ...editingSlot, notes: e.target.value })} className={inputClass} style={bodyFont} placeholder="Internal notes..." />
               </div>
 
-              {/* Crop Modal */}
-              {cropSrc && <ImageCropModal imageSrc={cropSrc} onCropComplete={handleCropComplete} onCancel={() => setCropSrc(null)} />}
+              {/* Image Positioner Modal */}
+              {cropSrc && <AdImagePositioner imageSrc={cropSrc} placement={editingSlot.placement} onComplete={handleCropComplete} onCancel={() => setCropSrc(null)} />}
 
               <div className="flex gap-3 pt-2">
                 <button onClick={saveEditingSlot} disabled={saving}
