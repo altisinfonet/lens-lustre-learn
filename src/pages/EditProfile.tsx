@@ -908,6 +908,17 @@ const EditProfile = () => {
           {/* Account Settings */}
           <div className="border border-border p-8">
             <span className={sectionHeadCls} style={{ fontFamily: "var(--font-heading)" }}><T>Account Settings</T></span>
+
+            <div className="mb-6">
+              <div className="flex items-center gap-2">
+                <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Member Since</T></span>
+                <PrivacyToggle value={privacySettings.member_since || "only_me"} onChange={(v) => setFieldPrivacy("member_since", v)} />
+              </div>
+              <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                <T>Control whether your join date is visible on your public profile.</T>
+              </p>
+            </div>
+
             <div className="mb-6">
               <div className="flex items-center gap-2">
                 <span className={labelCls} style={{ fontFamily: "var(--font-heading)" }}><T>Email Address</T></span>

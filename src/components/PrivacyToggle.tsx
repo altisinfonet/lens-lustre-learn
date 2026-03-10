@@ -57,6 +57,7 @@ export const DEFAULT_PRIVACY: Record<string, PrivacyLevel> = {
   social_links: "public",
   portfolio: "public",
   interests: "public",
+  member_since: "only_me",
 };
 
 export function getPrivacy(settings: Record<string, string> | null | undefined, field: string): PrivacyLevel {
