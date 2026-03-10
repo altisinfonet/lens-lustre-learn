@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion, Cloud, ArrowRightLeft, FolderSync } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Eye, EyeOff, Save, TestTube, Send, CheckCircle, XCircle, ChevronDown, ChevronUp, AlertTriangle, Info, ShieldCheck, ShieldX, ShieldQuestion, Cloud, ArrowRightLeft, FolderSync, Facebook, Instagram, Twitter, Youtube, Globe, Linkedin, Github, Music2, MapPin, Phone as PhoneIcon, Share2 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
