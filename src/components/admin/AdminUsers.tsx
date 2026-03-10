@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield, Plus, X, CheckSquare, Square, Award } from "lucide-react";
+import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield, Plus, X, CheckSquare, Square, Award, ExternalLink } from "lucide-react";
 import type { User as AuthUser } from "@supabase/supabase-js";
 import { BADGES, BADGE_TYPES, type BadgeType } from "@/lib/badgeConfig";
 
@@ -633,6 +633,10 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
                     className="p-1.5 hover:text-amber-600 transition-colors rounded-sm hover:bg-amber-500/10" title="Manage Badges" disabled={actionLoading === u.id}>
                     <Award className="h-3.5 w-3.5" />
                   </button>
+                  <a href={`/profile/${u.id}`} target="_blank" rel="noopener noreferrer"
+                    className="p-1.5 hover:text-blue-600 transition-colors rounded-sm hover:bg-blue-500/10" title="View Profile">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
                   <button onClick={() => { setEditTarget(u); setEditName(u.full_name || ""); setEditBio(u.bio || ""); }}
                     className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit" disabled={actionLoading === u.id}>
                     <Pencil className="h-3.5 w-3.5" />
