@@ -293,12 +293,12 @@ const Signup = () => {
           </form>
         </div>
 
-        <p className="text-xs text-muted-foreground mt-10" style={{ fontFamily: "var(--font-body)" }}>
+        <p className="text-xs text-muted-foreground mt-10 text-center" style={{ fontFamily: "var(--font-body)" }}>
           <T>Already have an account?</T>{" "}
           <Link to="/login" className="text-primary hover:underline"><T>Sign in</T></Link>
         </p>
 
-        <p className="text-[10px] text-muted-foreground/60 mt-4" style={{ fontFamily: "var(--font-body)" }}>
+        <p className="text-[10px] text-muted-foreground/60 mt-4 text-center" style={{ fontFamily: "var(--font-body)" }}>
           <T>By continuing, you agree to our terms of service and privacy policy.</T>
         </p>
       </div>
