@@ -333,7 +333,7 @@ const PublicProfile = () => {
       {/* ═══ Tabs Navigation ═══ */}
       <div className="border-b border-border bg-background sticky top-0 z-20">
         <div className="container mx-auto px-4 md:px-8 max-w-7xl">
-          <div className="flex items-center gap-0 sm:pl-36">
+          <div className="flex items-center gap-0 sm:pl-40">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
