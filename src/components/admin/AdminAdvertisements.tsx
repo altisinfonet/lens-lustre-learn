@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Save, Megaphone, Plus, Trash2, Eye, EyeOff, Monitor, Smartphone, Tablet, Upload, Link, Image as ImageIcon, Crop as CropIcon, BarChart3, Globe, Clock, Beaker, Settings2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import ImageCropModal from "@/components/admin/ImageCropModal";
+import AdImagePositioner, { PLACEMENT_DIMENSIONS } from "@/components/admin/AdImagePositioner";
 import { storageUpload } from "@/lib/storageUpload";
 import { compressImageToFiles } from "@/lib/imageCompression";
 import type { User } from "@supabase/supabase-js";
