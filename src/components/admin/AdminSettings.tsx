@@ -77,7 +77,7 @@ const SOCIAL_FIELDS: { key: keyof SocialMediaLinks; label: string; icon: any; pl
   { key: "telegram", label: "Telegram", icon: Send, placeholder: "https://t.me/yourchannel", hoverColor: "hover:text-[#0088CC]" },
   { key: "website", label: "Website", icon: Globe, placeholder: "https://yourwebsite.com", hoverColor: "hover:text-primary" },
 ];
-
+interface S3StorageSettings {
   enabled: boolean;
   provider: string;
   bucket_name: string;
