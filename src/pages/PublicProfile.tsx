@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube, MapPin, Calendar, Image, BadgeCheck } from "lucide-react";
+import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube, MapPin, Calendar, Image, BadgeCheck, ImagePlus } from "lucide-react";
 import FriendFollowActions, { FriendFollowStats, FriendFollowButtons } from "@/components/FriendFollowActions";
+import { storageUpload } from "@/lib/storageUpload";
+import { toast } from "@/hooks/use-toast";
 import WallPosts from "@/components/WallPosts";
 import { useAuth } from "@/hooks/useAuth";
 import { AnimatePresence, motion } from "framer-motion";
@@ -105,6 +107,7 @@ const MiniCarousel = ({
 interface ProfileData {
   full_name: string | null;
   avatar_url: string | null;
+  cover_url: string | null;
   bio: string | null;
   portfolio_url: string | null;
   photography_interests: string[] | null;
@@ -161,7 +164,7 @@ const PublicProfile = () => {
     if (!userId) return;
     const load = async () => {
       const [profileRes, entriesRes, certsRes, rolesRes, badgesRes, adminIds, friendRes] = await Promise.all([
-        profilesPublic().select("full_name, avatar_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url, privacy_settings").eq("id", userId).maybeSingle(),
+    profilesPublic().select("full_name, avatar_url, cover_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url, privacy_settings").eq("id", userId).maybeSingle(),
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
         supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["registered_photographer", "student"] as any),
@@ -244,46 +247,89 @@ const PublicProfile = () => {
     const hasVerifiedBadge = userBadges.includes("verified");
     const otherBadges = userBadges.filter((b) => b !== "verified");
 
+    const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files?.[0] || !isOwner || !currentUser) return;
+      const file = e.target.files[0];
+      try {
+        const path = `covers/${currentUser.id}/${Date.now()}-${file.name}`;
+        const result = await storageUpload("avatars", path, file);
+        const url = result.url;
+        await supabase.from("profiles").update({ cover_url: url }).eq("id", currentUser.id);
+        setProfile((prev) => prev ? { ...prev, cover_url: url } : prev);
+        toast({ title: "Cover photo updated!" });
+      } catch (err: any) {
+        toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      }
+    };
+
     return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* ═══ Cover / Header ═══ */}
-      <section className="relative bg-muted/30">
-        <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-10 pb-0">
-          <motion.div {...fadeUp()} className="flex flex-col md:flex-row gap-6 pb-6">
+      {/* ═══ Cover Photo ═══ */}
+      <section className="relative">
+        {/* Cover Image */}
+        <div className="relative h-48 sm:h-64 md:h-72 lg:h-80 overflow-hidden bg-gradient-to-br from-muted via-muted/80 to-muted/60">
+          {profile.cover_url ? (
+            <img
+              src={profile.cover_url}
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-muted to-accent/5" />
+          )}
+          {/* Gradient overlay at bottom for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+
+          {/* Cover upload button for owner */}
+          {isOwner && (
+            <label className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 cursor-pointer text-[10px] tracking-[0.12em] uppercase px-4 py-2 bg-background/80 backdrop-blur-sm text-foreground border border-border hover:bg-background hover:border-primary transition-all duration-300 rounded-sm" style={headingFont}>
+              <ImagePlus className="h-3.5 w-3.5" />
+              {profile.cover_url ? "Change Cover" : "Add Cover Photo"}
+              <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
+            </label>
+          )}
+        </div>
+
+        {/* ═══ Profile Info Bar (overlaps cover) ═══ */}
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl relative">
+          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 -mt-16 sm:-mt-20">
             {/* ── Avatar ── */}
-            <div className="relative flex-shrink-0 self-center md:self-end md:-mb-14 z-10">
+            <div className="relative flex-shrink-0 z-10">
               {canView("avatar") && profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt={displayName}
-                  className="h-32 w-32 sm:h-36 sm:w-36 rounded-full object-cover border-[5px] border-background shadow-2xl"
+                  className="h-32 w-32 sm:h-40 sm:w-40 rounded-full object-cover border-4 border-background shadow-xl ring-2 ring-border/30"
                 />
               ) : (
-                <div className="h-32 w-32 sm:h-36 sm:w-36 rounded-full bg-muted border-[5px] border-background flex items-center justify-center shadow-2xl">
+                <div className="h-32 w-32 sm:h-40 sm:w-40 rounded-full bg-muted border-4 border-background flex items-center justify-center shadow-xl ring-2 ring-border/30">
                   <Camera className="h-10 w-10 text-muted-foreground/30" />
                 </div>
               )}
             </div>
 
-            {/* ── Info Column ── */}
-            <div className="flex-1 flex flex-col md:flex-row md:items-end md:justify-between gap-4 pb-2 md:pb-4">
+            {/* ── Name + Badges + Stats ── */}
+            <div className="flex-1 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-4 w-full min-w-0">
               {/* Left: Name + badges */}
-              <div className="text-center md:text-left">
-                <div className="flex items-center gap-2 justify-center md:justify-start">
+              <div className="text-center sm:text-left min-w-0">
+                <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
                   <h1
                     className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight"
                     style={displayFont}
                   >
                     {displayName}
                   </h1>
-                  {/* Blue verified tick — Facebook style, right next to name */}
+                  {/* Blue verified tick — filled checkmark */}
                   {(hasVerifiedBadge || isVerifiedPhotographer) && (
-                    <BadgeCheck className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 fill-blue-500 shrink-0" aria-label="Verified" />
+                    <svg viewBox="0 0 22 22" className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" aria-label="Verified">
+                      <circle cx="11" cy="11" r="11" className="fill-blue-500" />
+                      <path d="M6 11.5l3 3 7-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
                   )}
                 </div>
 
                 {/* Small badge tags */}
-                <div className="flex flex-wrap items-center gap-1.5 mt-2 justify-center md:justify-start">
+                <div className="flex flex-wrap items-center gap-1.5 mt-2 justify-center sm:justify-start">
                   {isVerifiedPhotographer && !hasVerifiedBadge && (
                     <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.12em] uppercase px-2 py-0.5 bg-primary/10 text-primary rounded-sm border border-primary/20" style={headingFont}>
                       <Camera className="h-2.5 w-2.5" />
@@ -311,10 +357,15 @@ const PublicProfile = () => {
                     );
                   })}
                 </div>
+
+                {/* Member since */}
+                <p className="text-[10px] tracking-[0.1em] text-muted-foreground mt-1.5" style={headingFont}>
+                  Member since {memberSince}
+                </p>
               </div>
 
               {/* Right: Stats + Actions */}
-              <div className="flex flex-col items-center md:items-end gap-3">
+              <div className="flex flex-col items-center sm:items-end gap-3 flex-shrink-0">
                 {/* Stats row */}
                 <div className="flex items-center gap-5 text-[11px] tracking-[0.12em] uppercase text-muted-foreground" style={headingFont}>
                   <FriendFollowStats targetUserId={userId!} />
@@ -326,14 +377,14 @@ const PublicProfile = () => {
                 )}
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* ═══ Tabs Navigation ═══ */}
       <div className="border-b border-border bg-background sticky top-0 z-20">
         <div className="container mx-auto px-4 md:px-8 max-w-7xl">
-          <div className="flex items-center gap-0 sm:pl-40">
+          <div className="flex items-center gap-0 sm:pl-44">
             {tabs.map((tab) => (
               <button
                 key={tab.key}

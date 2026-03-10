@@ -1317,6 +1317,7 @@ export type Database = {
           bio: string | null
           city: string | null
           country: string | null
+          cover_url: string | null
           created_at: string
           facebook_url: string | null
           full_name: string | null
@@ -1346,6 +1347,7 @@ export type Database = {
           bio?: string | null
           city?: string | null
           country?: string | null
+          cover_url?: string | null
           created_at?: string
           facebook_url?: string | null
           full_name?: string | null
@@ -1375,6 +1377,7 @@ export type Database = {
           bio?: string | null
           city?: string | null
           country?: string | null
+          cover_url?: string | null
           created_at?: string
           facebook_url?: string | null
           full_name?: string | null
@@ -1829,6 +1832,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          cover_url: string | null
           created_at: string | null
           facebook_url: string | null
           full_name: string | null
@@ -1847,6 +1851,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          cover_url?: string | null
           created_at?: string | null
           facebook_url?: string | null
           full_name?: string | null
@@ -1865,6 +1870,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          cover_url?: string | null
           created_at?: string | null
           facebook_url?: string | null
           full_name?: string | null
