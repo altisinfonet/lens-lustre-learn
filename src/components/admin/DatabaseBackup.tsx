@@ -150,6 +150,15 @@ export default function DatabaseBackup() {
     setProgress(100);
     setCurrentTable("");
     setExporting(false);
+
+    // Save last backup timestamp
+    const now = new Date().toISOString();
+    setLastBackup(now);
+    await supabase.from("site_settings").upsert(
+      { key: "last_db_backup", value: { timestamp: now } as any, updated_at: now },
+      { onConflict: "key" }
+    );
+
     toast({ title: "Backup downloaded", description: `${totalRows} rows across ${EXPORTABLE_TABLES.length} tables` });
   };
 
