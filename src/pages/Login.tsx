@@ -279,7 +279,7 @@ const Login = () => {
         )}
 
         {!isLockedOut && failedAttempts > 0 && failedAttempts < 3 && (
-          <div className="mb-4 text-[10px] tracking-[0.15em] uppercase text-muted-foreground max-w-sm" style={{ fontFamily: "var(--font-heading)" }}>
+          <div className="mb-4 text-[10px] tracking-[0.15em] uppercase text-muted-foreground max-w-sm w-full text-center" style={{ fontFamily: "var(--font-heading)" }}>
             {3 - failedAttempts} <T>{`attempt${3 - failedAttempts > 1 ? "s" : ""} remaining before security check`}</T>
           </div>
         )}
