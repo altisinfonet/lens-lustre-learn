@@ -165,7 +165,7 @@ export default function AdminSettings({ user }: Props) {
       const { data } = await supabase
         .from("site_settings")
         .select("key, value")
-        .in("key", ["smtp_settings", "whatsapp_settings", "s3_storage_settings"]);
+        .in("key", ["smtp_settings", "whatsapp_settings", "s3_storage_settings", "social_media_links"]);
 
       if (data) {
         for (const row of data) {
