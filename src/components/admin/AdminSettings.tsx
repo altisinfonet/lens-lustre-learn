@@ -188,6 +188,25 @@ export default function AdminSettings({ user }: Props) {
     fetchSettings();
   }, []);
 
+  const saveSocial = async () => {
+    if (!user) return;
+    setSavingSocial(true);
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({
+        key: "social_media_links",
+        value: social as any,
+        updated_by: user.id,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "key" });
+    setSavingSocial(false);
+    if (error) {
+      toast({ title: "Failed to save social media links", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Social media links saved", description: "Links will now appear in the website footer." });
+    }
+  };
+
   const saveSmtp = async () => {
     if (!user) return;
     setSavingSmtp(true);
