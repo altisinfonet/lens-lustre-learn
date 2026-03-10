@@ -252,7 +252,8 @@ const PublicProfile = () => {
       const file = e.target.files[0];
       try {
         const path = `covers/${currentUser.id}/${Date.now()}-${file.name}`;
-        const url = await storageUpload(file, "avatars", path);
+        const result = await storageUpload("avatars", path, file);
+        const url = result.url;
         await supabase.from("profiles").update({ cover_url: url }).eq("id", currentUser.id);
         setProfile((prev) => prev ? { ...prev, cover_url: url } : prev);
         toast({ title: "Cover photo updated!" });
