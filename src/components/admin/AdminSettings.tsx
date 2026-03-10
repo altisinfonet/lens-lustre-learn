@@ -178,6 +178,9 @@ export default function AdminSettings({ user }: Props) {
           if (row.key === "s3_storage_settings") {
             setS3({ ...defaultS3, ...(row.value as any) });
           }
+          if (row.key === "social_media_links") {
+            setSocial({ ...defaultSocial, ...(row.value as any) });
+          }
         }
       }
       setLoading(false);
