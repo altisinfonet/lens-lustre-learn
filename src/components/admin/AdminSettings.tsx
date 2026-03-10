@@ -292,6 +292,9 @@ export default function AdminSettings({ user }: Props) {
         </p>
       </div>
 
+      {/* Database Backup */}
+      <DatabaseBackup />
+
       {/* Email Provider Settings */}
       <div className="border border-border rounded-sm overflow-hidden">
         <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-card/50">
