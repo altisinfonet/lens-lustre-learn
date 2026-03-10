@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell, HeartPulse, UserPlus, HelpCircle, Mail, ClipboardList } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell, HeartPulse, UserPlus, HelpCircle, Mail, ClipboardList, Database } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
@@ -25,6 +25,7 @@ import AdminReferrals from "@/components/admin/AdminReferrals";
 import AdminSupportTickets from "@/components/admin/AdminSupportTickets";
 import AdminEmailTemplates from "@/components/admin/AdminEmailTemplates";
 import AdminActivityLogs from "@/components/admin/AdminActivityLogs";
+import DatabaseBackupComponent from "@/components/admin/DatabaseBackup";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,7 +93,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements" | "health" | "referrals" | "support_tickets" | "email_templates" | "activity_logs";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements" | "health" | "referrals" | "support_tickets" | "email_templates" | "activity_logs" | "database";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -537,7 +538,7 @@ const AdminPanel = () => {
       ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["transactions", "Transactions", FileText],
     ] as const },
     { label: "Settings", items: [
-      ["health", "Site Health", HeartPulse], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["activity_logs", "Activity Logs", ClipboardList], ["settings", "Integrations", Settings], ["email_templates", "Email Templates", Mail],
+      ["health", "Site Health", HeartPulse], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["activity_logs", "Activity Logs", ClipboardList], ["settings", "Integrations", Settings], ["email_templates", "Email Templates", Mail], ["database", "Database", Database],
     ] as const },
     { label: "Help & Support", items: [
       ["support_tickets", "Support Tickets", HelpCircle],
@@ -654,6 +655,25 @@ const AdminPanel = () => {
 
         {/* Activity Logs Tab */}
         {tab === "activity_logs" && <AdminActivityLogs />}
+
+        {/* Database Tab */}
+        {tab === "database" && (
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-px bg-primary" />
+                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Management</span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                Database <em className="italic text-primary">Backup</em>
+              </h2>
+              <p className="text-xs text-muted-foreground mt-2 max-w-md" style={{ fontFamily: "var(--font-body)" }}>
+                Export and manage your database backups.
+              </p>
+            </div>
+            <DatabaseBackupComponent />
+          </div>
+        )}
 
         {/* Engagement Tab */}
         {tab === "engagement" && <AdminEngagement user={user} />}
