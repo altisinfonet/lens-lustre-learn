@@ -73,6 +73,20 @@ export default function DatabaseBackup() {
   const [exporting, setExporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTable, setCurrentTable] = useState("");
+  const [lastBackup, setLastBackup] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "last_db_backup")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.value && typeof data.value === "object" && "timestamp" in (data.value as any)) {
+          setLastBackup((data.value as any).timestamp);
+        }
+      });
+  }, []);
 
   const exportDB = async () => {
     setExporting(true);
