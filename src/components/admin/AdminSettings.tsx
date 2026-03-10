@@ -36,7 +36,48 @@ interface WhatsAppSettings {
   webhook_url: string;
 }
 
-interface S3StorageSettings {
+interface SocialMediaLinks {
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  youtube: string;
+  linkedin: string;
+  github: string;
+  tiktok: string;
+  pinterest: string;
+  whatsapp_link: string;
+  telegram: string;
+  website: string;
+}
+
+const defaultSocial: SocialMediaLinks = {
+  facebook: "",
+  instagram: "",
+  twitter: "",
+  youtube: "",
+  linkedin: "",
+  github: "",
+  tiktok: "",
+  pinterest: "",
+  whatsapp_link: "",
+  telegram: "",
+  website: "",
+};
+
+const SOCIAL_FIELDS: { key: keyof SocialMediaLinks; label: string; icon: any; placeholder: string; hoverColor: string }[] = [
+  { key: "facebook", label: "Facebook", icon: Facebook, placeholder: "https://facebook.com/yourpage", hoverColor: "hover:text-[#1877F2]" },
+  { key: "instagram", label: "Instagram", icon: Instagram, placeholder: "https://instagram.com/yourhandle", hoverColor: "hover:text-[#E4405F]" },
+  { key: "twitter", label: "X (Twitter)", icon: Twitter, placeholder: "https://x.com/yourhandle", hoverColor: "hover:text-foreground" },
+  { key: "youtube", label: "YouTube", icon: Youtube, placeholder: "https://youtube.com/@yourchannel", hoverColor: "hover:text-[#FF0000]" },
+  { key: "linkedin", label: "LinkedIn", icon: Linkedin, placeholder: "https://linkedin.com/company/yourco", hoverColor: "hover:text-[#0A66C2]" },
+  { key: "github", label: "GitHub", icon: Github, placeholder: "https://github.com/yourorg", hoverColor: "hover:text-foreground" },
+  { key: "tiktok", label: "TikTok", icon: Music2, placeholder: "https://tiktok.com/@yourhandle", hoverColor: "hover:text-foreground" },
+  { key: "pinterest", label: "Pinterest", icon: MapPin, placeholder: "https://pinterest.com/yourprofile", hoverColor: "hover:text-[#E60023]" },
+  { key: "whatsapp_link", label: "WhatsApp", icon: PhoneIcon, placeholder: "https://wa.me/1234567890", hoverColor: "hover:text-[#25D366]" },
+  { key: "telegram", label: "Telegram", icon: Send, placeholder: "https://t.me/yourchannel", hoverColor: "hover:text-[#0088CC]" },
+  { key: "website", label: "Website", icon: Globe, placeholder: "https://yourwebsite.com", hoverColor: "hover:text-primary" },
+];
+
   enabled: boolean;
   provider: string;
   bucket_name: string;
