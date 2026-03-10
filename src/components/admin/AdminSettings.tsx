@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { clearS3Cache } from "@/lib/s3Upload";
 import { Progress } from "@/components/ui/progress";
 import StorageMigrationPanel from "@/components/admin/StorageMigrationPanel";
+import DatabaseBackup from "@/components/admin/DatabaseBackup";
 
 interface Props {
   user: User | null;
@@ -794,6 +795,9 @@ export default function AdminSettings({ user }: Props) {
           )}
         </div>
       </div>
+
+      {/* Database Backup */}
+      <DatabaseBackup />
 
       {/* Info Note */}
       <div className="border border-border/50 rounded-sm px-5 py-4 bg-muted/20">
