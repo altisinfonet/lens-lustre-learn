@@ -551,7 +551,7 @@ const AdminPanel = () => {
       <aside className="w-56 shrink-0 border-r border-border bg-card/50 flex flex-col h-screen sticky top-0 overflow-y-auto">
         <div className="px-5 py-6 border-b border-border">
           <Link to="/" className="flex items-center gap-2 mb-1">
-            <img src="/images/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
+            <img src="/images/logo.png" alt="Logo" className="h-7 w-7 object-contain" />
             <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
               50mm Retina World
             </span>

@@ -133,7 +133,7 @@ const Signup = () => {
         </Link>
 
         <div className="flex items-center gap-3 mb-12">
-          <img src="/images/logo.png" alt="50mm Retina World" className="h-8 w-8 object-contain" />
+          <img src="/images/logo.png" alt="50mm Retina World" className="h-10 w-10 object-contain" />
           <span className="text-sm font-semibold tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>50mm Retina World</span>
         </div>
 
