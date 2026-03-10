@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube, MapPin, Calendar, Image, BadgeCheck } from "lucide-react";
-import FriendFollowActions from "@/components/FriendFollowActions";
+import FriendFollowActions, { FriendFollowStats, FriendFollowButtons } from "@/components/FriendFollowActions";
 import WallPosts from "@/components/WallPosts";
 import { useAuth } from "@/hooks/useAuth";
 import { AnimatePresence, motion } from "framer-motion";
