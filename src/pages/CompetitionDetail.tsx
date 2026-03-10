@@ -5,6 +5,7 @@ import PhaseBanner from "@/components/PhaseBanner";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import T from "@/components/T";
+import EngagementFooter from "@/components/EngagementFooter";
 import { motion } from "framer-motion";
 import PageSEO from "@/components/PageSEO";
 import { useEffect, useState, useMemo } from "react";
@@ -355,6 +356,7 @@ const CompetitionDetail = () => {
                             {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </span>
                         </div>
+                        <EngagementFooter id={entry.id} createdAt={entry.created_at} className="mt-2 px-0 border-t border-border/50 pt-2" />
                         {competition.status === "closed" && isAdmin && entry.photos.length > 0 && (
                           <button
                             onClick={async () => {

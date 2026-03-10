@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
 import FacebookPhotoGrid from "@/components/FacebookPhotoGrid";
 import AdPlacement from "@/components/AdPlacement";
+import EngagementFooter from "@/components/EngagementFooter";
 import { Textarea } from "@/components/ui/textarea";
 import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
 import {
@@ -674,6 +675,9 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
                   )}
                 </div>
               )}
+
+              {/* ── Engagement Stats ── */}
+              <EngagementFooter id={post.id} createdAt={post.created_at} className="border-t border-border mx-3" />
 
               {/* ── Action Bar (React / Comment / Share) ── */}
               <div className="mx-3 border-t border-border">
