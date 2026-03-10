@@ -247,7 +247,7 @@ const Login = () => {
 
       {/* Right — Content */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-8 md:px-16 lg:px-24 py-12">
-        <Link to="/" className="inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12" style={{ fontFamily: "var(--font-heading)" }}>
+        <Link to="/" className="self-start inline-flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground transition-colors duration-500 mb-12" style={{ fontFamily: "var(--font-heading)" }}>
           <ArrowLeft className="h-3 w-3" /> <T>Back</T>
         </Link>
 
