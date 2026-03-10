@@ -240,68 +240,91 @@ const PublicProfile = () => {
     { key: "about" as const, label: "About" },
   ];
 
-  return (
+    // Deduplicate: if user has "verified" badge, skip the role-based "Verified Photographer" tag
+    const hasVerifiedBadge = userBadges.includes("verified");
+    const otherBadges = userBadges.filter((b) => b !== "verified");
+
+    return (
     <main className="min-h-screen bg-background text-foreground">
       {/* ═══ Cover / Header ═══ */}
       <section className="relative bg-muted/30">
-        <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-8 pb-0">
-          <motion.div {...fadeUp()} className="flex flex-col sm:flex-row items-center sm:items-end gap-5 pb-6">
-            {/* Avatar */}
-            <div className="relative flex-shrink-0 sm:-mb-16 z-10">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl pt-10 pb-0">
+          <motion.div {...fadeUp()} className="flex flex-col md:flex-row gap-6 pb-6">
+            {/* ── Avatar ── */}
+            <div className="relative flex-shrink-0 self-center md:self-end md:-mb-14 z-10">
               {canView("avatar") && profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt={displayName}
-                  className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover border-4 border-background shadow-xl"
+                  className="h-32 w-32 sm:h-36 sm:w-36 rounded-full object-cover border-[5px] border-background shadow-2xl"
                 />
               ) : (
-                <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full bg-muted border-4 border-background flex items-center justify-center shadow-xl">
-                  <Camera className="h-8 w-8 text-muted-foreground/30" />
+                <div className="h-32 w-32 sm:h-36 sm:w-36 rounded-full bg-muted border-[5px] border-background flex items-center justify-center shadow-2xl">
+                  <Camera className="h-10 w-10 text-muted-foreground/30" />
                 </div>
               )}
             </div>
 
-            {/* Name & quick info */}
-            <div className="text-center sm:text-left flex-1 pb-2 sm:pb-4">
-              <h1
-                className="text-xl sm:text-2xl md:text-3xl font-light tracking-tight"
-                style={displayFont}
-              >
-                {displayName}
-              </h1>
-              <div className="flex flex-wrap items-center gap-2 mt-1.5 justify-center sm:justify-start">
-                {isVerifiedPhotographer && (
-                  <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-primary/10 text-primary rounded-full" style={headingFont}>
-                    <Camera className="h-2.5 w-2.5" />
-                    Verified
-                  </span>
-                )}
-                {isStudent && (
-                  <span className="inline-flex items-center gap-1.5 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-accent/10 text-accent-foreground rounded-full" style={headingFont}>
-                    <GraduationCap className="h-2.5 w-2.5" />
-                    Student
-                  </span>
-                )}
-                {userBadges.map((b) => {
-                  const cfg = BADGES[b as BadgeType];
-                  if (!cfg) return null;
-                  return (
-                    <span
-                      key={b}
-                      className={`inline-flex items-center gap-1.5 text-[9px] tracking-[0.2em] uppercase px-3 py-1 rounded-full ${cfg.ribbonClass}`}
-                      style={headingFont}
-                    >
-                      <span className="text-xs">{cfg.icon}</span>
-                      {cfg.label}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
+            {/* ── Info Column ── */}
+            <div className="flex-1 flex flex-col md:flex-row md:items-end md:justify-between gap-4 pb-2 md:pb-4">
+              {/* Left: Name + badges */}
+              <div className="text-center md:text-left">
+                <div className="flex items-center gap-2 justify-center md:justify-start">
+                  <h1
+                    className="text-2xl sm:text-3xl md:text-4xl font-light tracking-tight"
+                    style={displayFont}
+                  >
+                    {displayName}
+                  </h1>
+                  {/* Blue verified tick — Facebook style, right next to name */}
+                  {(hasVerifiedBadge || isVerifiedPhotographer) && (
+                    <BadgeCheck className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 fill-blue-500 shrink-0" aria-label="Verified" />
+                  )}
+                </div>
 
-            {/* Friend/Follow actions */}
-            <div className="pb-2 sm:pb-4">
-              <FriendFollowActions targetUserId={userId!} />
+                {/* Small badge tags */}
+                <div className="flex flex-wrap items-center gap-1.5 mt-2 justify-center md:justify-start">
+                  {isVerifiedPhotographer && !hasVerifiedBadge && (
+                    <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.12em] uppercase px-2 py-0.5 bg-primary/10 text-primary rounded-sm border border-primary/20" style={headingFont}>
+                      <Camera className="h-2.5 w-2.5" />
+                      Photographer
+                    </span>
+                  )}
+                  {isStudent && (
+                    <span className="inline-flex items-center gap-1 text-[8px] tracking-[0.12em] uppercase px-2 py-0.5 bg-accent/10 text-accent-foreground rounded-sm border border-accent/20" style={headingFont}>
+                      <GraduationCap className="h-2.5 w-2.5" />
+                      Student
+                    </span>
+                  )}
+                  {otherBadges.map((b) => {
+                    const cfg = BADGES[b as BadgeType];
+                    if (!cfg) return null;
+                    return (
+                      <span
+                        key={b}
+                        className={`inline-flex items-center gap-1 text-[8px] tracking-[0.1em] uppercase px-2 py-0.5 rounded-sm border ${cfg.badgeClass}`}
+                        style={headingFont}
+                      >
+                        <span className="text-[9px] leading-none">{cfg.icon}</span>
+                        {cfg.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right: Stats + Actions */}
+              <div className="flex flex-col items-center md:items-end gap-3">
+                {/* Stats row */}
+                <div className="flex items-center gap-5 text-[11px] tracking-[0.12em] uppercase text-muted-foreground" style={headingFont}>
+                  <FriendFollowStats targetUserId={userId!} />
+                </div>
+
+                {/* Action buttons */}
+                {!isOwner && (
+                  <FriendFollowButtons targetUserId={userId!} />
+                )}
+              </div>
             </div>
           </motion.div>
         </div>
