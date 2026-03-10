@@ -359,9 +359,11 @@ const PublicProfile = () => {
                 </div>
 
                 {/* Member since */}
-                <p className="text-[10px] tracking-[0.1em] text-muted-foreground mt-1.5" style={headingFont}>
-                  Member since {memberSince}
-                </p>
+                {canView("member_since") && (
+                  <p className="text-[10px] tracking-[0.1em] text-muted-foreground mt-1.5" style={headingFont}>
+                    Member since {memberSince}
+                  </p>
+                )}
               </div>
 
               {/* Right: Stats + Actions */}
