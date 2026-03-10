@@ -291,8 +291,6 @@ export default function AdminSettings({ user }: Props) {
         </p>
       </div>
 
-      {/* Database Backup */}
-      <DatabaseBackup />
 
       {/* Email Provider Settings */}
       <div className="border border-border rounded-sm overflow-hidden">
