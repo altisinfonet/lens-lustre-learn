@@ -655,6 +655,25 @@ const AdminPanel = () => {
         {/* Activity Logs Tab */}
         {tab === "activity_logs" && <AdminActivityLogs />}
 
+        {/* Database Tab */}
+        {tab === "database" && (
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-px bg-primary" />
+                <span className="text-[10px] tracking-[0.3em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>Management</span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-light tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+                Database <em className="italic text-primary">Backup</em>
+              </h2>
+              <p className="text-xs text-muted-foreground mt-2 max-w-md" style={{ fontFamily: "var(--font-body)" }}>
+                Export and manage your database backups.
+              </p>
+            </div>
+            <DatabaseBackupComponent />
+          </div>
+        )}
+
         {/* Engagement Tab */}
         {tab === "engagement" && <AdminEngagement user={user} />}
 
