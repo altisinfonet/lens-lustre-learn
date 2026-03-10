@@ -201,9 +201,15 @@ export default function DatabaseBackup() {
           {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
           {exporting ? "Exporting..." : "Download SQL Backup"}
         </button>
+        {lastBackup && (
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+            <Clock className="h-3 w-3" />
+            <span>Last backup: {new Date(lastBackup).toLocaleString()}</span>
+          </div>
+        )}
 
         <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-          <strong className="text-foreground">Note:</strong> Exports up to 10,000 rows per table. Large tables may be truncated. The file includes all {EXPORTABLE_TABLES.length} core tables.
+          <strong className="text-foreground">Note:</strong> Exports up to 10,000 rows per table. Large tables may be truncated. The file includes all {EXPORTABLE_TABLES.length} core tables. A weekly reminder notification is sent if no backup is recorded.
         </p>
       </div>
     </div>
