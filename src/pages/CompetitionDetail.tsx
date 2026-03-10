@@ -355,6 +355,7 @@ const CompetitionDetail = () => {
                             {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </span>
                         </div>
+                        <EngagementFooter id={entry.id} createdAt={entry.created_at} className="mt-2 px-0 border-t border-border/50 pt-2" />
                         {competition.status === "closed" && isAdmin && entry.photos.length > 0 && (
                           <button
                             onClick={async () => {

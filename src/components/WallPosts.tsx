@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import UserBadgeInline from "@/components/UserBadgeInline";
 import FacebookPhotoGrid from "@/components/FacebookPhotoGrid";
 import AdPlacement from "@/components/AdPlacement";
+import EngagementFooter from "@/components/EngagementFooter";
 import { Textarea } from "@/components/ui/textarea";
 import { getAdminIds, resolveName, resolveBadges } from "@/lib/adminBrand";
 import {
