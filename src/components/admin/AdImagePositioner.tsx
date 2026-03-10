@@ -6,7 +6,7 @@ type Placement = "header" | "sidebar" | "in-content" | "between-entries" | "ligh
 
 /** Required output dimensions per ad placement */
 export const PLACEMENT_DIMENSIONS: Record<Placement, { width: number; height: number; label: string }> = {
-  header:            { width: 1200, height: 180, label: "1200 × 180 px (Leaderboard)" },
+  header:            { width: 1560, height: 234, label: "1560 × 234 px (Leaderboard)" },
   "above-journal":   { width: 1200, height: 250, label: "1200 × 250 px (Banner)" },
   "below-journal":   { width: 1200, height: 250, label: "1200 × 250 px (Banner)" },
   sidebar:           { width: 400,  height: 350, label: "400 × 350 px (Rectangle)" },
