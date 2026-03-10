@@ -313,6 +313,7 @@ const Journal = () => {
                                 })}
                               </span>
                             </div>
+                            <EngagementFooter id={article.id} createdAt={article.published_at || article.created_at} wordCount={150} className="mt-2 px-0" />
                           </Link>
                         </motion.article>
                       ))}

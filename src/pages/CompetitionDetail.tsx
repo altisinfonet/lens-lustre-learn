@@ -5,6 +5,7 @@ import PhaseBanner from "@/components/PhaseBanner";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import T from "@/components/T";
+import EngagementFooter from "@/components/EngagementFooter";
 import { motion } from "framer-motion";
 import PageSEO from "@/components/PageSEO";
 import { useEffect, useState, useMemo } from "react";
