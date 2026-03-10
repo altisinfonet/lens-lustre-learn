@@ -251,8 +251,8 @@ const Login = () => {
           <ArrowLeft className="h-3 w-3" /> <T>Back</T>
         </Link>
 
-        <div className="flex items-center justify-center mb-12">
-          <img src="/images/logo.png" alt="50mm Retina World" className="h-24 w-24 object-contain" />
+        <div className="flex justify-center mb-8">
+          <img src="/images/logo.png" alt="50mm Retina World" className="h-48 w-48 object-contain" />
         </div>
 
         <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
