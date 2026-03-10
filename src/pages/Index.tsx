@@ -2229,7 +2229,7 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-12 items-start">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <img src="/images/logo.png" alt="50mm Retina World" className="h-7 w-7 object-contain" />
+                <img src="/images/logo.png" alt="50mm Retina World" className="h-9 w-9 object-contain" />
                 <span className="text-sm tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
                   50mm Retina World
                 </span>
