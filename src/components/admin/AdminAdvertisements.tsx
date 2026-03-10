@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Save, Megaphone, Plus, Trash2, Eye, EyeOff, Monitor, Smartphone, Tablet, Upload, Link, Image as ImageIcon, Crop as CropIcon, BarChart3, Globe, Clock, Beaker, Settings2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import ImageCropModal from "@/components/admin/ImageCropModal";
+import AdImagePositioner, { PLACEMENT_DIMENSIONS } from "@/components/admin/AdImagePositioner";
 import { storageUpload } from "@/lib/storageUpload";
 import { compressImageToFiles } from "@/lib/imageCompression";
 import type { User } from "@supabase/supabase-js";
@@ -434,13 +434,21 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
 
                   {(editingSlot.image_source === "upload" || !editingSlot.image_source) && editingSlot.image_source !== "code" && editingSlot.image_source !== "url" && (
                     <div className="space-y-4">
+                      {/* Required dimensions info */}
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-sm bg-primary/5 border border-primary/20">
+                        <span className="text-[9px] tracking-[0.15em] uppercase text-primary" style={headingFont}>Required size:</span>
+                        <span className="text-[10px] text-foreground font-medium" style={headingFont}>
+                          {PLACEMENT_DIMENSIONS[editingSlot.placement]?.label || "—"}
+                        </span>
+                      </div>
                       <div className="border border-dashed border-border rounded-sm p-5 bg-muted/10">
                         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
                           className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-xs tracking-[0.15em] uppercase hover:border-primary hover:text-primary transition-all disabled:opacity-50" style={headingFont}>
                           {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                          {uploading ? "Uploading…" : "Choose & Crop Image"}
+                          {uploading ? "Uploading…" : "Choose & Position Image"}
                         </button>
+                        <p className="mt-2 text-[9px] text-muted-foreground/60">Upload any image — you'll position & zoom it to fit the required frame</p>
                       </div>
                       {editingSlot.image_url && (
                         <div className="border border-border rounded-sm p-3">
@@ -583,8 +591,8 @@ export default function AdminAdvertisements({ user }: { user: User | null }) {
                 <input value={editingSlot.notes} onChange={(e) => setEditingSlot({ ...editingSlot, notes: e.target.value })} className={inputClass} style={bodyFont} placeholder="Internal notes..." />
               </div>
 
-              {/* Crop Modal */}
-              {cropSrc && <ImageCropModal imageSrc={cropSrc} onCropComplete={handleCropComplete} onCancel={() => setCropSrc(null)} />}
+              {/* Image Positioner Modal */}
+              {cropSrc && <AdImagePositioner imageSrc={cropSrc} placement={editingSlot.placement} onComplete={handleCropComplete} onCancel={() => setCropSrc(null)} />}
 
               <div className="flex gap-3 pt-2">
                 <button onClick={saveEditingSlot} disabled={saving}
