@@ -237,6 +237,7 @@ const Journal = () => {
                               })}
                             </span>
                           </div>
+                          <EngagementFooter id={hero.id} createdAt={hero.published_at || hero.created_at} wordCount={200} className="mt-3 px-0" />
                           <div className="mt-6 flex items-center gap-2 text-xs tracking-[0.15em] uppercase text-primary" style={{ fontFamily: "var(--font-heading)" }}>
                             <T>Read Article</T> <ArrowRight className="h-3.5 w-3.5" />
                           </div>
