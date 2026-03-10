@@ -536,6 +536,9 @@ const Index = () => {
       if (heroContentRes.data?.value) {
         setHeroContent(heroContentRes.data.value as any);
       }
+      if (socialLinksRes.data?.value) {
+        setSocialLinks(socialLinksRes.data.value as Record<string, string>);
+      }
 
       const winnerData = winnersRes.data || [];
       const certData = certsRes.data || [];
