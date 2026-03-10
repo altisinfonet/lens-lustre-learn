@@ -799,9 +799,6 @@ export default function AdminSettings({ user }: Props) {
         </div>
       </div>
 
-      {/* Database Backup */}
-      <DatabaseBackup />
-
       {/* Info Note */}
       <div className="border border-border/50 rounded-sm px-5 py-4 bg-muted/20">
         <p className="text-[11px] text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
