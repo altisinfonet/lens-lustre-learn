@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield, Plus, X, CheckSquare, Square, Award } from "lucide-react";
+import { Search, Ban, ShieldCheck, Trash2, Pencil, XCircle, Loader2, Mail, User, Calendar, Shield, Plus, X, CheckSquare, Square, Award, ExternalLink } from "lucide-react";
 import type { User as AuthUser } from "@supabase/supabase-js";
 import { BADGES, BADGE_TYPES, type BadgeType } from "@/lib/badgeConfig";
 
