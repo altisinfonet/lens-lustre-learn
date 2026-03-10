@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Download, Loader2, Database, CheckCircle2 } from "lucide-react";
+import { Download, Loader2, Database, Clock } from "lucide-react";
 
 const EXPORTABLE_TABLES = [
   "profiles",
