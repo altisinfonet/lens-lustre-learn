@@ -434,7 +434,7 @@ const WallPosts = ({ targetUserId, isOwnWall }: WallPostsProps) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-2xl mx-auto">
       {/* ── Facebook-style Compose Box ── */}
       {isOwnWall && user && (
         <div className="bg-card rounded-lg shadow-sm border border-border">
