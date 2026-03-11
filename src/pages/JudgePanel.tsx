@@ -89,7 +89,7 @@ const JudgePanel = () => {
 
       const { data: rawEntries } = await supabase
         .from("competition_entries")
-        .select("id, title, description, photos, user_id, status, created_at, competition_id, placement")
+        .select("id, title, description, photos, user_id, status, created_at, competition_id, placement, is_ai_generated")
         .eq("competition_id", selectedCompId)
         .in("status", ["approved", "winner"])
         .order("created_at", { ascending: false });
