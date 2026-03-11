@@ -348,7 +348,7 @@ const AdminPanel = () => {
   const openEdit = (comp: Competition) => {
     setEditingId(comp.id);
     // Need to fetch full data
-    supabase.from("competitions").select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at").eq("id", comp.id).single().then(async ({ data }) => {
+    supabase.from("competitions").select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at, ai_images_allowed").eq("id", comp.id).single().then(async ({ data }) => {
       if (data) {
         // Fetch payment details from separate admin-only table
         const { data: pd } = await supabase.from("competition_payment_details" as any).select("paypal_email, bank_details, upi_id").eq("competition_id", comp.id).maybeSingle();
@@ -367,6 +367,7 @@ const AdminPanel = () => {
           paypal_email: (pd as any)?.paypal_email || "",
           bank_details: (pd as any)?.bank_details || "",
           upi_id: (pd as any)?.upi_id || "",
+          ai_images_allowed: (data as any).ai_images_allowed !== false,
         });
         setShowForm(true);
       }
