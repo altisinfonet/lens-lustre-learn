@@ -264,39 +264,131 @@ const PublicProfile = () => {
         const path = `covers/${currentUser.id}/${Date.now()}-${file.name}`;
         const result = await storageUpload("avatars", path, file);
         const url = result.url;
-        await supabase.from("profiles").update({ cover_url: url }).eq("id", currentUser.id);
-        setProfile((prev) => prev ? { ...prev, cover_url: url } : prev);
-        toast({ title: "Cover photo updated!" });
+        await supabase.from("profiles").update({ cover_url: url, cover_position: 50 } as any).eq("id", currentUser.id);
+        setProfile((prev) => prev ? { ...prev, cover_url: url, cover_position: 50 } : prev);
+        setDragPosition(50);
+        setSavedPosition(50);
+        setRepositionMode(true);
+        toast({ title: "Cover photo updated! Drag to reposition." });
       } catch (err: any) {
         toast({ title: "Upload failed", description: err.message, variant: "destructive" });
       }
     };
+
+    const handleRepositionStart = () => {
+      setRepositionMode(true);
+      setDragPosition(savedPosition);
+    };
+
+    const handleRepositionSave = async () => {
+      if (!currentUser) return;
+      await supabase.from("profiles").update({ cover_position: dragPosition } as any).eq("id", currentUser.id);
+      setSavedPosition(dragPosition);
+      setProfile((prev) => prev ? { ...prev, cover_position: dragPosition } : prev);
+      setRepositionMode(false);
+      toast({ title: "Cover position saved!" });
+    };
+
+    const handleRepositionCancel = () => {
+      setDragPosition(savedPosition);
+      setRepositionMode(false);
+    };
+
+    const onCoverPointerDown = (e: React.PointerEvent) => {
+      if (!repositionMode) return;
+      e.preventDefault();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      dragRef.current = { startY: e.clientY, startPos: dragPosition };
+    };
+
+    const onCoverPointerMove = (e: React.PointerEvent) => {
+      if (!dragRef.current || !coverContainerRef.current) return;
+      const containerH = coverContainerRef.current.getBoundingClientRect().height;
+      const deltaY = e.clientY - dragRef.current.startY;
+      // Moving mouse down → shows upper part → decrease %, moving up → increase %
+      const deltaPct = -(deltaY / containerH) * 100;
+      const newPos = Math.max(0, Math.min(100, dragRef.current.startPos + deltaPct));
+      setDragPosition(newPos);
+    };
+
+    const onCoverPointerUp = () => {
+      dragRef.current = null;
+    };
+
+    const coverPosition = repositionMode ? dragPosition : (profile.cover_position ?? 50);
 
     return (
     <main className="min-h-screen bg-background text-foreground">
       {/* ═══ Cover Photo ═══ */}
       <section className="relative">
         {/* Cover Image */}
-        <div className="relative h-48 sm:h-64 md:h-72 lg:h-80 overflow-hidden bg-gradient-to-br from-muted via-muted/80 to-muted/60">
+        <div
+          ref={coverContainerRef}
+          className={`relative h-48 sm:h-64 md:h-72 lg:h-80 overflow-hidden bg-gradient-to-br from-muted via-muted/80 to-muted/60 ${repositionMode ? "cursor-grab active:cursor-grabbing" : ""}`}
+          onPointerDown={onCoverPointerDown}
+          onPointerMove={onCoverPointerMove}
+          onPointerUp={onCoverPointerUp}
+        >
           {profile.cover_url ? (
             <img
               src={profile.cover_url}
               alt="Cover"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover select-none pointer-events-none"
+              style={{ objectPosition: `center ${coverPosition}%` }}
+              draggable={false}
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-muted to-accent/5" />
           )}
           {/* Gradient overlay at bottom for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+          {!repositionMode && (
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+          )}
 
-          {/* Cover upload button for owner */}
-          {isOwner && (
-            <label className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 cursor-pointer text-[10px] tracking-[0.12em] uppercase px-4 py-2 bg-background/80 backdrop-blur-sm text-foreground border border-border hover:bg-background hover:border-primary transition-all duration-300 rounded-sm" style={headingFont}>
-              <ImagePlus className="h-3.5 w-3.5" />
-              {profile.cover_url ? "Change Cover" : "Add Cover Photo"}
-              <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
-            </label>
+          {/* Reposition toolbar */}
+          {repositionMode && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border rounded-sm px-4 py-2 shadow-lg">
+              <Move className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] tracking-[0.12em] uppercase text-foreground" style={headingFont}>
+                Drag to reposition
+              </span>
+              <div className="w-px h-4 bg-border mx-1" />
+              <button
+                onClick={handleRepositionSave}
+                className="inline-flex items-center gap-1 text-[10px] tracking-[0.12em] uppercase px-3 py-1.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-sm"
+                style={headingFont}
+              >
+                <Check className="h-3 w-3" /> Save
+              </button>
+              <button
+                onClick={handleRepositionCancel}
+                className="inline-flex items-center gap-1 text-[10px] tracking-[0.12em] uppercase px-3 py-1.5 border border-border text-muted-foreground hover:text-foreground transition-colors rounded-sm"
+                style={headingFont}
+              >
+                <X className="h-3 w-3" /> Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Cover buttons for owner */}
+          {isOwner && !repositionMode && (
+            <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+              {profile.cover_url && (
+                <button
+                  onClick={handleRepositionStart}
+                  className="inline-flex items-center gap-2 text-[10px] tracking-[0.12em] uppercase px-4 py-2 bg-background/80 backdrop-blur-sm text-foreground border border-border hover:bg-background hover:border-primary transition-all duration-300 rounded-sm"
+                  style={headingFont}
+                >
+                  <Move className="h-3.5 w-3.5" />
+                  Reposition
+                </button>
+              )}
+              <label className="inline-flex items-center gap-2 cursor-pointer text-[10px] tracking-[0.12em] uppercase px-4 py-2 bg-background/80 backdrop-blur-sm text-foreground border border-border hover:bg-background hover:border-primary transition-all duration-300 rounded-sm" style={headingFont}>
+                <ImagePlus className="h-3.5 w-3.5" />
+                {profile.cover_url ? "Change Cover" : "Add Cover Photo"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
+              </label>
+            </div>
           )}
         </div>
 
