@@ -285,6 +285,37 @@ const CompetitionSubmit = () => {
             </p>
           </div>
 
+          {/* AI Image Declaration */}
+          <div className={`p-4 border space-y-3 ${!aiImagesAllowed ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-muted/20'}`}>
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={isAiGenerated}
+                onChange={(e) => setIsAiGenerated(e.target.checked)}
+                className="h-4 w-4 accent-primary mt-0.5"
+                id="ai-declaration"
+              />
+              <label htmlFor="ai-declaration" className="cursor-pointer">
+                <span className="text-xs font-medium block" style={{ fontFamily: "var(--font-heading)" }}>
+                  <T>This submission contains AI-generated image(s)</T>
+                </span>
+                <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                  <T>Check this box if any of your photos were created or significantly modified using AI tools. This declaration is required as EXIF camera data may not be available.</T>
+                </p>
+              </label>
+            </div>
+            {!aiImagesAllowed && (
+              <div className="text-[10px] text-destructive font-medium px-7" style={{ fontFamily: "var(--font-heading)" }}>
+                ⚠ <T>AI-generated images are NOT allowed in this competition. If you check this box, your submission will be blocked.</T>
+              </div>
+            )}
+            {!aiImagesAllowed && !isAiGenerated && (
+              <div className="text-[10px] text-muted-foreground px-7" style={{ fontFamily: "var(--font-body)" }}>
+                <T>By not checking this box, you confirm that all submitted photos are original camera/mobile captures.</T>
+              </div>
+            )}
+          </div>
+
           {/* Entry Fee & Wallet Balance */}
           {entryFee > 0 && (
             <div className="p-4 border border-border bg-muted/30 space-y-2">
