@@ -543,7 +543,7 @@ const AdminPanel = () => {
       ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["transactions", "Transactions", FileText],
     ] as const },
     { label: "Settings", items: [
-      ["health", "Site Health", HeartPulse], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["activity_logs", "Activity Logs", ClipboardList], ["settings", "Integrations", Settings], ["auth_pages", "Login / Signup", LogIn], ["email_templates", "Email Templates", Mail], ["database", "Database", Database],
+      ["health", "Site Health", HeartPulse], ["page_management", "Page Management", FileText], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["activity_logs", "Activity Logs", ClipboardList], ["settings", "Integrations", Settings], ["auth_pages", "Login / Signup", LogIn], ["email_templates", "Email Templates", Mail], ["database", "Database", Database],
     ] as const },
     { label: "Help & Support", items: [
       ["support_tickets", "Support Tickets", HelpCircle],
