@@ -120,6 +120,11 @@ const CompetitionSubmit = () => {
       return;
     }
 
+    if (!aiImagesAllowed && isAiGenerated) {
+      toast({ title: "AI-generated images are not allowed in this competition", variant: "destructive" });
+      return;
+    }
+
     if (entryFee > 0) {
       if (balance < entryFee) {
         toast({ title: "Insufficient wallet balance", description: `You need $${entryFee} but have $${Number(balance).toFixed(2)}. Add funds to your wallet first.`, variant: "destructive" });
