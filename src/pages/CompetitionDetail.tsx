@@ -28,6 +28,7 @@ interface Competition {
   max_photos_per_entry: number;
   starts_at: string;
   ends_at: string;
+  ai_images_allowed: boolean;
 }
 
 interface Entry {
