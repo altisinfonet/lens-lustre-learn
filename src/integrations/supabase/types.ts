@@ -342,9 +342,11 @@ export type Database = {
       }
       competition_entries: {
         Row: {
+          ai_detection_result: Json | null
           competition_id: string
           created_at: string
           description: string | null
+          exif_data: Json | null
           id: string
           is_ai_generated: boolean
           is_pinned: boolean
@@ -358,9 +360,11 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          ai_detection_result?: Json | null
           competition_id: string
           created_at?: string
           description?: string | null
+          exif_data?: Json | null
           id?: string
           is_ai_generated?: boolean
           is_pinned?: boolean
@@ -374,9 +378,11 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          ai_detection_result?: Json | null
           competition_id?: string
           created_at?: string
           description?: string | null
+          exif_data?: Json | null
           id?: string
           is_ai_generated?: boolean
           is_pinned?: boolean
