@@ -180,6 +180,9 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
     return { safe: false, reason: "Empty file" };
   }
 
+  // Normalize filename early for all checks
+  const fileName = file.name.toLowerCase();
+
   // 2. MIME type whitelist
   const allowedMimes: string[] = [];
   const includesImages = ["image", "image+pdf", "image+pdf+document"].includes(allowedTypes);
@@ -204,8 +207,8 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
     );
   }
 
-  // Allow files where MIME is in whitelist, OR where extension matches an allowed image type
-  // (some browsers/devices don't set file.type correctly)
+  // Allow files where MIME is in whitelist, OR where extension matches an allowed type
+  // (some browsers/devices don't set file.type correctly, causing false rejections)
   const IMAGE_EXT_CHECK = /\.(jpg|jpeg|png|webp|gif|bmp|tiff|tif|heic|heif)$/i;
   const PDF_EXT_CHECK = /\.pdf$/i;
   const DOC_EXT_CHECK = /\.(docx?|xlsx?)$/i;
@@ -224,7 +227,6 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
   }
 
   // 3. Extension check (double-extension attack prevention)
-  const fileName = file.name.toLowerCase();
   const dangerousExtensions = [".exe", ".bat", ".cmd", ".com", ".msi", ".scr", ".pif", ".vbs", ".js", ".ws", ".wsf", ".php", ".py", ".sh", ".html", ".htm", ".svg"];
   for (const ext of dangerousExtensions) {
     if (fileName.includes(ext + ".") || fileName.endsWith(ext)) {
