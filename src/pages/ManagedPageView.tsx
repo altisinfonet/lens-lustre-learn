@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Helmet } from "react-helmet-async";
 import { Loader2 } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface ManagedPage {
   id: string;
@@ -16,14 +17,16 @@ interface ManagedPage {
   noindex: boolean;
   is_published: boolean;
   view_count: number;
+  json_ld: string;
+  translations: Record<string, { title: string; content: string; meta_title: string; meta_description: string }>;
 }
 
-const displayFont = { fontFamily: "var(--font-display)" };
 const bodyFont = { fontFamily: "var(--font-body)" };
 
 const ManagedPageView = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [page, setPage] = useState<ManagedPage | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -69,22 +72,41 @@ const ManagedPageView = () => {
     return null;
   }
 
-  const metaTitle = page.meta_title || page.title;
+  // Resolve language-specific content
+  const trans = language !== "English" && page.translations?.[language];
+  const title = (trans && trans.title) || page.title;
+  const content = (trans && trans.content) || page.content;
+  const metaTitle = (trans && trans.meta_title) || page.meta_title || title;
+  const metaDesc = (trans && trans.meta_description) || page.meta_description;
   const canonical = `${window.location.origin}/page/${page.slug}`;
+
+  // Validate JSON-LD
+  let jsonLdScript: string | null = null;
+  if (page.json_ld) {
+    try {
+      JSON.parse(page.json_ld);
+      jsonLdScript = page.json_ld;
+    } catch {
+      // Invalid JSON-LD, skip
+    }
+  }
 
   return (
     <div className="py-10 md:py-16">
       <Helmet>
         <title>{metaTitle} — 50mm Retina World</title>
-        {page.meta_description && <meta name="description" content={page.meta_description} />}
+        {metaDesc && <meta name="description" content={metaDesc} />}
         <meta property="og:title" content={metaTitle} />
-        {page.meta_description && <meta property="og:description" content={page.meta_description} />}
+        {metaDesc && <meta property="og:description" content={metaDesc} />}
         {page.og_image && <meta property="og:image" content={page.og_image} />}
         <link rel="canonical" href={canonical} />
         {page.noindex && <meta name="robots" content="noindex, nofollow" />}
+        {jsonLdScript && (
+          <script type="application/ld+json">{jsonLdScript}</script>
+        )}
       </Helmet>
 
-      <Breadcrumbs items={[{ label: page.title }]} className="mb-8" />
+      <Breadcrumbs items={[{ label: title }]} className="mb-8" />
 
       <article className="max-w-3xl">
         <div
@@ -103,7 +125,7 @@ const ManagedPageView = () => {
             [&_hr]:my-8 [&_hr]:border-border
             [&_blockquote]:border-l-2 [&_blockquote]:border-primary [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground"
           style={bodyFont}
-          dangerouslySetInnerHTML={{ __html: page.content }}
+          dangerouslySetInnerHTML={{ __html: content }}
         />
       </article>
     </div>
