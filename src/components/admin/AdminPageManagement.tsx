@@ -29,6 +29,8 @@ interface ManagedPage {
   template: string;
   scheduled_at: string | null;
   view_count: number;
+  json_ld: string;
+  translations: Record<string, { title: string; content: string; meta_title: string; meta_description: string }>;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +39,7 @@ const emptyPage: Omit<ManagedPage, "id" | "created_at" | "updated_at"> = {
   title: "", slug: "", content: "", meta_title: "", meta_description: "",
   og_image: "", noindex: false, is_published: false, sort_order: 0,
   show_in_nav: false, template: "blank", scheduled_at: null, view_count: 0,
+  json_ld: "", translations: {},
 };
 
 /* ── Page Templates ── */
@@ -534,7 +537,125 @@ export default function AdminPageManagement({ user }: { user: User | null }) {
             </div>
           </div>
 
-          {/* Scheduling & Options */}
+          {/* JSON-LD Structured Data */}
+          <div className="border-t border-border pt-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Code className="h-4 w-4 text-primary" />
+              <span className="text-[10px] tracking-[0.2em] uppercase text-primary" style={headingFont}>Structured Data / JSON-LD</span>
+            </div>
+            <textarea
+              value={editingPage.json_ld || ""}
+              onChange={(e) => setEditingPage((p) => p ? ({ ...p, json_ld: e.target.value }) : null)}
+              className="w-full bg-muted/20 border border-border focus:border-primary outline-none p-4 text-sm font-mono transition-colors duration-500 rounded resize-y"
+              rows={6}
+              placeholder={`{\n  "@context": "https://schema.org",\n  "@type": "WebPage",\n  "name": "${editingPage.title || "Page Title"}"\n}`}
+            />
+            <p className="text-[10px] text-muted-foreground mt-1" style={bodyFont}>
+              Paste valid JSON-LD for enhanced search results (rich snippets). Leave empty to skip.
+            </p>
+          </div>
+
+          {/* Multi-Language Versions */}
+          <div className="border-t border-border pt-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="h-4 w-4 text-primary" />
+              <span className="text-[10px] tracking-[0.2em] uppercase text-primary" style={headingFont}>Multi-Language Versions</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground mb-3" style={bodyFont}>
+              Add translated versions of this page. These tie into the platform's language system — visitors see the version matching their selected language.
+            </p>
+            {Object.entries(editingPage.translations || {}).map(([lang, trans]) => (
+              <div key={lang} className="border border-border rounded-sm p-4 mb-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-primary" style={headingFont}>{lang}</span>
+                  <button
+                    onClick={() => {
+                      const updated = { ...editingPage.translations };
+                      delete updated[lang];
+                      setEditingPage((p) => p ? ({ ...p, translations: updated }) : null);
+                    }}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+                <div>
+                  <label className={labelClass} style={headingFont}>Title</label>
+                  <input
+                    value={trans.title}
+                    onChange={(e) => {
+                      const updated = { ...editingPage.translations, [lang]: { ...trans, title: e.target.value } };
+                      setEditingPage((p) => p ? ({ ...p, translations: updated }) : null);
+                    }}
+                    className={inputClass} style={bodyFont}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} style={headingFont}>Meta Title</label>
+                  <input
+                    value={trans.meta_title}
+                    onChange={(e) => {
+                      const updated = { ...editingPage.translations, [lang]: { ...trans, meta_title: e.target.value } };
+                      setEditingPage((p) => p ? ({ ...p, translations: updated }) : null);
+                    }}
+                    className={inputClass} style={bodyFont}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} style={headingFont}>Meta Description</label>
+                  <input
+                    value={trans.meta_description}
+                    onChange={(e) => {
+                      const updated = { ...editingPage.translations, [lang]: { ...trans, meta_description: e.target.value } };
+                      setEditingPage((p) => p ? ({ ...p, translations: updated }) : null);
+                    }}
+                    className={inputClass} style={bodyFont}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} style={headingFont}>Content (HTML)</label>
+                  <textarea
+                    value={trans.content}
+                    onChange={(e) => {
+                      const updated = { ...editingPage.translations, [lang]: { ...trans, content: e.target.value } };
+                      setEditingPage((p) => p ? ({ ...p, translations: updated }) : null);
+                    }}
+                    className="w-full bg-muted/20 border border-border focus:border-primary outline-none p-3 text-sm font-mono transition-colors rounded resize-y"
+                    rows={6}
+                  />
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center gap-2">
+              <select
+                id="add-lang-select"
+                className="bg-transparent border border-border rounded px-2 py-1.5 text-xs"
+                style={bodyFont}
+                defaultValue=""
+              >
+                <option value="" disabled>Select language…</option>
+                {["Hindi", "Bengali", "Tamil", "Telugu", "Spanish", "French", "German", "Portuguese", "Arabic", "Chinese", "Japanese", "Korean", "Russian", "Italian", "Dutch", "Turkish"]
+                  .filter((l) => !editingPage.translations?.[l])
+                  .map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+              <button
+                onClick={() => {
+                  const sel = (document.getElementById("add-lang-select") as HTMLSelectElement)?.value;
+                  if (!sel) return;
+                  const updated = {
+                    ...editingPage.translations,
+                    [sel]: { title: "", content: "", meta_title: "", meta_description: "" },
+                  };
+                  setEditingPage((p) => p ? ({ ...p, translations: updated }) : null);
+                }}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-border hover:border-primary hover:text-primary transition-all rounded-sm"
+                style={headingFont}
+              >
+                <Plus className="h-3 w-3" /> Add Language
+              </button>
+            </div>
+          </div>
+
           <div className="border-t border-border pt-5">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="h-4 w-4 text-primary" />

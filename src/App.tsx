@@ -9,6 +9,7 @@ import { LanguageProvider } from "@/hooks/useLanguage";
 import { HelmetProvider } from "react-helmet-async";
 import { lazy, Suspense } from "react";
 import Layout from "@/components/Layout";
+import RedirectHandler from "@/components/RedirectHandler";
 
 /* Eagerly load the homepage */
 import Index from "./pages/Index";
@@ -78,6 +79,7 @@ const App = () => (
         <AuthProvider>
           <ThemeProvider>
           <LanguageProvider>
+          <RedirectHandler />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route element={<Layout />}>
