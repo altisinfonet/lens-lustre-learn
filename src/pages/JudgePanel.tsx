@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Trophy, Award, Medal, Eye, MessageSquare, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Star, Trophy, Award, Medal, Eye, MessageSquare, ChevronDown, ChevronUp, Loader2, AlertTriangle, Camera, ShieldCheck } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +33,8 @@ interface JudgeEntry {
   my_feedback: string | null;
   avg_score: number | null;
   is_ai_generated: boolean;
+  ai_detection_result: any[] | null;
+  exif_data: any | null;
 }
 
 const PLACEMENTS = [
@@ -89,7 +91,7 @@ const JudgePanel = () => {
 
       const { data: rawEntries } = await supabase
         .from("competition_entries")
-        .select("id, title, description, photos, user_id, status, created_at, competition_id, placement, is_ai_generated")
+        .select("id, title, description, photos, user_id, status, created_at, competition_id, placement, is_ai_generated, ai_detection_result, exif_data")
         .eq("competition_id", selectedCompId)
         .in("status", ["approved", "winner"])
         .order("created_at", { ascending: false });
@@ -124,6 +126,8 @@ const JudgePanel = () => {
           ...entry,
           placement: (entry as any).placement || null,
           is_ai_generated: (entry as any).is_ai_generated || false,
+          ai_detection_result: (entry as any).ai_detection_result || null,
+          exif_data: (entry as any).exif_data || null,
           photographer_name: profileMap.get(entry.user_id) || null,
           vote_count: entryVotes.length,
           my_score: myScore?.score ?? null,
@@ -374,6 +378,104 @@ const JudgePanel = () => {
                               <p className="text-xs text-muted-foreground leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
                                 {entry.description}
                               </p>
+                            </div>
+                          )}
+
+                          {/* AI Detection & EXIF Info Panel */}
+                          {(entry.is_ai_generated || entry.ai_detection_result || entry.exif_data) && (
+                            <div className="px-5 pb-5 border-t border-border pt-5">
+                              <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>
+                                <AlertTriangle className="h-3 w-3 inline mr-1" />
+                                AI & Authenticity Info
+                              </span>
+
+                              {/* User declaration */}
+                              <div className={`flex items-center gap-2 mb-3 text-[10px] px-3 py-2 border ${
+                                entry.is_ai_generated
+                                  ? "border-destructive/40 bg-destructive/5 text-destructive"
+                                  : "border-green-600/40 bg-green-600/5 text-green-700 dark:text-green-400"
+                              }`} style={{ fontFamily: "var(--font-heading)" }}>
+                                {entry.is_ai_generated ? (
+                                  <><AlertTriangle className="h-3.5 w-3.5" /> User declared: AI-GENERATED</>
+                                ) : (
+                                  <><ShieldCheck className="h-3.5 w-3.5" /> User declared: ORIGINAL CAPTURE</>
+                                )}
+                              </div>
+
+                              {/* Auto-detection results */}
+                              {entry.ai_detection_result && Array.isArray(entry.ai_detection_result) && entry.ai_detection_result.length > 0 && (
+                                <div className="space-y-2 mb-3">
+                                  <span className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                                    Auto-Detection Results:
+                                  </span>
+                                  {entry.ai_detection_result.map((det: any, i: number) => (
+                                    <div key={i} className={`text-[10px] px-3 py-2 border ${
+                                      det.detection?.is_likely_ai
+                                        ? "border-destructive/30 bg-destructive/5"
+                                        : "border-border bg-muted/20"
+                                    }`} style={{ fontFamily: "var(--font-body)" }}>
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+                                          Photo {det.photo_index + 1}:
+                                        </span>
+                                        <span className={det.detection?.is_likely_ai ? "text-destructive font-semibold" : "text-green-600 dark:text-green-400"}>
+                                          {det.detection?.is_likely_ai
+                                            ? `⚠ AI Likely (${det.detection?.confidence}% confidence)`
+                                            : `✓ Likely Original`}
+                                        </span>
+                                      </div>
+                                      {det.detection?.summary && (
+                                        <p className="text-muted-foreground">{det.detection.summary}</p>
+                                      )}
+                                      {det.detection?.reasons?.length > 0 && (
+                                        <ul className="mt-1 text-muted-foreground list-disc list-inside">
+                                          {det.detection.reasons.map((r: string, ri: number) => (
+                                            <li key={ri}>{r}</li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* EXIF Data (shown when user overrode AI detection) */}
+                              {entry.exif_data && (
+                                <div className="border border-primary/30 bg-primary/5 p-3 space-y-2">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Camera className="h-3.5 w-3.5 text-primary" />
+                                    <span className="text-[9px] tracking-[0.15em] uppercase text-primary font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+                                      User-Provided EXIF Data (Override)
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]" style={{ fontFamily: "var(--font-body)" }}>
+                                    {entry.exif_data.camera_make && (
+                                      <div><span className="text-muted-foreground">Make:</span> <strong>{entry.exif_data.camera_make}</strong></div>
+                                    )}
+                                    {entry.exif_data.camera_model && (
+                                      <div><span className="text-muted-foreground">Model:</span> <strong>{entry.exif_data.camera_model}</strong></div>
+                                    )}
+                                    {entry.exif_data.lens && (
+                                      <div><span className="text-muted-foreground">Lens:</span> <strong>{entry.exif_data.lens}</strong></div>
+                                    )}
+                                    {entry.exif_data.focal_length && (
+                                      <div><span className="text-muted-foreground">Focal:</span> <strong>{entry.exif_data.focal_length}</strong></div>
+                                    )}
+                                    {entry.exif_data.aperture && (
+                                      <div><span className="text-muted-foreground">Aperture:</span> <strong>{entry.exif_data.aperture}</strong></div>
+                                    )}
+                                    {entry.exif_data.shutter_speed && (
+                                      <div><span className="text-muted-foreground">Shutter:</span> <strong>{entry.exif_data.shutter_speed}</strong></div>
+                                    )}
+                                    {entry.exif_data.iso && (
+                                      <div><span className="text-muted-foreground">ISO:</span> <strong>{entry.exif_data.iso}</strong></div>
+                                    )}
+                                    {entry.exif_data.date_taken && (
+                                      <div><span className="text-muted-foreground">Date:</span> <strong>{entry.exif_data.date_taken}</strong></div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
 
