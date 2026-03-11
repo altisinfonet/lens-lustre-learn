@@ -1,6 +1,6 @@
 import { BADGES, type BadgeType } from "@/lib/badgeConfig";
 import { BadgeCheck } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   badges: string[];
