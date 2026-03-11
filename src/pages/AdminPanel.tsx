@@ -618,12 +618,12 @@ const AdminPanel = () => {
                       <button
                         key={key}
                         onClick={() => setTab(key)}
-                        className={`w-full flex items-center gap-2.5 text-[13px] tracking-[0.1em] uppercase px-3 py-2.5 rounded-sm transition-all duration-300 ${
+                        className={`w-full flex items-center gap-2.5 text-[13px] px-3 py-2.5 rounded-sm transition-all duration-300 ${
                           tab === key
                             ? "bg-primary/10 text-primary border-l-2 border-primary"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
+                            : "text-muted-foreground hover:text-primary hover:bg-primary/5 border-l-2 border-transparent"
                         }`}
-                        style={{ fontFamily: "var(--font-heading)" }}
+                        style={{ fontFamily: "var(--font-body)" }}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
                         {label}
