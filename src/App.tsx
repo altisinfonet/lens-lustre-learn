@@ -79,6 +79,7 @@ const App = () => (
         <AuthProvider>
           <ThemeProvider>
           <LanguageProvider>
+          <RedirectHandler />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route element={<Layout />}>
