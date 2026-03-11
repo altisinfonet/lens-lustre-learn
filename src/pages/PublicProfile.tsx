@@ -159,8 +159,13 @@ const PublicProfile = () => {
   const [isVerifiedPhotographer, setIsVerifiedPhotographer] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const [userBadges, setUserBadges] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"wall" | "works" | "about">("wall");
-  const [isFriend, setIsFriend] = useState(false);
+   const [activeTab, setActiveTab] = useState<"wall" | "works" | "about">("wall");
+   const [isFriend, setIsFriend] = useState(false);
+   const [repositionMode, setRepositionMode] = useState(false);
+   const [dragPosition, setDragPosition] = useState(50);
+   const [savedPosition, setSavedPosition] = useState(50);
+   const dragRef = useRef<{ startY: number; startPos: number } | null>(null);
+   const coverContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
