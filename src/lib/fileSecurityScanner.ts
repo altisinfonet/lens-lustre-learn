@@ -180,6 +180,9 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
     return { safe: false, reason: "Empty file" };
   }
 
+  // Normalize filename early for all checks
+  const fileName = file.name.toLowerCase();
+
   // 2. MIME type whitelist
   const allowedMimes: string[] = [];
   const includesImages = ["image", "image+pdf", "image+pdf+document"].includes(allowedTypes);
@@ -204,7 +207,17 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
     );
   }
 
-  if (!allowedMimes.includes(file.type)) {
+  // Allow files where MIME is in whitelist, OR where extension matches an allowed type
+  // (some browsers/devices don't set file.type correctly, causing false rejections)
+  const IMAGE_EXT_CHECK = /\.(jpg|jpeg|png|webp|gif|bmp|tiff|tif|heic|heif)$/i;
+  const PDF_EXT_CHECK = /\.pdf$/i;
+  const DOC_EXT_CHECK = /\.(docx?|xlsx?)$/i;
+  const mimeOk = allowedMimes.includes(file.type);
+  const extOk = (includesImages && IMAGE_EXT_CHECK.test(fileName)) ||
+                (includesPdf && PDF_EXT_CHECK.test(fileName)) ||
+                (includesDocs && DOC_EXT_CHECK.test(fileName));
+
+  if (!mimeOk && !extOk) {
     const labels: string[] = [];
     if (includesImages) labels.push("images");
     if (includesPdf) labels.push("PDFs");
@@ -214,7 +227,6 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
   }
 
   // 3. Extension check (double-extension attack prevention)
-  const fileName = file.name.toLowerCase();
   const dangerousExtensions = [".exe", ".bat", ".cmd", ".com", ".msi", ".scr", ".pif", ".vbs", ".js", ".ws", ".wsf", ".php", ".py", ".sh", ".html", ".htm", ".svg"];
   for (const ext of dangerousExtensions) {
     if (fileName.includes(ext + ".") || fileName.endsWith(ext)) {
@@ -224,17 +236,40 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
 
   // 4. Magic bytes verification
   const headerBytes = await readFileBytes(file, 32);
-  const isPdf = file.type === "application/pdf";
-  const isImage = file.type.startsWith("image/");
+  const isPdf = file.type === "application/pdf" || fileName.endsWith(".pdf");
 
-  if (isImage || isPdf) {
+  // Robust image detection: check MIME type, file extension, AND magic bytes
+  // file.type can be empty on some browsers/devices, causing false positives
+  const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|webp|gif|bmp|tiff|tif|heic|heif)$/i;
+  const isImageByMime = file.type.startsWith("image/");
+  const isImageByExt = IMAGE_EXTENSIONS.test(fileName);
+  const isImageByMagic = (
+    verifyMagicBytes(headerBytes, "image/jpeg") ||
+    verifyMagicBytes(headerBytes, "image/png") ||
+    verifyMagicBytes(headerBytes, "image/webp") ||
+    verifyMagicBytes(headerBytes, "image/gif") ||
+    verifyMagicBytes(headerBytes, "image/bmp") ||
+    verifyMagicBytes(headerBytes, "image/tiff") ||
+    verifyMagicBytes(headerBytes, "image/heic")
+  );
+  const isImage = isImageByMime || isImageByExt || isImageByMagic;
+
+  if ((isImageByMime || isPdf) && !isImage) {
     const magicValid = verifyMagicBytes(headerBytes, file.type);
     if (!magicValid) {
       return { safe: false, reason: "File content does not match its declared type (possible forgery)" };
     }
   }
 
-  // 5. Scan file content for embedded malicious payloads (skip for images — binary data causes false positives)
+  if (isPdf) {
+    const magicValid = verifyMagicBytes(headerBytes, "application/pdf");
+    if (!magicValid) {
+      return { safe: false, reason: "File content does not match its declared type (possible forgery)" };
+    }
+  }
+
+  // 5. Scan file content for embedded malicious payloads
+  // NEVER scan images as text — binary data ALWAYS causes false positives
   if (!isImage) {
     const scanSize = Math.min(file.size, MAX_SCAN_BYTES);
     const textContent = await readFileText(file, scanSize);
