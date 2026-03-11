@@ -147,7 +147,8 @@ const CompetitionSubmit = () => {
       title: title.trim(),
       description: description.trim() || null,
       photos: photos.map((p) => p.url),
-    });
+      is_ai_generated: isAiGenerated,
+    } as any);
     setSubmitting(false);
 
     if (error) {
