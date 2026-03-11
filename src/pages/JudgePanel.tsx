@@ -332,6 +332,11 @@ const JudgePanel = () => {
                                 {entry.placement.replace(/_/g, " ")}
                               </span>
                             )}
+                            {entry.is_ai_generated && (
+                              <span className="text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 border border-orange-500 text-orange-500 bg-orange-500/10" style={{ fontFamily: "var(--font-heading)" }}>
+                                🤖 AI Generated
+                              </span>
+                            )}
                           </div>
                           <p className="text-[10px] text-muted-foreground mb-1" style={{ fontFamily: "var(--font-body)" }}>
                             by {entry.photographer_name || "Anonymous"}
