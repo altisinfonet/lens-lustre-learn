@@ -637,6 +637,9 @@ const AdminPanel = () => {
         {/* SEO Tab */}
         {tab === "seo" && <AdminSEO user={user} />}
 
+        {/* Page Management Tab */}
+        {tab === "page_management" && <AdminPageManagement user={user} />}
+
         {/* Analytics Tab */}
         {tab === "analytics" && <AdminAnalytics user={user} />}
 
