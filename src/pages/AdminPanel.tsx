@@ -29,6 +29,7 @@ import AdminActivityLogs from "@/components/admin/AdminActivityLogs";
 import DatabaseBackupComponent from "@/components/admin/DatabaseBackup";
 import AdminAuthPages from "@/components/admin/AdminAuthPages";
 import AdminRedirects from "@/components/admin/AdminRedirects";
+import AdminMenuBuilder from "@/components/admin/AdminMenuBuilder";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
