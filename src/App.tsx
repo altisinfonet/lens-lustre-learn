@@ -45,7 +45,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const FeaturedArtistPage = lazy(() => import("./pages/FeaturedArtistPage"));
 const Referrals = lazy(() => import("./pages/Referrals"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
-
+const ManagedPageView = lazy(() => import("./pages/ManagedPageView"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
