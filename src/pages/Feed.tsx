@@ -631,8 +631,6 @@ const Feed = () => {
           </>
         )}
         </div>
-        </div>
-      </div>
 
       {/* Back to top */}
       <AnimatePresence>
@@ -650,7 +648,7 @@ const Feed = () => {
           </motion.button>
         )}
       </AnimatePresence>
-    </main>
+    </div>
   );
 };
 
