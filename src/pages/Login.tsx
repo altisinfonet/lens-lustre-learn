@@ -69,6 +69,8 @@ const Login = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isDeviceTrusted, trustDevice } = useTrustedDevice();
+  const { settings: authSettings } = useAuthPageSettings();
+  const cfg = authSettings.login;
 
   const needsCaptcha = failedAttempts >= 3;
 
