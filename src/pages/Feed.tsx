@@ -423,10 +423,8 @@ const Feed = () => {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 md:px-8 py-8 md:py-14 max-w-6xl">
+    <div className="py-8 md:py-14">
         <Breadcrumbs items={[{ label: "News Feed" }]} className="mb-6" />
-        <div>
         {/* Main feed column */}
         <div className="min-w-0">
 
@@ -633,8 +631,6 @@ const Feed = () => {
           </>
         )}
         </div>
-        </div>
-      </div>
 
       {/* Back to top */}
       <AnimatePresence>
@@ -652,7 +648,7 @@ const Feed = () => {
           </motion.button>
         )}
       </AnimatePresence>
-    </main>
+    </div>
   );
 };
 

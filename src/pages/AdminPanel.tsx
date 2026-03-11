@@ -14,6 +14,7 @@ import AdminExcellence from "@/components/admin/AdminExcellence";
 import AdminFeaturedArtist from "@/components/admin/AdminFeaturedArtist";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminSEO from "@/components/admin/AdminSEO";
+import AdminPageManagement from "@/components/admin/AdminPageManagement";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminAdvertisements from "@/components/admin/AdminAdvertisements";
 import AdminPerformance from "@/components/admin/AdminPerformance";
@@ -94,7 +95,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements" | "health" | "referrals" | "support_tickets" | "email_templates" | "activity_logs" | "database" | "auth_pages";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements" | "health" | "referrals" | "support_tickets" | "email_templates" | "activity_logs" | "database" | "auth_pages" | "page_management";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -542,7 +543,7 @@ const AdminPanel = () => {
       ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["transactions", "Transactions", FileText],
     ] as const },
     { label: "Settings", items: [
-      ["health", "Site Health", HeartPulse], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["activity_logs", "Activity Logs", ClipboardList], ["settings", "Integrations", Settings], ["auth_pages", "Login / Signup", LogIn], ["email_templates", "Email Templates", Mail], ["database", "Database", Database],
+      ["health", "Site Health", HeartPulse], ["page_management", "Page Management", FileText], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["activity_logs", "Activity Logs", ClipboardList], ["settings", "Integrations", Settings], ["auth_pages", "Login / Signup", LogIn], ["email_templates", "Email Templates", Mail], ["database", "Database", Database],
     ] as const },
     { label: "Help & Support", items: [
       ["support_tickets", "Support Tickets", HelpCircle],
@@ -635,6 +636,9 @@ const AdminPanel = () => {
 
         {/* SEO Tab */}
         {tab === "seo" && <AdminSEO user={user} />}
+
+        {/* Page Management Tab */}
+        {tab === "page_management" && <AdminPageManagement user={user} />}
 
         {/* Analytics Tab */}
         {tab === "analytics" && <AdminAnalytics user={user} />}

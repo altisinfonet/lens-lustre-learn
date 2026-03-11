@@ -1,5 +1,6 @@
 import { BADGES, type BadgeType } from "@/lib/badgeConfig";
 import { BadgeCheck } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   badges: string[];
@@ -24,10 +25,19 @@ const UserBadgeInline = ({ badges, size = "compact" }: Props) => {
   return (
     <span className="inline-flex items-center gap-1 align-middle">
       {isVerified && (
-        <BadgeCheck
-          className={`${tickSize} text-blue-500 fill-blue-500 shrink-0`}
-          aria-label="Verified"
-        />
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <BadgeCheck
+                className={`${tickSize} text-blue-500 fill-blue-500 shrink-0 cursor-pointer`}
+                aria-label="Verified Profile"
+              />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs font-medium">
+              Verified Profile
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
       {otherBadges.map((b) => {
         const cfg = BADGES[b as BadgeType];
