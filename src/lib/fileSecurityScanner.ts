@@ -224,17 +224,40 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
 
   // 4. Magic bytes verification
   const headerBytes = await readFileBytes(file, 32);
-  const isPdf = file.type === "application/pdf";
-  const isImage = file.type.startsWith("image/");
+  const isPdf = file.type === "application/pdf" || fileName.endsWith(".pdf");
 
-  if (isImage || isPdf) {
+  // Robust image detection: check MIME type, file extension, AND magic bytes
+  // file.type can be empty on some browsers/devices, causing false positives
+  const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|webp|gif|bmp|tiff|tif|heic|heif)$/i;
+  const isImageByMime = file.type.startsWith("image/");
+  const isImageByExt = IMAGE_EXTENSIONS.test(fileName);
+  const isImageByMagic = (
+    verifyMagicBytes(headerBytes, "image/jpeg") ||
+    verifyMagicBytes(headerBytes, "image/png") ||
+    verifyMagicBytes(headerBytes, "image/webp") ||
+    verifyMagicBytes(headerBytes, "image/gif") ||
+    verifyMagicBytes(headerBytes, "image/bmp") ||
+    verifyMagicBytes(headerBytes, "image/tiff") ||
+    verifyMagicBytes(headerBytes, "image/heic")
+  );
+  const isImage = isImageByMime || isImageByExt || isImageByMagic;
+
+  if ((isImageByMime || isPdf) && !isImage) {
     const magicValid = verifyMagicBytes(headerBytes, file.type);
     if (!magicValid) {
       return { safe: false, reason: "File content does not match its declared type (possible forgery)" };
     }
   }
 
-  // 5. Scan file content for embedded malicious payloads (skip for images — binary data causes false positives)
+  if (isPdf) {
+    const magicValid = verifyMagicBytes(headerBytes, "application/pdf");
+    if (!magicValid) {
+      return { safe: false, reason: "File content does not match its declared type (possible forgery)" };
+    }
+  }
+
+  // 5. Scan file content for embedded malicious payloads
+  // NEVER scan images as text — binary data ALWAYS causes false positives
   if (!isImage) {
     const scanSize = Math.min(file.size, MAX_SCAN_BYTES);
     const textContent = await readFileText(file, scanSize);
