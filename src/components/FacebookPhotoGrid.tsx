@@ -47,7 +47,7 @@ const FacebookPhotoGrid = ({ urls, onPhotoClick }: FacebookPhotoGridProps) => {
   );
 
   const grid = count === 1 ? (
-    <div className="mt-2 max-w-[480px]">
+    <div className="mt-2 w-full">
       <Photo src={urls[0]} index={0} />
     </div>
   ) : count === 2 ? (
