@@ -191,7 +191,11 @@ const PublicProfile = () => {
         profileRes.data.full_name = resolveName(userId, profileRes.data.full_name, adminIds);
       }
 
-      setProfile(profileRes.data);
+      const pData = { ...profileRes.data, cover_position: (profileRes.data as any).cover_position ?? 50 };
+      setProfile(pData);
+      const pos = pData.cover_position;
+      setDragPosition(pos);
+      setSavedPosition(pos);
       setEntries((entriesRes.data as any) || []);
       setCertificates(certsRes.data || []);
       const userRoles = rolesRes.data?.map((r: any) => r.role) || [];
