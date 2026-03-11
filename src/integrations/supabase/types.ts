@@ -346,6 +346,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_ai_generated: boolean
           is_pinned: boolean
           is_trending: boolean
           photos: string[]
@@ -361,6 +362,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_ai_generated?: boolean
           is_pinned?: boolean
           is_trending?: boolean
           photos?: string[]
@@ -376,6 +378,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_ai_generated?: boolean
           is_pinned?: boolean
           is_trending?: boolean
           photos?: string[]
@@ -457,6 +460,7 @@ export type Database = {
       }
       competitions: {
         Row: {
+          ai_images_allowed: boolean
           category: string
           cover_image_url: string | null
           created_at: string
@@ -474,6 +478,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_images_allowed?: boolean
           category?: string
           cover_image_url?: string | null
           created_at?: string
@@ -491,6 +496,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_images_allowed?: boolean
           category?: string
           cover_image_url?: string | null
           created_at?: string
