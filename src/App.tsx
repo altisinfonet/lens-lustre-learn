@@ -114,6 +114,7 @@ const App = () => (
                 <Route path="/featured-artist/:slug" element={<FeaturedArtistPage />} />
                 <Route path="/referrals" element={<Referrals />} />
                 <Route path="/help-support" element={<HelpSupport />} />
+                <Route path="/page/:slug" element={<ManagedPageView />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Route>
