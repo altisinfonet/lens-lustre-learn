@@ -335,7 +335,7 @@ const CompetitionSubmit = () => {
           <div className="pt-4 border-t border-border">
             <button
               type="submit"
-              disabled={submitting || photos.length === 0 || (entryFee > 0 && balance < entryFee)}
+              disabled={submitting || photos.length === 0 || (entryFee > 0 && balance < entryFee) || (!aiImagesAllowed && isAiGenerated)}
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
               style={{ fontFamily: "var(--font-heading)" }}
             >
