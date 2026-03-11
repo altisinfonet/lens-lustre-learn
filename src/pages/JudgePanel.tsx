@@ -126,6 +126,8 @@ const JudgePanel = () => {
           ...entry,
           placement: (entry as any).placement || null,
           is_ai_generated: (entry as any).is_ai_generated || false,
+          ai_detection_result: (entry as any).ai_detection_result || null,
+          exif_data: (entry as any).exif_data || null,
           photographer_name: profileMap.get(entry.user_id) || null,
           vote_count: entryVotes.length,
           my_score: myScore?.score ?? null,
