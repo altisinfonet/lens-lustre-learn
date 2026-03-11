@@ -437,6 +437,17 @@ const CompetitionDetail = () => {
                 <Users className="h-3.5 w-3.5 text-primary" />
                 <span style={{ fontFamily: "var(--font-body)" }}><T>Max</T> {competition.max_photos_per_entry} <T>photos per entry</T></span>
               </div>
+
+              {/* AI Policy */}
+              <div className={`flex items-start gap-3 text-xs ${competition.ai_images_allowed ? 'text-muted-foreground' : 'text-orange-600 dark:text-orange-400'}`}>
+                <span className="text-base mt-[-2px]">{competition.ai_images_allowed ? '✅' : '🚫'}</span>
+                <span style={{ fontFamily: "var(--font-body)" }}>
+                  {competition.ai_images_allowed
+                    ? <T>AI-generated images are allowed</T>
+                    : <T>AI-generated images are NOT allowed. Only original camera/mobile captures accepted.</T>
+                  }
+                </span>
+              </div>
             </div>
 
             {canSubmit && (
