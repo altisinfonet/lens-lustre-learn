@@ -211,14 +211,64 @@ export default function AdminPageManagement({ user }: { user: User | null }) {
   useEffect(() => { fetchPages(); }, []);
 
   const fetchPages = async () => {
-    const { data } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "managed_pages")
-      .maybeSingle();
-    if (data?.value && Array.isArray(data.value)) {
-      setPages(data.value as unknown as ManagedPage[]);
+    // Fetch both managed_pages and navigation_menu in parallel
+    const [pagesRes, navRes] = await Promise.all([
+      supabase.from("site_settings").select("value").eq("key", "managed_pages").maybeSingle(),
+      supabase.from("site_settings").select("value").eq("key", "navigation_menu").maybeSingle(),
+    ]);
+
+    let storedPages: ManagedPage[] = [];
+    if (pagesRes.data?.value && Array.isArray(pagesRes.data.value)) {
+      storedPages = pagesRes.data.value as unknown as ManagedPage[];
     }
+
+    // Reconcile: if navigation_menu has managed-type items without a corresponding page, auto-create them
+    if (navRes.data?.value && Array.isArray(navRes.data.value)) {
+      const navItems = navRes.data.value as any[];
+      const managedNavItems = navItems.filter((n: any) => n.type === "managed");
+      const existingIds = new Set(storedPages.map((p) => p.id));
+      const existingSlugs = new Set(storedPages.map((p) => p.slug));
+      let added = false;
+
+      for (const nav of managedNavItems) {
+        const slug = (nav.path || "").replace(/^\/page\//, "") || `page-${nav.id}`;
+        if (!existingIds.has(nav.id) && !existingSlugs.has(slug)) {
+          storedPages.push({
+            id: nav.id,
+            title: nav.label || "Untitled Page",
+            slug,
+            content: "<h1>" + (nav.label || "New Page") + "</h1><p>Edit this page content here.</p>",
+            meta_title: nav.meta_title || "",
+            meta_description: nav.meta_description || "",
+            og_image: nav.og_image || "",
+            noindex: nav.noindex || false,
+            is_published: true,
+            sort_order: storedPages.length,
+            show_in_nav: nav.show_in_nav ?? true,
+            template: "blank",
+            scheduled_at: null,
+            view_count: 0,
+            json_ld: "",
+            translations: {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+          added = true;
+        }
+      }
+
+      // Persist any newly reconciled pages
+      if (added) {
+        await supabase.from("site_settings").upsert({
+          key: "managed_pages",
+          value: storedPages as any,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id,
+        });
+      }
+    }
+
+    setPages(storedPages);
     setLoading(false);
   };
 
