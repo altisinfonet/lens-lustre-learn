@@ -152,6 +152,7 @@ const AdminPanel = () => {
     paypal_email: "",
     bank_details: "",
     upi_id: "",
+    ai_images_allowed: true,
   });
   const [saving, setSaving] = useState(false);
 
