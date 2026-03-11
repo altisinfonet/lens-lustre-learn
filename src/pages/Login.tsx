@@ -255,11 +255,13 @@ const Login = () => {
         </Link>
 
         <div className="flex flex-col items-center text-center mb-10">
-          <img src="/images/logo.png" alt="50mm Retina World" className="h-48 w-48 object-contain mb-8" />
+          {cfg.show_logo && (
+            <img src="/images/logo.png" alt="50mm Retina World" style={{ height: cfg.logo_size * 4, width: cfg.logo_size * 4 }} className="object-contain mb-8" />
+          )}
           <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-            <T>Welcome</T> <em className="italic text-primary"><T>Back</T></em>
+            <T>{cfg.heading}</T> <em className="italic text-primary"><T>{cfg.heading_accent}</T></em>
           </h1>
-          <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>Sign in to continue your journey.</T></p>
+          <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>{cfg.subtitle}</T></p>
         </div>
 
         {error && (
