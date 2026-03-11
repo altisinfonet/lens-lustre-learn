@@ -204,7 +204,17 @@ export async function scanFile(file: File, options?: ScanOptions): Promise<ScanR
     );
   }
 
-  if (!allowedMimes.includes(file.type)) {
+  // Allow files where MIME is in whitelist, OR where extension matches an allowed image type
+  // (some browsers/devices don't set file.type correctly)
+  const IMAGE_EXT_CHECK = /\.(jpg|jpeg|png|webp|gif|bmp|tiff|tif|heic|heif)$/i;
+  const PDF_EXT_CHECK = /\.pdf$/i;
+  const DOC_EXT_CHECK = /\.(docx?|xlsx?)$/i;
+  const mimeOk = allowedMimes.includes(file.type);
+  const extOk = (includesImages && IMAGE_EXT_CHECK.test(fileName)) ||
+                (includesPdf && PDF_EXT_CHECK.test(fileName)) ||
+                (includesDocs && DOC_EXT_CHECK.test(fileName));
+
+  if (!mimeOk && !extOk) {
     const labels: string[] = [];
     if (includesImages) labels.push("images");
     if (includesPdf) labels.push("PDFs");
