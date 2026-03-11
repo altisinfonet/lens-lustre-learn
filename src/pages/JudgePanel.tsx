@@ -32,6 +32,7 @@ interface JudgeEntry {
   my_score: number | null;
   my_feedback: string | null;
   avg_score: number | null;
+  is_ai_generated: boolean;
 }
 
 const PLACEMENTS = [
@@ -88,7 +89,7 @@ const JudgePanel = () => {
 
       const { data: rawEntries } = await supabase
         .from("competition_entries")
-        .select("id, title, description, photos, user_id, status, created_at, competition_id, placement")
+        .select("id, title, description, photos, user_id, status, created_at, competition_id, placement, is_ai_generated")
         .eq("competition_id", selectedCompId)
         .in("status", ["approved", "winner"])
         .order("created_at", { ascending: false });
@@ -122,6 +123,7 @@ const JudgePanel = () => {
         return {
           ...entry,
           placement: (entry as any).placement || null,
+          is_ai_generated: (entry as any).is_ai_generated || false,
           photographer_name: profileMap.get(entry.user_id) || null,
           vote_count: entryVotes.length,
           my_score: myScore?.score ?? null,
@@ -328,6 +330,11 @@ const JudgePanel = () => {
                                 PLACEMENTS.find((p) => p.value === entry.placement)?.color || "border-border text-muted-foreground"
                               }`} style={{ fontFamily: "var(--font-heading)" }}>
                                 {entry.placement.replace(/_/g, " ")}
+                              </span>
+                            )}
+                            {entry.is_ai_generated && (
+                              <span className="text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 border border-orange-500 text-orange-500 bg-orange-500/10" style={{ fontFamily: "var(--font-heading)" }}>
+                                🤖 AI Generated
                               </span>
                             )}
                           </div>

@@ -23,10 +23,12 @@ const CompetitionSubmit = () => {
   const [compTitle, setCompTitle] = useState("");
   const [maxPhotos, setMaxPhotos] = useState(5);
   const [entryFee, setEntryFee] = useState(0);
+  const [aiImagesAllowed, setAiImagesAllowed] = useState(true);
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
   const [photos, setPhotos] = useState<{ url: string; path: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -43,7 +45,7 @@ const CompetitionSubmit = () => {
     const fetch = async () => {
       const { data } = await supabase
         .from("competitions")
-        .select("title, max_photos_per_entry, status, entry_fee")
+        .select("title, max_photos_per_entry, status, entry_fee, ai_images_allowed")
         .eq("id", id)
         .single();
       if (data) {
@@ -55,6 +57,7 @@ const CompetitionSubmit = () => {
         setCompTitle(data.title);
         setMaxPhotos(data.max_photos_per_entry || 5);
         setEntryFee((data as any).entry_fee || 0);
+        setAiImagesAllowed((data as any).ai_images_allowed !== false);
       }
       setLoading(false);
     };
@@ -117,6 +120,11 @@ const CompetitionSubmit = () => {
       return;
     }
 
+    if (!aiImagesAllowed && isAiGenerated) {
+      toast({ title: "AI-generated images are not allowed in this competition", variant: "destructive" });
+      return;
+    }
+
     if (entryFee > 0) {
       if (balance < entryFee) {
         toast({ title: "Insufficient wallet balance", description: `You need $${entryFee} but have $${Number(balance).toFixed(2)}. Add funds to your wallet first.`, variant: "destructive" });
@@ -139,7 +147,8 @@ const CompetitionSubmit = () => {
       title: title.trim(),
       description: description.trim() || null,
       photos: photos.map((p) => p.url),
-    });
+      is_ai_generated: isAiGenerated,
+    } as any);
     setSubmitting(false);
 
     if (error) {
@@ -276,6 +285,37 @@ const CompetitionSubmit = () => {
             </p>
           </div>
 
+          {/* AI Image Declaration */}
+          <div className={`p-4 border space-y-3 ${!aiImagesAllowed ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-muted/20'}`}>
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={isAiGenerated}
+                onChange={(e) => setIsAiGenerated(e.target.checked)}
+                className="h-4 w-4 accent-primary mt-0.5"
+                id="ai-declaration"
+              />
+              <label htmlFor="ai-declaration" className="cursor-pointer">
+                <span className="text-xs font-medium block" style={{ fontFamily: "var(--font-heading)" }}>
+                  <T>This submission contains AI-generated image(s)</T>
+                </span>
+                <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}>
+                  <T>Check this box if any of your photos were created or significantly modified using AI tools. This declaration is required as EXIF camera data may not be available.</T>
+                </p>
+              </label>
+            </div>
+            {!aiImagesAllowed && (
+              <div className="text-[10px] text-destructive font-medium px-7" style={{ fontFamily: "var(--font-heading)" }}>
+                ⚠ <T>AI-generated images are NOT allowed in this competition. If you check this box, your submission will be blocked.</T>
+              </div>
+            )}
+            {!aiImagesAllowed && !isAiGenerated && (
+              <div className="text-[10px] text-muted-foreground px-7" style={{ fontFamily: "var(--font-body)" }}>
+                <T>By not checking this box, you confirm that all submitted photos are original camera/mobile captures.</T>
+              </div>
+            )}
+          </div>
+
           {/* Entry Fee & Wallet Balance */}
           {entryFee > 0 && (
             <div className="p-4 border border-border bg-muted/30 space-y-2">
@@ -295,7 +335,7 @@ const CompetitionSubmit = () => {
           <div className="pt-4 border-t border-border">
             <button
               type="submit"
-              disabled={submitting || photos.length === 0 || (entryFee > 0 && balance < entryFee)}
+              disabled={submitting || photos.length === 0 || (entryFee > 0 && balance < entryFee) || (!aiImagesAllowed && isAiGenerated)}
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground text-xs tracking-[0.2em] uppercase hover:opacity-90 transition-opacity duration-500 disabled:opacity-50"
               style={{ fontFamily: "var(--font-heading)" }}
             >

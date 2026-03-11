@@ -28,6 +28,7 @@ interface Competition {
   max_photos_per_entry: number;
   starts_at: string;
   ends_at: string;
+  ai_images_allowed: boolean;
 }
 
 interface Entry {
@@ -65,7 +66,7 @@ const CompetitionDetail = () => {
     const fetchAll = async () => {
       const { data: comp } = await supabase
         .from("competitions")
-        .select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at")
+        .select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at, ai_images_allowed")
         .eq("id", id)
         .single();
       setCompetition(comp);
@@ -435,6 +436,17 @@ const CompetitionDetail = () => {
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <Users className="h-3.5 w-3.5 text-primary" />
                 <span style={{ fontFamily: "var(--font-body)" }}><T>Max</T> {competition.max_photos_per_entry} <T>photos per entry</T></span>
+              </div>
+
+              {/* AI Policy */}
+              <div className={`flex items-start gap-3 text-xs ${competition.ai_images_allowed ? 'text-muted-foreground' : 'text-orange-600 dark:text-orange-400'}`}>
+                <span className="text-base mt-[-2px]">{competition.ai_images_allowed ? '✅' : '🚫'}</span>
+                <span style={{ fontFamily: "var(--font-body)" }}>
+                  {competition.ai_images_allowed
+                    ? <T>AI-generated images are allowed</T>
+                    : <T>AI-generated images are NOT allowed. Only original camera/mobile captures accepted.</T>
+                  }
+                </span>
               </div>
             </div>
 

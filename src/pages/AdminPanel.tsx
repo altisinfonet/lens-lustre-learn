@@ -152,6 +152,7 @@ const AdminPanel = () => {
     paypal_email: "",
     bank_details: "",
     upi_id: "",
+    ai_images_allowed: true,
   });
   const [saving, setSaving] = useState(false);
 
@@ -338,7 +339,7 @@ const AdminPanel = () => {
       title: "", description: "", category: "General", cover_image_url: "",
       entry_fee: "0", prize_info: "", status: "upcoming",
       max_entries_per_user: "1", max_photos_per_entry: "5", starts_at: "", ends_at: "",
-      paypal_email: "", bank_details: "", upi_id: "",
+      paypal_email: "", bank_details: "", upi_id: "", ai_images_allowed: true,
     });
     setEditingId(null);
     setShowForm(false);
@@ -347,7 +348,7 @@ const AdminPanel = () => {
   const openEdit = (comp: Competition) => {
     setEditingId(comp.id);
     // Need to fetch full data
-    supabase.from("competitions").select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at").eq("id", comp.id).single().then(async ({ data }) => {
+    supabase.from("competitions").select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at, ai_images_allowed").eq("id", comp.id).single().then(async ({ data }) => {
       if (data) {
         // Fetch payment details from separate admin-only table
         const { data: pd } = await supabase.from("competition_payment_details" as any).select("paypal_email, bank_details, upi_id").eq("competition_id", comp.id).maybeSingle();
@@ -366,6 +367,7 @@ const AdminPanel = () => {
           paypal_email: (pd as any)?.paypal_email || "",
           bank_details: (pd as any)?.bank_details || "",
           upi_id: (pd as any)?.upi_id || "",
+          ai_images_allowed: (data as any).ai_images_allowed !== false,
         });
         setShowForm(true);
       }
@@ -392,6 +394,7 @@ const AdminPanel = () => {
       starts_at: new Date(form.starts_at).toISOString(),
       ends_at: new Date(form.ends_at).toISOString(),
       updated_at: new Date().toISOString(),
+      ai_images_allowed: form.ai_images_allowed,
     };
 
     let error;
@@ -741,6 +744,22 @@ const AdminPanel = () => {
                   <FormField label="Max Photos/Entry" value={form.max_photos_per_entry} onChange={(v) => setForm((f) => ({ ...f, max_photos_per_entry: v }))} type="number" />
                   <FormField label="Starts At *" value={form.starts_at} onChange={(v) => setForm((f) => ({ ...f, starts_at: v }))} type="datetime-local" />
                   <FormField label="Ends At *" value={form.ends_at} onChange={(v) => setForm((f) => ({ ...f, ends_at: v }))} type="datetime-local" />
+                </div>
+
+                {/* AI Images Policy */}
+                <div className="flex items-center gap-3 py-3 px-4 border border-border bg-muted/20">
+                  <input
+                    type="checkbox"
+                    checked={form.ai_images_allowed}
+                    onChange={(e) => setForm((f) => ({ ...f, ai_images_allowed: e.target.checked }))}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <div>
+                    <span className="text-xs font-medium" style={{ fontFamily: "var(--font-heading)" }}>Allow AI-Generated Images</span>
+                    <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                      If unchecked, participants must declare whether their submission is AI-generated. AI entries will be flagged for judges.
+                    </p>
+                  </div>
                 </div>
 
                 <div>
