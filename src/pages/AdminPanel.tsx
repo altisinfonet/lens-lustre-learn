@@ -651,6 +651,9 @@ const AdminPanel = () => {
         {/* Settings Tab */}
         {tab === "settings" && <AdminSettings user={user} />}
 
+        {/* Auth Pages Tab */}
+        {tab === "auth_pages" && <AdminAuthPages user={user} />}
+
         {/* Email Templates Tab */}
         {tab === "email_templates" && <AdminEmailTemplates user={user} />}
 
