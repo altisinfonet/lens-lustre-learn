@@ -28,6 +28,7 @@ import AdminEmailTemplates from "@/components/admin/AdminEmailTemplates";
 import AdminActivityLogs from "@/components/admin/AdminActivityLogs";
 import DatabaseBackupComponent from "@/components/admin/DatabaseBackup";
 import AdminAuthPages from "@/components/admin/AdminAuthPages";
+import AdminRedirects from "@/components/admin/AdminRedirects";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
