@@ -339,7 +339,7 @@ const AdminPanel = () => {
       title: "", description: "", category: "General", cover_image_url: "",
       entry_fee: "0", prize_info: "", status: "upcoming",
       max_entries_per_user: "1", max_photos_per_entry: "5", starts_at: "", ends_at: "",
-      paypal_email: "", bank_details: "", upi_id: "",
+      paypal_email: "", bank_details: "", upi_id: "", ai_images_allowed: true,
     });
     setEditingId(null);
     setShowForm(false);
