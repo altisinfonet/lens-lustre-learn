@@ -39,6 +39,8 @@ const Signup = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   useCaptureReferral();
+  const { settings: authSettings } = useAuthPageSettings();
+  const cfg = authSettings.signup;
 
   useEffect(() => {
     if (user) navigate("/dashboard");
