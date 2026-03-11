@@ -8,6 +8,7 @@ import { z } from "zod";
 import SimpleCaptcha from "@/components/SimpleCaptcha";
 import { useTrustedDevice } from "@/hooks/useTrustedDevice";
 import T from "@/components/T";
+import { useAuthPageSettings } from "@/hooks/useAuthPageSettings";
 import {
   getLockedOutSeconds,
   getFailedAttempts,
