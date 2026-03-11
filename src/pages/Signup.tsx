@@ -125,7 +125,7 @@ const Signup = () => {
     <main className="min-h-screen bg-background text-foreground flex">
       {/* Left — Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
-        <img src="/images/innocence.jpg" alt="Photography by 50mm Retina World" className="w-full h-full object-cover" />
+        <img src={cfg.background_image || "/images/innocence.jpg"} alt="Photography by 50mm Retina World" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
       </div>
 
@@ -136,11 +136,13 @@ const Signup = () => {
         </Link>
 
         <div className="flex flex-col items-center text-center mb-10">
-          <img src="/images/logo.png" alt="50mm Retina World" className="h-48 w-48 object-contain mb-8" />
+          {cfg.show_logo && (
+            <img src="/images/logo.png" alt="50mm Retina World" style={{ height: cfg.logo_size * 4, width: cfg.logo_size * 4 }} className="object-contain mb-8" />
+          )}
           <h1 className="text-4xl md:text-5xl font-light tracking-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-            <T>Join the</T> <em className="italic text-primary"><T>Community</T></em>
+            <T>{cfg.heading}</T> <em className="italic text-primary"><T>{cfg.heading_accent}</T></em>
           </h1>
-          <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>Create your account and start sharing your vision.</T></p>
+          <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}><T>{cfg.subtitle}</T></p>
         </div>
 
         {error && (
