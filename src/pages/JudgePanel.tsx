@@ -32,6 +32,7 @@ interface JudgeEntry {
   my_score: number | null;
   my_feedback: string | null;
   avg_score: number | null;
+  is_ai_generated: boolean;
 }
 
 const PLACEMENTS = [
