@@ -529,23 +529,59 @@ const AdminPanel = () => {
   };
 
   const tabGroups = [
-    { label: "Content", items: [
-      ["banners", "Banners", LayoutDashboard], ["potd", "Photo of Day", Star], ["portfolio", "Gallery", Image], ["featured_artist", "Featured Artist", Star], ["announcements", "Announcements", Bell],
+    { label: "Overview", items: [
+      ["health", "Site Health", HeartPulse],
+      ["analytics", "Analytics", BarChart3],
+      ["activity_logs", "Activity Logs", ClipboardList],
     ] as const },
-    { label: "Learning", items: [
-      ["courses", "Courses", BookOpen], ["journal", "Journal", Newspaper], ["certificates", "Certificates", Award], ["excellence", "Excellence", Star],
+    { label: "Content", items: [
+      ["banners", "Hero Banners", LayoutDashboard],
+      ["potd", "Photo of Day", Star],
+      ["portfolio", "Gallery", Image],
+      ["featured_artist", "Featured Artist", Star],
+    ] as const },
+    { label: "Editorial", items: [
+      ["journal", "Journal", Newspaper],
+      ["courses", "Courses", BookOpen],
+      ["certificates", "Certificates", Award],
+      ["excellence", "Excellence", Star],
     ] as const },
     { label: "Competitions", items: [
-      ["competitions", "Competitions", Trophy], ["entries", "Entries", Users], ["vote_rewards", "Vote Rewards", Vote],
+      ["competitions", "Competitions", Trophy],
+      ["entries", "Entries", Users],
+      ["vote_rewards", "Vote Rewards", Vote],
     ] as const },
-    { label: "Community", items: [
-      ["users", "Users", UserCog], ["applications", "Applications", Briefcase], ["referrals", "Referrals", UserPlus], ["comments", "Comments", MessageSquare], ["reports", "Reports", AlertTriangle], ["engagement", "Engagement", Heart],
+    { label: "Users & Community", items: [
+      ["users", "Users", UserCog],
+      ["applications", "Role Applications", Briefcase],
+      ["referrals", "Referrals", UserPlus],
+      ["engagement", "Engagement", Heart],
+    ] as const },
+    { label: "Moderation", items: [
+      ["comments", "Comments", MessageSquare],
+      ["reports", "Reports", AlertTriangle],
     ] as const },
     { label: "Finance", items: [
-      ["wallet", "Wallet", Wallet], ["gifts", "Gift Credits", Gift], ["transactions", "Transactions", FileText],
+      ["wallet", "Wallet", Wallet],
+      ["gifts", "Gift Credits", Gift],
+      ["transactions", "Transactions", FileText],
     ] as const },
-    { label: "Settings", items: [
-      ["health", "Site Health", HeartPulse], ["page_management", "Page Management", FileText], ["menu_builder", "Menu Builder", LayoutDashboard], ["redirects", "URL Redirects", ExternalLink], ["seo", "SEO", Globe], ["analytics", "Analytics", BarChart3], ["advertisements", "Ads", Megaphone], ["performance", "Performance", Zap], ["activity_logs", "Activity Logs", ClipboardList], ["settings", "Integrations", Settings], ["auth_pages", "Login / Signup", LogIn], ["email_templates", "Email Templates", Mail], ["database", "Database", Database],
+    { label: "Marketing & SEO", items: [
+      ["seo", "SEO Settings", Globe],
+      ["advertisements", "Advertisements", Megaphone],
+      ["performance", "Performance", Zap],
+      ["announcements", "Announcements", Bell],
+    ] as const },
+    { label: "Pages & Navigation", items: [
+      ["page_management", "Page Management", FileText],
+      ["menu_builder", "Menu Builder", LayoutDashboard],
+      ["redirects", "URL Redirects", ExternalLink],
+    ] as const },
+    { label: "System", items: [
+      ["settings", "Integrations", Settings],
+      ["auth_pages", "Login / Signup", LogIn],
+      ["email_templates", "Email Templates", Mail],
+      ["database", "Database", Database],
     ] as const },
     { label: "Help & Support", items: [
       ["support_tickets", "Support Tickets", HelpCircle],
