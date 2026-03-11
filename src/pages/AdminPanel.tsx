@@ -394,6 +394,7 @@ const AdminPanel = () => {
       starts_at: new Date(form.starts_at).toISOString(),
       ends_at: new Date(form.ends_at).toISOString(),
       updated_at: new Date().toISOString(),
+      ai_images_allowed: form.ai_images_allowed,
     };
 
     let error;
