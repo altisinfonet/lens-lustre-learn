@@ -23,10 +23,12 @@ const CompetitionSubmit = () => {
   const [compTitle, setCompTitle] = useState("");
   const [maxPhotos, setMaxPhotos] = useState(5);
   const [entryFee, setEntryFee] = useState(0);
+  const [aiImagesAllowed, setAiImagesAllowed] = useState(true);
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
   const [photos, setPhotos] = useState<{ url: string; path: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
