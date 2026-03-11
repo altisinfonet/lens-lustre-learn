@@ -244,7 +244,7 @@ const Login = () => {
     <main className="min-h-screen bg-background text-foreground flex">
       {/* Left — Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
-        <img src="/images/sadhu.jpg" alt="Photography by 50mm Retina World" className="w-full h-full object-cover" />
+        <img src={cfg.background_image || "/images/sadhu.jpg"} alt="Photography by 50mm Retina World" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/60 to-transparent" />
       </div>
 
