@@ -192,7 +192,7 @@ const PublicProfile = () => {
         profileRes.data.full_name = resolveName(userId, profileRes.data.full_name, adminIds);
       }
 
-      const pData = { ...profileRes.data, cover_position: (profileRes.data as any).cover_position ?? 50 };
+      const pData = { ...profileRes.data, cover_position: (coverPosRes.data as any)?.cover_position ?? 50 };
       setProfile(pData);
       const pos = pData.cover_position;
       setDragPosition(pos);
