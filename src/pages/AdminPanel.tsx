@@ -14,6 +14,7 @@ import AdminExcellence from "@/components/admin/AdminExcellence";
 import AdminFeaturedArtist from "@/components/admin/AdminFeaturedArtist";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminSEO from "@/components/admin/AdminSEO";
+import AdminPageManagement from "@/components/admin/AdminPageManagement";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import AdminAdvertisements from "@/components/admin/AdminAdvertisements";
 import AdminPerformance from "@/components/admin/AdminPerformance";
