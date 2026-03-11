@@ -746,6 +746,22 @@ const AdminPanel = () => {
                   <FormField label="Ends At *" value={form.ends_at} onChange={(v) => setForm((f) => ({ ...f, ends_at: v }))} type="datetime-local" />
                 </div>
 
+                {/* AI Images Policy */}
+                <div className="flex items-center gap-3 py-3 px-4 border border-border bg-muted/20">
+                  <input
+                    type="checkbox"
+                    checked={form.ai_images_allowed}
+                    onChange={(e) => setForm((f) => ({ ...f, ai_images_allowed: e.target.checked }))}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <div>
+                    <span className="text-xs font-medium" style={{ fontFamily: "var(--font-heading)" }}>Allow AI-Generated Images</span>
+                    <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                      If unchecked, participants must declare whether their submission is AI-generated. AI entries will be flagged for judges.
+                    </p>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Description</label>
                   <textarea
