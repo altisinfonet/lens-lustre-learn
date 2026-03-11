@@ -29,6 +29,8 @@ interface ManagedPage {
   template: string;
   scheduled_at: string | null;
   view_count: number;
+  json_ld: string;
+  translations: Record<string, { title: string; content: string; meta_title: string; meta_description: string }>;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +39,7 @@ const emptyPage: Omit<ManagedPage, "id" | "created_at" | "updated_at"> = {
   title: "", slug: "", content: "", meta_title: "", meta_description: "",
   og_image: "", noindex: false, is_published: false, sort_order: 0,
   show_in_nav: false, template: "blank", scheduled_at: null, view_count: 0,
+  json_ld: "", translations: {},
 };
 
 /* ── Page Templates ── */
