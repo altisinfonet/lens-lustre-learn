@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Trophy, Award, Medal, Eye, MessageSquare, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Star, Trophy, Award, Medal, Eye, MessageSquare, ChevronDown, ChevronUp, Loader2, AlertTriangle, Camera, ShieldCheck } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import { useAuth } from "@/hooks/useAuth";
