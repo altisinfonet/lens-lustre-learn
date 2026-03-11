@@ -33,6 +33,8 @@ interface JudgeEntry {
   my_feedback: string | null;
   avg_score: number | null;
   is_ai_generated: boolean;
+  ai_detection_result: any[] | null;
+  exif_data: any | null;
 }
 
 const PLACEMENTS = [
