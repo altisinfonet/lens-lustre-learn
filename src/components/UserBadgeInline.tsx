@@ -25,19 +25,19 @@ const UserBadgeInline = ({ badges, size = "compact" }: Props) => {
   return (
     <span className="inline-flex items-center gap-1 align-middle">
       {isVerified && (
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex shrink-0 cursor-pointer">
               <BadgeCheck
-                className={`${tickSize} text-blue-500 fill-blue-500 shrink-0 cursor-pointer`}
+                className={`${tickSize} text-blue-500 fill-blue-500`}
                 aria-label="Verified Profile"
               />
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs font-medium">
-              Verified Profile
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs font-medium">
+            Verified Profile
+          </TooltipContent>
+        </Tooltip>
       )}
       {otherBadges.map((b) => {
         const cfg = BADGES[b as BadgeType];
