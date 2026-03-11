@@ -82,11 +82,12 @@ export default function AdminMenuBuilder({ user }: { user: User | null }) {
     setEditingId(newItem.id);
   };
 
-  const addManagedPage = () => {
+  const addManagedPage = async () => {
+    const slug = "new-page-" + Date.now();
     const newItem: MenuItem = {
       id: crypto.randomUUID(),
       label: "New Page",
-      path: "/page/new-page",
+      path: `/page/${slug}`,
       icon: "FileText",
       description: "",
       type: "managed",
@@ -102,6 +103,44 @@ export default function AdminMenuBuilder({ user }: { user: User | null }) {
     };
     setItems((prev) => [...prev, newItem]);
     setEditingId(newItem.id);
+
+    // Auto-create page in Page Management
+    try {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "managed_pages")
+        .maybeSingle();
+      const existingPages = (data?.value && Array.isArray(data.value)) ? data.value as any[] : [];
+      const newPage = {
+        id: newItem.id,
+        title: "New Page",
+        slug,
+        content: "<h1>New Page</h1><p>Edit this page from Page Management.</p>",
+        meta_title: "",
+        meta_description: "",
+        og_image: "",
+        noindex: false,
+        is_published: true,
+        sort_order: existingPages.length,
+        show_in_nav: true,
+        template: "blank",
+        scheduled_at: null,
+        view_count: 0,
+        json_ld: "",
+        translations: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      await supabase.from("site_settings").upsert({
+        key: "managed_pages",
+        value: [...existingPages, newPage] as any,
+        updated_at: new Date().toISOString(),
+        updated_by: user?.id,
+      });
+    } catch (e) {
+      console.error("Failed to auto-create managed page:", e);
+    }
   };
 
   const updateItem = (id: string, field: keyof MenuItem, value: any) => {
