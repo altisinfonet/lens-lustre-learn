@@ -123,6 +123,7 @@ const JudgePanel = () => {
         return {
           ...entry,
           placement: (entry as any).placement || null,
+          is_ai_generated: (entry as any).is_ai_generated || false,
           photographer_name: profileMap.get(entry.user_id) || null,
           vote_count: entryVotes.length,
           my_score: myScore?.score ?? null,
