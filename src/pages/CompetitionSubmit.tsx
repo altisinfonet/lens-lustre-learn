@@ -419,7 +419,7 @@ const CompetitionSubmit = () => {
                     <T>AI-Generated Image(s) Detected</T>
                   </span>
                   <p className="text-[10px] text-muted-foreground mt-1" style={{ fontFamily: "var(--font-body)" }}>
-                    <T>Our system has detected that {aiDetectedPhotos.length} of your photo(s) may be AI-generated. This information will be visible to judges.</T>
+                    <T>{`Our system has detected that ${aiDetectedPhotos.length} of your photo(s) may be AI-generated. This information will be visible to judges.`}</T>
                   </p>
                   <ul className="mt-2 space-y-1">
                     {aiDetectedPhotos.map((p, i) => (
