@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube, MapPin, Calendar, Image, BadgeCheck, ImagePlus } from "lucide-react";
+import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, User, Expand, Award, ChevronLeft, ChevronRight, Facebook, Instagram, GraduationCap, Twitter, Youtube, MapPin, Calendar, Image, BadgeCheck, ImagePlus, Move, Check, X } from "lucide-react";
 import FriendFollowActions, { FriendFollowStats, FriendFollowButtons } from "@/components/FriendFollowActions";
 import { storageUpload } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
@@ -108,6 +108,7 @@ interface ProfileData {
   full_name: string | null;
   avatar_url: string | null;
   cover_url: string | null;
+  cover_position: number;
   bio: string | null;
   portfolio_url: string | null;
   photography_interests: string[] | null;
@@ -158,19 +159,25 @@ const PublicProfile = () => {
   const [isVerifiedPhotographer, setIsVerifiedPhotographer] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const [userBadges, setUserBadges] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"wall" | "works" | "about">("wall");
-  const [isFriend, setIsFriend] = useState(false);
+   const [activeTab, setActiveTab] = useState<"wall" | "works" | "about">("wall");
+   const [isFriend, setIsFriend] = useState(false);
+   const [repositionMode, setRepositionMode] = useState(false);
+   const [dragPosition, setDragPosition] = useState(50);
+   const [savedPosition, setSavedPosition] = useState(50);
+   const dragRef = useRef<{ startY: number; startPos: number } | null>(null);
+   const coverContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
-      const [profileRes, entriesRes, certsRes, rolesRes, badgesRes, adminIds, friendRes] = await Promise.all([
-    profilesPublic().select("full_name, avatar_url, cover_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url, privacy_settings").eq("id", userId).maybeSingle(),
+      const [profileRes, entriesRes, certsRes, rolesRes, badgesRes, adminIds, friendRes, coverPosRes] = await Promise.all([
+    profilesPublic().select("full_name, avatar_url, cover_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url, privacy_settings").eq("id", userId).maybeSingle() as any,
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
         supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["registered_photographer", "student"] as any),
         supabase.from("user_badges").select("badge_type").eq("user_id", userId),
         getAdminIds(),
         currentUser ? supabase.rpc("are_friends", { _user_a: currentUser.id, _user_b: userId }) : Promise.resolve({ data: false }),
+        supabase.from("profiles").select("cover_position").eq("id", userId).maybeSingle(),
       ]);
 
       if (!profileRes.data) {
@@ -185,7 +192,11 @@ const PublicProfile = () => {
         profileRes.data.full_name = resolveName(userId, profileRes.data.full_name, adminIds);
       }
 
-      setProfile(profileRes.data);
+      const pData = { ...profileRes.data, cover_position: (coverPosRes.data as any)?.cover_position ?? 50 };
+      setProfile(pData);
+      const pos = pData.cover_position;
+      setDragPosition(pos);
+      setSavedPosition(pos);
       setEntries((entriesRes.data as any) || []);
       setCertificates(certsRes.data || []);
       const userRoles = rolesRes.data?.map((r: any) => r.role) || [];
@@ -254,39 +265,131 @@ const PublicProfile = () => {
         const path = `covers/${currentUser.id}/${Date.now()}-${file.name}`;
         const result = await storageUpload("avatars", path, file);
         const url = result.url;
-        await supabase.from("profiles").update({ cover_url: url }).eq("id", currentUser.id);
-        setProfile((prev) => prev ? { ...prev, cover_url: url } : prev);
-        toast({ title: "Cover photo updated!" });
+        await supabase.from("profiles").update({ cover_url: url, cover_position: 50 } as any).eq("id", currentUser.id);
+        setProfile((prev) => prev ? { ...prev, cover_url: url, cover_position: 50 } : prev);
+        setDragPosition(50);
+        setSavedPosition(50);
+        setRepositionMode(true);
+        toast({ title: "Cover photo updated! Drag to reposition." });
       } catch (err: any) {
         toast({ title: "Upload failed", description: err.message, variant: "destructive" });
       }
     };
+
+    const handleRepositionStart = () => {
+      setRepositionMode(true);
+      setDragPosition(savedPosition);
+    };
+
+    const handleRepositionSave = async () => {
+      if (!currentUser) return;
+      await supabase.from("profiles").update({ cover_position: dragPosition } as any).eq("id", currentUser.id);
+      setSavedPosition(dragPosition);
+      setProfile((prev) => prev ? { ...prev, cover_position: dragPosition } : prev);
+      setRepositionMode(false);
+      toast({ title: "Cover position saved!" });
+    };
+
+    const handleRepositionCancel = () => {
+      setDragPosition(savedPosition);
+      setRepositionMode(false);
+    };
+
+    const onCoverPointerDown = (e: React.PointerEvent) => {
+      if (!repositionMode) return;
+      e.preventDefault();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      dragRef.current = { startY: e.clientY, startPos: dragPosition };
+    };
+
+    const onCoverPointerMove = (e: React.PointerEvent) => {
+      if (!dragRef.current || !coverContainerRef.current) return;
+      const containerH = coverContainerRef.current.getBoundingClientRect().height;
+      const deltaY = e.clientY - dragRef.current.startY;
+      // Moving mouse down → shows upper part → decrease %, moving up → increase %
+      const deltaPct = -(deltaY / containerH) * 100;
+      const newPos = Math.max(0, Math.min(100, dragRef.current.startPos + deltaPct));
+      setDragPosition(newPos);
+    };
+
+    const onCoverPointerUp = () => {
+      dragRef.current = null;
+    };
+
+    const coverPosition = repositionMode ? dragPosition : (profile.cover_position ?? 50);
 
     return (
     <main className="min-h-screen bg-background text-foreground">
       {/* ═══ Cover Photo ═══ */}
       <section className="relative">
         {/* Cover Image */}
-        <div className="relative h-48 sm:h-64 md:h-72 lg:h-80 overflow-hidden bg-gradient-to-br from-muted via-muted/80 to-muted/60">
+        <div
+          ref={coverContainerRef}
+          className={`relative h-48 sm:h-64 md:h-72 lg:h-80 overflow-hidden bg-gradient-to-br from-muted via-muted/80 to-muted/60 ${repositionMode ? "cursor-grab active:cursor-grabbing" : ""}`}
+          onPointerDown={onCoverPointerDown}
+          onPointerMove={onCoverPointerMove}
+          onPointerUp={onCoverPointerUp}
+        >
           {profile.cover_url ? (
             <img
               src={profile.cover_url}
               alt="Cover"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover select-none pointer-events-none"
+              style={{ objectPosition: `center ${coverPosition}%` }}
+              draggable={false}
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-muted to-accent/5" />
           )}
           {/* Gradient overlay at bottom for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+          {!repositionMode && (
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+          )}
 
-          {/* Cover upload button for owner */}
-          {isOwner && (
-            <label className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-2 cursor-pointer text-[10px] tracking-[0.12em] uppercase px-4 py-2 bg-background/80 backdrop-blur-sm text-foreground border border-border hover:bg-background hover:border-primary transition-all duration-300 rounded-sm" style={headingFont}>
-              <ImagePlus className="h-3.5 w-3.5" />
-              {profile.cover_url ? "Change Cover" : "Add Cover Photo"}
-              <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
-            </label>
+          {/* Reposition toolbar */}
+          {repositionMode && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border rounded-sm px-4 py-2 shadow-lg">
+              <Move className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] tracking-[0.12em] uppercase text-foreground" style={headingFont}>
+                Drag to reposition
+              </span>
+              <div className="w-px h-4 bg-border mx-1" />
+              <button
+                onClick={handleRepositionSave}
+                className="inline-flex items-center gap-1 text-[10px] tracking-[0.12em] uppercase px-3 py-1.5 bg-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-sm"
+                style={headingFont}
+              >
+                <Check className="h-3 w-3" /> Save
+              </button>
+              <button
+                onClick={handleRepositionCancel}
+                className="inline-flex items-center gap-1 text-[10px] tracking-[0.12em] uppercase px-3 py-1.5 border border-border text-muted-foreground hover:text-foreground transition-colors rounded-sm"
+                style={headingFont}
+              >
+                <X className="h-3 w-3" /> Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Cover buttons for owner */}
+          {isOwner && !repositionMode && (
+            <div className="absolute bottom-4 right-4 z-10 flex items-center gap-2">
+              {profile.cover_url && (
+                <button
+                  onClick={handleRepositionStart}
+                  className="inline-flex items-center gap-2 text-[10px] tracking-[0.12em] uppercase px-4 py-2 bg-background/80 backdrop-blur-sm text-foreground border border-border hover:bg-background hover:border-primary transition-all duration-300 rounded-sm"
+                  style={headingFont}
+                >
+                  <Move className="h-3.5 w-3.5" />
+                  Reposition
+                </button>
+              )}
+              <label className="inline-flex items-center gap-2 cursor-pointer text-[10px] tracking-[0.12em] uppercase px-4 py-2 bg-background/80 backdrop-blur-sm text-foreground border border-border hover:bg-background hover:border-primary transition-all duration-300 rounded-sm" style={headingFont}>
+                <ImagePlus className="h-3.5 w-3.5" />
+                {profile.cover_url ? "Change Cover" : "Add Cover Photo"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
+              </label>
+            </div>
           )}
         </div>
 

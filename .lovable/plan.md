@@ -1,35 +1,71 @@
 
 
-# Cover Photo Area Positioner
+# User Roles & Permissions System
 
-## Problem
-When users upload a cover photo, it's displayed with `object-cover` in a fixed-height container (h-48 to h-80). Users have no control over which part of the image is visible — it always centers by default, which often crops out the subject.
+## Role Architecture
 
-## Solution
-Add a repositioning tool that lets users drag their cover photo vertically to choose the visible area, then save that position. This is the same pattern used by Facebook/LinkedIn cover photos.
+### Roles (stored in a separate `user_roles` table for security)
+- **user** – Default role for all signups
+- **judge** – Can review and score competition submissions
+- **content_editor** – Can create/edit journal articles and courses
+- **admin** – Full platform management access
 
-## Technical Approach
+### How Roles Work
+- Everyone signs up with a single **user** role
+- Features unlock automatically based on actions (submit a photo → photographer capabilities, enroll in course → learner capabilities)
+- **Judge** and **Content Editor** roles are assigned via admin OR through an application/approval flow
+- Users can hold multiple roles simultaneously (e.g., user + judge)
 
-### 1. Database — Add `cover_position` column
-- Add a `cover_position` float column (0–100, default 50) to the `profiles` table representing the vertical `object-position` percentage.
+## Capabilities by Role
 
-### 2. Cover Photo Display (`PublicProfile.tsx`)
-- Apply `object-position: center ${cover_position}%` to the cover `<img>` tag so the saved position is always respected.
+### User (default)
+- Create and edit profile with portfolio link, avatar, bio
+- Upload photography submissions to competitions
+- Enroll in courses and track progress
+- Comment on journal articles
+- Bookmark articles and courses
+- Download certificates (course completion + competition wins)
 
-### 3. Reposition Mode (`PublicProfile.tsx`)
-- Add a "Reposition" button next to the existing "Change Cover" button (only visible to owner when a cover exists).
-- When clicked, enter reposition mode:
-  - The cover image becomes draggable vertically (cursor: grab/grabbing).
-  - A small toolbar appears with "Save Position" and "Cancel" buttons.
-  - User drags the image up/down; the `object-position` Y% updates in real-time.
-  - On save, persist the new `cover_position` value to the `profiles` table.
-  - On cancel, revert to the previous position.
+### Judge (applied for or admin-assigned)
+- All user capabilities
+- Access judging panel for assigned competitions
+- Score and provide feedback on submissions
 
-### 4. Also integrate with cover upload flow
-- After uploading a new cover photo, automatically enter reposition mode so the user can immediately adjust framing.
+### Content Editor (applied for or admin-assigned)
+- All user capabilities
+- Create, edit, and publish journal articles
+- Create and manage courses & lessons
 
-### Files to modify
-- **Migration**: Add `cover_position` column to `profiles`
-- **`src/pages/PublicProfile.tsx`**: Add reposition UI, drag logic, save handler, and dynamic `object-position` style
-- No new components needed — the drag interaction is simple enough to live inline
+### Admin
+- Full access to everything
+- Manage all competitions, courses, articles
+- Approve/reject role applications (judge, content editor)
+- Manage users and assign roles directly
+- View platform analytics
+
+## Role Application Flow
+- Users can apply for Judge or Content Editor roles from their dashboard
+- Application includes a short form (reason/portfolio/experience)
+- Admins see pending applications in the admin dashboard
+- Admins approve or reject with optional message
+- User gets notified of the decision
+
+## Certificates
+- **Course completion certificates** – Auto-generated when all lessons in a course are marked complete
+- **Competition winner certificates** – Generated for 1st, 2nd, 3rd place winners
+- Downloadable as styled PDF from the user dashboard
+- Stored in Supabase Storage
+
+## Database Design (Supabase)
+- `user_roles` table with `user_id` + `role` (enum: user, judge, content_editor, admin)
+- `role_applications` table for tracking judge/content editor applications
+- `certificates` table linking users to earned certificates
+- Security definer function `has_role()` for RLS policies (no recursive policies)
+- All tables protected with Row Level Security
+
+## Security
+- Role checks always done server-side via `has_role()` function
+- No client-side role storage or hardcoded credentials
+- RLS policies on all tables ensuring users only access what their role permits
+- Admin actions protected by admin role check
 
