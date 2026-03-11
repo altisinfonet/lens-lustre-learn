@@ -143,8 +143,20 @@ export default function AdminMenuBuilder({ user }: { user: User | null }) {
     }
   };
 
+  const toSlug = (text: string) =>
+    text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
   const updateItem = (id: string, field: keyof MenuItem, value: any) => {
-    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+    setItems((prev) => prev.map((item) => {
+      if (item.id !== id) return item;
+      const updated = { ...item, [field]: value };
+      // Auto-generate slug from label for managed pages
+      if (field === "label" && item.type === "managed") {
+        const slug = toSlug(value as string) || "page";
+        updated.path = `/page/${slug}`;
+      }
+      return updated;
+    }));
   };
 
   const removeItem = (id: string) => {
