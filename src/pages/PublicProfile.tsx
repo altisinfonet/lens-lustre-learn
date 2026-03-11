@@ -108,6 +108,7 @@ interface ProfileData {
   full_name: string | null;
   avatar_url: string | null;
   cover_url: string | null;
+  cover_position: number;
   bio: string | null;
   portfolio_url: string | null;
   photography_interests: string[] | null;
