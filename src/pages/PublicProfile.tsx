@@ -169,7 +169,7 @@ const PublicProfile = () => {
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
-      const [profileRes, entriesRes, certsRes, rolesRes, badgesRes, adminIds, friendRes] = await Promise.all([
+      const [profileRes, entriesRes, certsRes, rolesRes, badgesRes, adminIds, friendRes, coverPosRes] = await Promise.all([
     profilesPublic().select("full_name, avatar_url, cover_url, bio, portfolio_url, photography_interests, created_at, facebook_url, instagram_url, twitter_url, youtube_url, website_url, privacy_settings").eq("id", userId).maybeSingle() as any,
         supabase.from("competition_entries").select("id, title, description, photos, status, competition:competitions(title)").eq("user_id", userId).in("status", ["approved", "winner"]).order("created_at", { ascending: false }).limit(12),
         supabase.from("certificates").select("id, title, type, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }).limit(10),
@@ -177,6 +177,7 @@ const PublicProfile = () => {
         supabase.from("user_badges").select("badge_type").eq("user_id", userId),
         getAdminIds(),
         currentUser ? supabase.rpc("are_friends", { _user_a: currentUser.id, _user_b: userId }) : Promise.resolve({ data: false }),
+        supabase.from("profiles").select("cover_position").eq("id", userId).maybeSingle(),
       ]);
 
       if (!profileRes.data) {
