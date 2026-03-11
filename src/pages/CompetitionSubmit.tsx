@@ -57,6 +57,7 @@ const CompetitionSubmit = () => {
         setCompTitle(data.title);
         setMaxPhotos(data.max_photos_per_entry || 5);
         setEntryFee((data as any).entry_fee || 0);
+        setAiImagesAllowed((data as any).ai_images_allowed !== false);
       }
       setLoading(false);
     };
