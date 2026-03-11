@@ -641,6 +641,9 @@ const AdminPanel = () => {
         {/* Page Management Tab */}
         {tab === "page_management" && <AdminPageManagement user={user} />}
 
+        {/* URL Redirects Tab */}
+        {tab === "redirects" && <AdminRedirects user={user} />}
+
         {/* Analytics Tab */}
         {tab === "analytics" && <AdminAnalytics user={user} />}
 
