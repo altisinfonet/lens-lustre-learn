@@ -45,7 +45,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const FeaturedArtistPage = lazy(() => import("./pages/FeaturedArtistPage"));
 const Referrals = lazy(() => import("./pages/Referrals"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
-
+const ManagedPageView = lazy(() => import("./pages/ManagedPageView"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -114,6 +114,7 @@ const App = () => (
                 <Route path="/featured-artist/:slug" element={<FeaturedArtistPage />} />
                 <Route path="/referrals" element={<Referrals />} />
                 <Route path="/help-support" element={<HelpSupport />} />
+                <Route path="/page/:slug" element={<ManagedPageView />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Route>
