@@ -34,6 +34,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { storageUpload, storageRemove } from "@/lib/storageUpload";
+import { compressImageToFiles } from "@/lib/imageCompression";
+import ImageCropModal from "@/components/admin/ImageCropModal";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
