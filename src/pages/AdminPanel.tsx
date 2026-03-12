@@ -353,7 +353,42 @@ const AdminPanel = () => {
     setShowForm(false);
   };
 
-  const openEdit = (comp: Competition) => {
+  const handleCoverFileSelect = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 10MB", variant: "destructive" });
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Only images allowed", variant: "destructive" });
+      return;
+    }
+    setCoverCropSrc(URL.createObjectURL(file));
+  };
+
+  const handleCoverCropComplete = async (croppedFile: File) => {
+    setCoverCropSrc(null);
+    setCoverUploading(true);
+    try {
+      const safe = await scanFileWithToast(croppedFile, toast, { allowedTypes: "image" });
+      if (!safe) { setCoverUploading(false); return; }
+      const baseName = `comp-cover-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const { webpFile } = await compressImageToFiles(croppedFile, baseName);
+      const path = `covers/${baseName}.webp`;
+      const result = await storageUpload("competition-photos", path, webpFile, { fileName: `${baseName}.webp` });
+      setForm(prev => ({ ...prev, cover_image_url: result.url }));
+      toast({ title: "Cover image uploaded" });
+    } catch {
+      toast({ title: "Upload failed", variant: "destructive" });
+    }
+    setCoverUploading(false);
+  };
+
+  const handleCoverCropCancel = () => {
+    if (coverCropSrc) URL.revokeObjectURL(coverCropSrc);
+    setCoverCropSrc(null);
+  };
+
+
     setEditingId(comp.id);
     // Need to fetch full data
     supabase.from("competitions").select("id, title, description, cover_image_url, category, entry_fee, prize_info, status, max_entries_per_user, max_photos_per_entry, starts_at, ends_at, ai_images_allowed").eq("id", comp.id).single().then(async ({ data }) => {
