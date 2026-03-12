@@ -603,32 +603,32 @@ const AdminPanel = () => {
             Admin <em className="italic text-primary">Panel</em>
           </h2>
         </div>
-        <nav className="flex-1 py-3 px-2 space-y-1">
+        <nav className="flex-1 py-3 px-2 space-y-1 overflow-x-hidden">
           {tabGroups.map((group) => {
             const isGroupActive = group.items.some((item) => item[0] === tab);
             return (
               <Collapsible key={group.label} defaultOpen={isGroupActive}>
                 <CollapsibleTrigger className="w-full flex items-center justify-between px-3 py-2 text-[11px] tracking-[0.2em] uppercase text-muted-foreground/60 font-semibold hover:text-muted-foreground transition-colors group/collapsible" style={{ fontFamily: "var(--font-heading)" }}>
-                  {group.label}
+                  <span className="truncate">{group.label}</span>
                   <ChevronDown className="h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
                 </CollapsibleTrigger>
-                <CollapsibleContent>
+                <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                   <div className="space-y-0.5 pb-2">
                     {group.items.map(([key, label, Icon]) => (
                       <button
                         key={key}
                         onClick={() => setTab(key)}
-                        className={`w-full flex items-center gap-2.5 text-[13px] px-3 py-2.5 rounded-sm transition-all duration-300 ${
+                        className={`w-full flex items-center gap-2.5 text-[13px] px-3 py-2.5 rounded-sm transition-all duration-300 border-l-2 ${
                           tab === key
-                            ? "bg-primary/10 text-primary border-l-2 border-primary"
-                            : "text-muted-foreground hover:text-primary hover:bg-primary/5 border-l-2 border-transparent"
+                            ? "bg-primary/10 text-primary border-primary"
+                            : "text-muted-foreground hover:text-primary hover:bg-primary/5 border-transparent"
                         }`}
                         style={{ fontFamily: "var(--font-body)" }}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
-                        {label}
+                        <span className="truncate">{label}</span>
                         {key === "support_tickets" && unresolvedTicketCount > 0 && (
-                          <span className="ml-auto bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                          <span className="ml-auto bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shrink-0">
                             {unresolvedTicketCount}
                           </span>
                         )}
