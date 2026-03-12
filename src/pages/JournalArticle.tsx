@@ -25,20 +25,20 @@ interface Article {
   author_id: string;
 }
 
-interface BodyBlock {
-  type: "text" | "image";
-  content: string;
-}
-
-function parseBodyBlocks(body: string): BodyBlock[] {
-  const parts = body.split("\n\n");
-  return parts.map((part) => {
+/** Convert legacy [img:URL] block format to HTML if needed */
+function ensureHtmlBody(rawBody: string): string {
+  if (!rawBody) return "";
+  // If it already contains HTML tags, return as-is
+  if (/<[a-z][\s\S]*>/i.test(rawBody)) return rawBody;
+  // Convert legacy format
+  const parts = rawBody.split("\n\n");
+  return parts.map(part => {
     const trimmed = part.trim();
-    if (!trimmed) return null;
+    if (!trimmed) return "";
     const imgMatch = trimmed.match(/^\[img:(.*?)\]$/);
-    if (imgMatch) return { type: "image" as const, content: imgMatch[1] };
-    return { type: "text" as const, content: trimmed };
-  }).filter(Boolean) as BodyBlock[];
+    if (imgMatch) return `<div class="my-8"><img src="${imgMatch[1]}" alt="Article image" style="width:100%;border-radius:4px;" loading="lazy" /></div>`;
+    return `<p>${trimmed}</p>`;
+  }).filter(Boolean).join("\n");
 }
 
 const JournalArticle = () => {
@@ -124,7 +124,7 @@ const JournalArticle = () => {
     );
   }
 
-  const bodyBlocks = parseBodyBlocks(article.body);
+  const htmlBody = ensureHtmlBody(article.body);
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -191,26 +191,12 @@ const JournalArticle = () => {
             </span>
           </div>
 
-          {/* Body */}
-          <div className="prose-custom space-y-6">
-            {bodyBlocks.map((block, i) =>
-              block.type === "image" ? (
-                <div key={i} className="my-8">
-                  <img
-                    src={block.content}
-                    alt={`Article image ${i + 1}`}
-                    className="w-full object-cover rounded-sm cursor-pointer hover:brightness-90 transition-all duration-500"
-                    loading="lazy"
-                    onClick={() => setLightboxImg(block.content)}
-                  />
-                </div>
-              ) : (
-                <p key={i} className="text-sm md:text-base text-foreground/85 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
-                  {block.content}
-                </p>
-              )
-            )}
-          </div>
+          {/* Body - rendered as HTML */}
+          <div
+            className="prose-custom prose-sm md:prose-base max-w-none text-foreground/85 leading-relaxed"
+            style={{ fontFamily: "var(--font-body)" }}
+            dangerouslySetInnerHTML={{ __html: htmlBody }}
+          />
 
           {/* Photo gallery */}
           {article.photo_gallery.length > 0 && (
