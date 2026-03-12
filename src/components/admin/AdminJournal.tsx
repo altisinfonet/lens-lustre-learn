@@ -83,7 +83,7 @@ const AdminJournal = () => {
         <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
           {articles.length} article{articles.length !== 1 ? "s" : ""}
         </span>
-        <button onClick={() => navigate("/journal/editor/new")}
+        <button onClick={() => navigate("/journal/new")}
           className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-sm"
           style={{ fontFamily: "var(--font-heading)" }}>
           <Plus className="h-3 w-3" /> New Article
@@ -140,7 +140,7 @@ const AdminJournal = () => {
               <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => toggleFeatured(a.id, a.is_featured)} className={`p-1.5 transition-colors rounded-sm ${a.is_featured ? "text-yellow-500 bg-yellow-500/10" : "hover:text-yellow-500 hover:bg-yellow-500/10"}`} title={a.is_featured ? "Remove from homepage" : "Feature on homepage"}><Star className={`h-3.5 w-3.5 ${a.is_featured ? "fill-current" : ""}`} /></button>
                 <button onClick={() => navigate(`/journal/${a.slug}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="View"><Eye className="h-3.5 w-3.5" /></button>
-                <button onClick={() => navigate(`/journal/editor/${a.id}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                <button onClick={() => navigate(`/journal/edit/${a.id}`)} className="p-1.5 hover:text-primary transition-colors rounded-sm hover:bg-primary/10" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                 <button onClick={() => deleteArticle(a.id)} className="p-1.5 hover:text-destructive transition-colors rounded-sm hover:bg-destructive/10" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
             </div>
