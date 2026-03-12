@@ -31,7 +31,7 @@ import AdminAuthPages from "@/components/admin/AdminAuthPages";
 import AdminRedirects from "@/components/admin/AdminRedirects";
 import AdminMenuBuilder from "@/components/admin/AdminMenuBuilder";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { storageUpload, storageRemove } from "@/lib/storageUpload";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
