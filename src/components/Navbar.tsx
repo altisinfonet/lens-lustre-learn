@@ -104,14 +104,15 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
         onMouseEnter={() => handleMegaEnter(item.id)}
         onMouseLeave={handleMegaLeave}
       >
-        <Link
-          to={item.path}
+        <button
+          type="button"
+          onClick={() => setOpenMegaId(openMegaId === item.id ? null : item.id)}
           className={`hover:opacity-60 transition-opacity duration-500 flex items-center gap-1.5 ${isActive ? "text-primary" : ""}`}
         >
           {item.icon && <DynIcon name={item.icon} className="h-3 w-3" />}
           <T>{item.label}</T>
           <ChevronDown className={`h-2.5 w-2.5 transition-transform duration-300 ${openMegaId === item.id ? "rotate-180" : ""}`} />
-        </Link>
+        </button>
 
         {/* Mega menu dropdown */}
         <AnimatePresence>
@@ -141,6 +142,7 @@ const Navbar = ({ transparent = false }: NavbarProps) => {
                           key={child.id}
                           to={child.path}
                           className="flex items-start gap-3 p-3 rounded-sm hover:bg-muted/40 transition-colors group"
+                          onClick={() => setOpenMegaId(null)}
                           {...childLinkProps}
                         >
                           {child.icon && (
