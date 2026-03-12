@@ -83,7 +83,7 @@ const AdminJournal = () => {
         <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
           {articles.length} article{articles.length !== 1 ? "s" : ""}
         </span>
-        <button onClick={() => navigate("/journal/editor/new")}
+        <button onClick={() => navigate("/journal/new")}
           className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.15em] uppercase px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-sm"
           style={{ fontFamily: "var(--font-heading)" }}>
           <Plus className="h-3 w-3" /> New Article
