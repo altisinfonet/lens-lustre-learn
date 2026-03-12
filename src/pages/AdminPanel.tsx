@@ -947,6 +947,15 @@ const AdminPanel = () => {
               </div>
             )}
 
+            {/* Cover Image Crop Modal */}
+            {coverCropSrc && (
+              <ImageCropModal
+                imageSrc={coverCropSrc}
+                onCropComplete={handleCoverCropComplete}
+                onCancel={handleCoverCropCancel}
+              />
+            )}
+
             {/* Table */}
             <div className="border border-border overflow-x-auto">
               <table className="w-full text-left">
