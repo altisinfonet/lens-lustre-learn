@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell, HeartPulse, UserPlus, HelpCircle, Mail, ClipboardList, Database, LogIn, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell, HeartPulse, UserPlus, HelpCircle, Mail, ClipboardList, Database, LogIn, ExternalLink, ZoomIn, ZoomOut, Move, RotateCcw } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
@@ -31,9 +31,11 @@ import AdminAuthPages from "@/components/admin/AdminAuthPages";
 import AdminRedirects from "@/components/admin/AdminRedirects";
 import AdminMenuBuilder from "@/components/admin/AdminMenuBuilder";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { storageUpload, storageRemove } from "@/lib/storageUpload";
+import { compressImageToFiles } from "@/lib/imageCompression";
+import ImageCropModal from "@/components/admin/ImageCropModal";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -158,6 +160,9 @@ const AdminPanel = () => {
     ai_images_allowed: true,
   });
   const [saving, setSaving] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -347,6 +352,42 @@ const AdminPanel = () => {
     setEditingId(null);
     setShowForm(false);
   };
+
+  const handleCoverFileSelect = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 10MB", variant: "destructive" });
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Only images allowed", variant: "destructive" });
+      return;
+    }
+    setCoverCropSrc(URL.createObjectURL(file));
+  };
+
+  const handleCoverCropComplete = async (croppedFile: File) => {
+    setCoverCropSrc(null);
+    setCoverUploading(true);
+    try {
+      const safe = await scanFileWithToast(croppedFile, toast, { allowedTypes: "image" });
+      if (!safe) { setCoverUploading(false); return; }
+      const baseName = `comp-cover-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const { webpFile } = await compressImageToFiles(croppedFile, baseName);
+      const path = `covers/${baseName}.webp`;
+      const result = await storageUpload("competition-photos", path, webpFile, { fileName: `${baseName}.webp` });
+      setForm(prev => ({ ...prev, cover_image_url: result.url }));
+      toast({ title: "Cover image uploaded" });
+    } catch {
+      toast({ title: "Upload failed", variant: "destructive" });
+    }
+    setCoverUploading(false);
+  };
+
+  const handleCoverCropCancel = () => {
+    if (coverCropSrc) URL.revokeObjectURL(coverCropSrc);
+    setCoverCropSrc(null);
+  };
+
 
   const openEdit = (comp: Competition) => {
     setEditingId(comp.id);
@@ -774,7 +815,53 @@ const AdminPanel = () => {
                 <div className="grid md:grid-cols-2 gap-5">
                   <FormField label="Title *" value={form.title} onChange={(v) => setForm((f) => ({ ...f, title: v }))} placeholder="Competition title" />
                   <FormField label="Category" value={form.category} onChange={(v) => setForm((f) => ({ ...f, category: v }))} placeholder="e.g. Wildlife, Street" />
-                  <FormField label="Cover Image URL" value={form.cover_image_url} onChange={(v) => setForm((f) => ({ ...f, cover_image_url: v }))} placeholder="https://..." />
+                  {/* Cover Image Upload with Crop */}
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Cover Image</label>
+                    <input ref={coverInputRef} type="file" accept="image/*" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverFileSelect(f); e.target.value = ""; }} />
+                    {form.cover_image_url ? (
+                      <div className="border border-border rounded-sm overflow-hidden">
+                        <div
+                          className="relative h-48 bg-muted/20 overflow-hidden select-none"
+                        >
+                          <img
+                            src={form.cover_image_url}
+                            alt="Cover"
+                            className="w-full h-full object-cover"
+                            draggable={false}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1.5 border-t border-border bg-card/50">
+                          <button type="button" onClick={() => coverInputRef.current?.click()} disabled={coverUploading}
+                            className="p-1 rounded-sm text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Replace Image">
+                            <Upload className="h-3.5 w-3.5" />
+                          </button>
+                          <span className="text-[9px] text-muted-foreground ml-1">Replace</span>
+                          <button type="button" onClick={() => setForm(f => ({ ...f, cover_image_url: "" }))}
+                            className="p-1 rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-auto" title="Remove Image">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => coverInputRef.current?.click()}
+                        disabled={coverUploading}
+                        className="w-full h-32 border-2 border-dashed border-border rounded-sm flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                      >
+                        {coverUploading ? (
+                          <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Image className="h-6 w-6" />
+                        )}
+                        <span className="text-[9px] tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-heading)" }}>
+                          {coverUploading ? "Uploading…" : "Click to upload cover image"}
+                        </span>
+                      </button>
+                    )}
+                  </div>
                   <div>
                     <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>Status</label>
                     <select
@@ -859,6 +946,15 @@ const AdminPanel = () => {
                   <button onClick={resetForm} className="text-xs tracking-[0.15em] uppercase text-muted-foreground hover:text-foreground" style={{ fontFamily: "var(--font-heading)" }}>Cancel</button>
                 </div>
               </div>
+            )}
+
+            {/* Cover Image Crop Modal */}
+            {coverCropSrc && (
+              <ImageCropModal
+                imageSrc={coverCropSrc}
+                onCropComplete={handleCoverCropComplete}
+                onCancel={handleCoverCropCancel}
+              />
             )}
 
             {/* Table */}
