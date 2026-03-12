@@ -160,6 +160,9 @@ const AdminPanel = () => {
     ai_images_allowed: true,
   });
   const [saving, setSaving] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
