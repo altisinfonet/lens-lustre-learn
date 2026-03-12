@@ -1226,41 +1226,6 @@ const FormField = ({
   </div>
 );
 
-  const handleCoverFileSelect = (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 10MB", variant: "destructive" });
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Invalid file", description: "Only images allowed", variant: "destructive" });
-      return;
-    }
-    setCoverCropSrc(URL.createObjectURL(file));
-  };
-
-  const handleCoverCropComplete = async (croppedFile: File) => {
-    setCoverCropSrc(null);
-    setCoverUploading(true);
-    try {
-      const safe = await scanFileWithToast(croppedFile, toast, { allowedTypes: "image" });
-      if (!safe) { setCoverUploading(false); return; }
-      const baseName = `comp-cover-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const { webpFile } = await compressImageToFiles(croppedFile, baseName);
-      const path = `covers/${baseName}.webp`;
-      const result = await storageUpload("competition-photos", path, webpFile, { fileName: `${baseName}.webp` });
-      setForm(prev => ({ ...prev, cover_image_url: result.url }));
-      toast({ title: "Cover image uploaded" });
-    } catch {
-      toast({ title: "Upload failed", variant: "destructive" });
-    }
-    setCoverUploading(false);
-  };
-
-  const handleCoverCropCancel = () => {
-    if (coverCropSrc) URL.revokeObjectURL(coverCropSrc);
-    setCoverCropSrc(null);
-  };
-
 
 /* ─── Admin Wallet Tab ─── */
 import type { User } from "@supabase/supabase-js";
