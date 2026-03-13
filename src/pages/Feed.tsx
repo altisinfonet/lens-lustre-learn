@@ -57,11 +57,14 @@ const FeedImage = ({ src }: { src: string }) => {
   );
 };
 
+import FacebookPhotoGrid from "@/components/FacebookPhotoGrid";
+
 interface FeedPost {
   id: string;
   user_id: string;
   content: string;
   image_url: string | null;
+  image_urls: string[];
   privacy: string;
   created_at: string;
   author_name: string | null;
@@ -156,8 +159,12 @@ const Feed = () => {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([type]) => type);
+      const imageUrls = (p as any).image_urls?.length > 0
+        ? (p as any).image_urls
+        : p.image_url ? [p.image_url] : [];
       return {
         ...p,
+        image_urls: imageUrls,
         author_name: resolveName(p.user_id, profileMap.get(p.user_id)?.full_name ?? null, adminIds),
         author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
         author_badges: resolveBadges(p.user_id, badgeMap.get(p.user_id) || [], adminIds),
@@ -331,6 +338,7 @@ const Feed = () => {
       user_id: user.id,
       content: sharedContent,
       image_url: post.image_url,
+      image_urls: post.image_urls,
       privacy: "public",
     });
     if (error) {
@@ -503,7 +511,13 @@ const Feed = () => {
                     {/* Content */}
                     <div className="px-4 py-3">
                       <p className="text-sm leading-relaxed whitespace-pre-wrap" style={bodyFont}>{post.content}</p>
-                      {post.image_url && <FeedImage src={post.image_url} />}
+                      {post.image_urls.length > 0 ? (
+                        <div className="mt-3">
+                          <FacebookPhotoGrid urls={post.image_urls} />
+                        </div>
+                      ) : post.image_url ? (
+                        <FeedImage src={post.image_url} />
+                      ) : null}
                     </div>
 
                     {/* Counts */}
