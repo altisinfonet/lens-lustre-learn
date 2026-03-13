@@ -159,7 +159,7 @@ const Discover = () => {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 md:px-8 py-8 md:py-14 max-w-6xl">
-        <Breadcrumbs items={[{ label: "Discover" }]} className="mb-6" />
+        <Breadcrumbs items={[{ label: "Discover People" }]} className="mb-6" />
 
         {/* Header */}
         <div className="mb-8">
@@ -170,10 +170,10 @@ const Discover = () => {
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-light tracking-tight" style={displayFont}>
-            <T>Discover </T><em className="text-primary"><T>Photographers</T></em>
+            <T>Discover </T><em className="text-primary"><T>People</T></em>
           </h1>
           <p className="text-sm text-muted-foreground mt-2" style={bodyFont}>
-            <T>Find and connect with talented photographers from around the world.</T>
+            <T>Find and connect with people from the community.</T>
           </p>
         </div>
 
@@ -301,14 +301,14 @@ const Discover = () => {
         {loading ? (
           <div className="text-center py-16">
             <span className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={headingFont}>
-              <T>Searching photographers...</T>
+              <T>Searching people...</T>
             </span>
           </div>
         ) : profiles.length === 0 ? (
           <div className="border border-dashed border-border p-12 text-center">
             <Compass className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground" style={bodyFont}>
-              <T>No photographers found matching your criteria.</T>
+              <T>No people found matching your criteria.</T>
             </p>
             <p className="text-xs text-muted-foreground/60 mt-1" style={bodyFont}>
               <T>Try adjusting your search or filters.</T>
@@ -317,7 +317,7 @@ const Discover = () => {
         ) : (
           <>
             <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-5" style={headingFont}>
-              {profiles.length} <T>{profiles.length !== 1 ? "photographers found" : "photographer found"}</T>
+              {profiles.length} <T>{profiles.length !== 1 ? "people found" : "person found"}</T>
             </p>
             <DiscoverGrid profiles={profiles} />
           </>
