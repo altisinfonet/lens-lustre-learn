@@ -159,8 +159,12 @@ const Feed = () => {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([type]) => type);
+      const imageUrls = (p as any).image_urls?.length > 0
+        ? (p as any).image_urls
+        : p.image_url ? [p.image_url] : [];
       return {
         ...p,
+        image_urls: imageUrls,
         author_name: resolveName(p.user_id, profileMap.get(p.user_id)?.full_name ?? null, adminIds),
         author_avatar: profileMap.get(p.user_id)?.avatar_url || null,
         author_badges: resolveBadges(p.user_id, badgeMap.get(p.user_id) || [], adminIds),
