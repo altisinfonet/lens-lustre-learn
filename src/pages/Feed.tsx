@@ -338,6 +338,7 @@ const Feed = () => {
       user_id: user.id,
       content: sharedContent,
       image_url: post.image_url,
+      image_urls: post.image_urls,
       privacy: "public",
     });
     if (error) {
