@@ -57,11 +57,14 @@ const FeedImage = ({ src }: { src: string }) => {
   );
 };
 
+import FacebookPhotoGrid from "@/components/FacebookPhotoGrid";
+
 interface FeedPost {
   id: string;
   user_id: string;
   content: string;
   image_url: string | null;
+  image_urls: string[];
   privacy: string;
   created_at: string;
   author_name: string | null;
