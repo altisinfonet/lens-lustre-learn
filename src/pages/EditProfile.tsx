@@ -303,6 +303,8 @@ const EditProfile = () => {
       const newUrl = `${result.url}?t=${Date.now()}`;
       await supabase.from("profiles").update({ avatar_url: newUrl } as any).eq("id", user.id);
       setAvatarUrl(newUrl);
+      // Auto-post to wall like Facebook
+      await createProfileUpdatePost(user.id, "avatar", newUrl);
       toast({ title: "Profile picture updated" });
     } catch (err: any) {
       toast({ title: "Compression failed", description: err.message, variant: "destructive" });

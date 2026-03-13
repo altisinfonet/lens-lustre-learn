@@ -271,6 +271,8 @@ const PublicProfile = () => {
         setDragPosition(50);
         setSavedPosition(50);
         setRepositionMode(true);
+        // Auto-post to wall like Facebook
+        await createProfileUpdatePost(currentUser.id, "cover", url);
         toast({ title: "Cover photo updated! Drag to reposition." });
       } catch (err: any) {
         toast({ title: "Upload failed", description: err.message, variant: "destructive" });
