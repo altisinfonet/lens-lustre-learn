@@ -32,7 +32,7 @@ const defaultGlobalSEO: GlobalSEO = {
   default_og_image: "",
   site_name: "50mm Retina World",
   twitter_handle: "",
-  canonical_base: "https://lens-lustre-learn.lovable.app",
+  canonical_base: "https://50mmretina.com",
   google_verification: "",
   bing_verification: "",
 };
