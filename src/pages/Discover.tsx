@@ -159,7 +159,7 @@ const Discover = () => {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 md:px-8 py-8 md:py-14 max-w-6xl">
-        <Breadcrumbs items={[{ label: "Discover" }]} className="mb-6" />
+        <Breadcrumbs items={[{ label: "Discover People" }]} className="mb-6" />
 
         {/* Header */}
         <div className="mb-8">
@@ -170,10 +170,10 @@ const Discover = () => {
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-light tracking-tight" style={displayFont}>
-            <T>Discover </T><em className="text-primary"><T>Photographers</T></em>
+            <T>Discover </T><em className="text-primary"><T>People</T></em>
           </h1>
           <p className="text-sm text-muted-foreground mt-2" style={bodyFont}>
-            <T>Find and connect with talented photographers from around the world.</T>
+            <T>Find and connect with people from the community.</T>
           </p>
         </div>
 
