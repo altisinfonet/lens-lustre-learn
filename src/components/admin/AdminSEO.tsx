@@ -131,7 +131,7 @@ export default function AdminSEO({ user }: { user: User | null }) {
   };
 
   const generateSitemap = async () => {
-    const base = globalSEO.canonical_base || "https://lens-lustre-learn.lovable.app";
+    const base = globalSEO.canonical_base || "https://50mmretina.com";
 
     // Fetch dynamic slugs
     const [{ data: articles }, { data: courses }, { data: comps }, { data: artists }] = await Promise.all([

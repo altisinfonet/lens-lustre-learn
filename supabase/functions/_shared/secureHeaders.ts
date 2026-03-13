@@ -4,6 +4,7 @@
  */
 
 const ALLOWED_ORIGINS = [
+  "https://50mmretina.com",
   "https://lens-lustre-learn.lovable.app",
   "https://id-preview--8658c335-87a2-4e48-86ad-6c1fff54dead.lovable.app",
 ];
