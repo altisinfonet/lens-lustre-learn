@@ -308,7 +308,7 @@ const Discover = () => {
           <div className="border border-dashed border-border p-12 text-center">
             <Compass className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground" style={bodyFont}>
-              <T>No photographers found matching your criteria.</T>
+              <T>No people found matching your criteria.</T>
             </p>
             <p className="text-xs text-muted-foreground/60 mt-1" style={bodyFont}>
               <T>Try adjusting your search or filters.</T>
