@@ -97,11 +97,23 @@ const FeedRightSidebar = () => {
     (followsRes.data || []).forEach((f: any) => excludeIds.add(f.following_id));
     adminIds.forEach((id) => excludeIds.add(id));
 
+    // Fetch from profiles table directly to include all users (including private profiles)
+    const excludeArray = Array.from(excludeIds);
+    
+    // Also exclude admin and judge role users
+    const { data: roleUsers } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .in("role", ["admin", "judge"]);
+    
+    (roleUsers || []).forEach((r) => excludeIds.add(r.user_id));
+    const finalExcludeArray = Array.from(excludeIds);
+
     const { data: profiles } = await profilesPublic()
       .select("id, full_name, avatar_url")
-      .not("id", "in", `(${Array.from(excludeIds).join(",")})`)
+      .not("id", "in", `(${finalExcludeArray.join(",")})`)
       .eq("is_suspended", false)
-      .limit(20);
+      .limit(100);
 
     if (!profiles || profiles.length === 0) { setSuggestions([]); return; }
 
@@ -111,7 +123,7 @@ const FeedRightSidebar = () => {
       avatar_url: p.avatar_url,
       mutual_count: 0,
     }));
-    setSuggestions(suggested.sort(() => Math.random() - 0.5).slice(0, 5));
+    setSuggestions(suggested.sort(() => Math.random() - 0.5).slice(0, 15));
   };
 
   const loadAds = async () => {
