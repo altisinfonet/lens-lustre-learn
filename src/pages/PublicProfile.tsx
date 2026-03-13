@@ -4,6 +4,7 @@ import { Camera, CheckCircle2, ExternalLink, Globe, Trophy, BookOpen, User, Expa
 import FriendFollowActions, { FriendFollowStats, FriendFollowButtons } from "@/components/FriendFollowActions";
 import { storageUpload } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
+import { createProfileUpdatePost } from "@/lib/profilePostHelper";
 import WallPosts from "@/components/WallPosts";
 import { useAuth } from "@/hooks/useAuth";
 import { AnimatePresence, motion } from "framer-motion";
