@@ -53,7 +53,7 @@ Disallow: /judge
 Disallow: /reset-password
 Disallow: /forgot-password
 
-Sitemap: https://lens-lustre-learn.lovable.app/sitemap.xml`;
+Sitemap: https://50mmretina.com/sitemap.xml`;
 
 export default function AdminSEO({ user }: { user: User | null }) {
   const [globalSEO, setGlobalSEO] = useState<GlobalSEO>(defaultGlobalSEO);
