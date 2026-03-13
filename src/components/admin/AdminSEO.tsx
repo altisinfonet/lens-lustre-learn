@@ -32,7 +32,7 @@ const defaultGlobalSEO: GlobalSEO = {
   default_og_image: "",
   site_name: "50mm Retina World",
   twitter_handle: "",
-  canonical_base: "https://lens-lustre-learn.lovable.app",
+  canonical_base: "https://50mmretina.com",
   google_verification: "",
   bing_verification: "",
 };
@@ -53,7 +53,7 @@ Disallow: /judge
 Disallow: /reset-password
 Disallow: /forgot-password
 
-Sitemap: https://lens-lustre-learn.lovable.app/sitemap.xml`;
+Sitemap: https://50mmretina.com/sitemap.xml`;
 
 export default function AdminSEO({ user }: { user: User | null }) {
   const [globalSEO, setGlobalSEO] = useState<GlobalSEO>(defaultGlobalSEO);
@@ -131,7 +131,7 @@ export default function AdminSEO({ user }: { user: User | null }) {
   };
 
   const generateSitemap = async () => {
-    const base = globalSEO.canonical_base || "https://lens-lustre-learn.lovable.app";
+    const base = globalSEO.canonical_base || "https://50mmretina.com";
 
     // Fetch dynamic slugs
     const [{ data: articles }, { data: courses }, { data: comps }, { data: artists }] = await Promise.all([

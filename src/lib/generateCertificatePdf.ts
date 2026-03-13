@@ -133,7 +133,7 @@ export const generateCertificatePdf = async ({
   // --- Verification URL ---
   doc.setFontSize(6);
   doc.setTextColor(100, 100, 100);
-  const publishedOrigin = "https://lens-lustre-learn.lovable.app";
+  const publishedOrigin = "https://50mmretina.com";
   const origin = window.location.hostname === "localhost" || window.location.hostname.includes("preview")
     ? publishedOrigin
     : window.location.origin;
