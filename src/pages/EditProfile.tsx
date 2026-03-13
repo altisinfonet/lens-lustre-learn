@@ -15,6 +15,7 @@ import { storageUpload } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
 import { compressAvatar } from "@/lib/imageCompression";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
+import { createProfileUpdatePost } from "@/lib/profilePostHelper";
 
 const INTEREST_OPTIONS = [
   "Wildlife", "Street", "Portrait", "Aerial", "Documentary",
