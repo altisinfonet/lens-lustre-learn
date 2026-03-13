@@ -301,7 +301,7 @@ const Discover = () => {
         {loading ? (
           <div className="text-center py-16">
             <span className="text-xs tracking-[0.3em] uppercase text-muted-foreground animate-pulse" style={headingFont}>
-              <T>Searching photographers...</T>
+              <T>Searching people...</T>
             </span>
           </div>
         ) : profiles.length === 0 ? (
