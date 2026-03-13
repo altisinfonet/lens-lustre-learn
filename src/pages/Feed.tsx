@@ -512,7 +512,7 @@ const Feed = () => {
                       <p className="text-sm leading-relaxed whitespace-pre-wrap" style={bodyFont}>{post.content}</p>
                       {post.image_urls.length > 0 ? (
                         <div className="mt-3">
-                          <FacebookPhotoGrid photos={post.image_urls} />
+                          <FacebookPhotoGrid urls={post.image_urls} />
                         </div>
                       ) : post.image_url ? (
                         <FeedImage src={post.image_url} />
