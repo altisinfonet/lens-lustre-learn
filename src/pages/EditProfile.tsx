@@ -15,6 +15,7 @@ import { storageUpload } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
 import { compressAvatar } from "@/lib/imageCompression";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
+import { createProfileUpdatePost } from "@/lib/profilePostHelper";
 
 const INTEREST_OPTIONS = [
   "Wildlife", "Street", "Portrait", "Aerial", "Documentary",
@@ -302,6 +303,8 @@ const EditProfile = () => {
       const newUrl = `${result.url}?t=${Date.now()}`;
       await supabase.from("profiles").update({ avatar_url: newUrl } as any).eq("id", user.id);
       setAvatarUrl(newUrl);
+      // Auto-post to wall like Facebook
+      await createProfileUpdatePost(user.id, "avatar", newUrl);
       toast({ title: "Profile picture updated" });
     } catch (err: any) {
       toast({ title: "Compression failed", description: err.message, variant: "destructive" });
