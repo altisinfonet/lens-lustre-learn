@@ -317,7 +317,7 @@ const Discover = () => {
         ) : (
           <>
             <p className="text-[10px] tracking-[0.15em] uppercase text-muted-foreground mb-5" style={headingFont}>
-              {profiles.length} <T>{profiles.length !== 1 ? "photographers found" : "photographer found"}</T>
+              {profiles.length} <T>{profiles.length !== 1 ? "people found" : "person found"}</T>
             </p>
             <DiscoverGrid profiles={profiles} />
           </>
