@@ -853,62 +853,85 @@ const JudgePanel = () => {
               <>
                 {/* ── ROUND SELECTOR ── */}
                 {rounds.length > 0 && (
-                  <div className="px-3 py-2 border-b border-border bg-card">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
+                  <div className="px-3 py-2.5 border-b border-border bg-card space-y-2">
+                    {/* Round tabs */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 mr-1">
                         <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
-                        <span className="text-[9px] tracking-[0.15em] uppercase text-primary font-semibold" style={{ fontFamily: "var(--font-heading)" }}>Round</span>
+                        <span className="text-[9px] tracking-[0.15em] uppercase text-primary font-semibold" style={{ fontFamily: "var(--font-heading)" }}>Rounds</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        {rounds.map(round => {
-                          const isSelected = selectedRound === round.id;
-                          const isRoundActive = round.status === "active";
-                          const isCompleted = round.status === "completed";
-                          return (
-                            <div key={round.id} className="flex items-center gap-0.5">
+                      {rounds.map(round => {
+                        const isSelected = selectedRound === round.id;
+                        const isRoundActive = round.status === "active";
+                        const isCompleted = round.status === "completed";
+                        return (
+                          <button
+                            key={round.id}
+                            onClick={() => setSelectedRound(round.id)}
+                            className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-3 py-1.5 rounded-md whitespace-nowrap transition-all duration-200 border ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground shadow-sm border-primary"
+                                : isCompleted
+                                ? "bg-muted/60 text-muted-foreground border-border"
+                                : "bg-muted/30 text-foreground hover:bg-muted/60 border-border/50"
+                            }`}
+                            style={{ fontFamily: "var(--font-heading)" }}
+                          >
+                            {isRoundActive && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />}
+                            {isCompleted && <CheckCircle className="h-3 w-3 shrink-0 text-green-500" />}
+                            {round.name}
+                            <span className={`text-[8px] px-1 py-0.5 rounded uppercase tracking-wider ${
+                              isRoundActive ? "bg-green-500/20 text-green-600" : isCompleted ? "bg-muted text-muted-foreground" : "bg-yellow-500/20 text-yellow-600"
+                            }`}>{round.status === "active" ? "LIVE" : round.status === "completed" ? "DONE" : "PENDING"}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Active round action bar */}
+                    {(() => {
+                      const activeRound = rounds.find(r => r.id === selectedRound);
+                      if (!activeRound) return null;
+                      return (
+                        <div className="flex items-center justify-between gap-3 bg-muted/30 rounded-lg px-3 py-2 border border-border/50">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                            <span>Viewing: <strong className="text-foreground">{activeRound.name}</strong></span>
+                            {activeRound.status === "active" && (
+                              <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 border border-green-500/30">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Judging in progress
+                              </span>
+                            )}
+                            {activeRound.status === "completed" && (
+                              <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                <CheckCircle className="h-3 w-3" /> Round completed
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {activeRound.status === "active" && (
                               <button
-                                onClick={() => setSelectedRound(round.id)}
-                                className={`inline-flex items-center gap-1 text-[10px] font-medium px-3 py-1.5 rounded-md whitespace-nowrap transition-all duration-200 ${
-                                  isSelected
-                                    ? "bg-primary text-primary-foreground shadow-sm"
-                                    : isCompleted
-                                    ? "bg-muted/60 text-muted-foreground"
-                                    : "bg-muted/30 text-foreground hover:bg-muted/60"
-                                }`}
+                                onClick={() => handleCompleteRound(activeRound.id)}
+                                className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-4 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors shadow-sm"
                                 style={{ fontFamily: "var(--font-heading)" }}
                               >
-                                {isRoundActive && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />}
-                                {isCompleted && <CheckCircle className="h-3 w-3 shrink-0 opacity-60" />}
-                                {round.name}
+                                <CheckCircle className="h-3.5 w-3.5" />
+                                Complete This Round
                               </button>
-                              {/* Complete round button for admin/judge on active round */}
-                              {isRoundActive && isSelected && (
-                                <button
-                                  onClick={() => handleCompleteRound(round.id)}
-                                  className="text-[8px] px-1.5 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-0.5"
-                                  style={{ fontFamily: "var(--font-heading)" }}
-                                  title="Mark this round as completed"
-                                >
-                                  <ShieldCheck className="h-3 w-3" />
-                                  Done
-                                </button>
-                              )}
-                              {/* Activate button for admin on pending rounds */}
-                              {isAdmin && round.status === "pending" && !isRoundActive && (
-                                <button
-                                  onClick={() => handleActivateRound(round.id)}
-                                  className="text-[8px] px-1.5 py-1 rounded bg-primary/80 text-primary-foreground hover:bg-primary transition-colors"
-                                  style={{ fontFamily: "var(--font-heading)" }}
-                                  title="Set this round as active"
-                                >
-                                  Go Live
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                            )}
+                            {isAdmin && activeRound.status === "pending" && (
+                              <button
+                                onClick={() => handleActivateRound(activeRound.id)}
+                                className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+                                style={{ fontFamily: "var(--font-heading)" }}
+                              >
+                                <Zap className="h-3.5 w-3.5" />
+                                Activate Round
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
