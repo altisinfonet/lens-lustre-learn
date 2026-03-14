@@ -458,7 +458,12 @@ const JudgePanel = () => {
             </button>
             <div>
               <h3 className="text-sm text-white font-medium" style={{ fontFamily: "var(--font-display)" }}>{selectedEntry.title}</h3>
-              <p className="text-[11px] text-white/50">by {selectedEntry.photographer_name || "Anonymous"}</p>
+              <p className="text-[11px] text-white/50">
+                by {selectedEntry.photographer_name || "Anonymous"}
+                {selectedRound && rounds.length > 0 && (
+                  <> · <span className="text-green-400">{rounds.find(r => r.id === selectedRound)?.name || "Round"}</span></>
+                )}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
