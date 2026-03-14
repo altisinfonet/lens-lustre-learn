@@ -786,10 +786,14 @@ const JudgePanel = () => {
                                         borderColor: isActive ? tag.color : undefined,
                                       }}
                                     >
-                                      <span
-                                        className="w-2 h-2 rounded-full shrink-0"
-                                        style={{ backgroundColor: tag.color }}
-                                      />
+                                      {tag.image_url ? (
+                                        <img src={tag.image_url} alt={tag.label} className="h-4 w-auto object-contain" />
+                                      ) : (
+                                        <span
+                                          className="w-2 h-2 rounded-full shrink-0"
+                                          style={{ backgroundColor: tag.color }}
+                                        />
+                                      )}
                                       {tag.label}
                                       {totalCount > 0 && (
                                         <span className="text-[8px] opacity-60">({totalCount})</span>
