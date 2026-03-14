@@ -534,7 +534,13 @@ const JudgePanel = () => {
                         onClick={() => setExpandedEntry(isExpanded ? null : entry.id)}
                       >
                         {entry.photos.length > 0 && (
-                          <img src={entry.photos[0]} alt={entry.title} className="w-20 h-20 object-cover shrink-0 border border-border" />
+                          <div className="relative group cursor-pointer" onClick={(e) => { e.stopPropagation(); setViewerIndex(entries.indexOf(entry)); }}>
+                            <img src={entry.photos[0]} alt={entry.title} className="w-20 h-20 object-cover shrink-0 border border-border" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Maximize2 className="h-4 w-4 text-white" />
+                            </div>
+                          </div>
+                        )}
                         )}
 
                         <div className="flex-1 min-w-0">
