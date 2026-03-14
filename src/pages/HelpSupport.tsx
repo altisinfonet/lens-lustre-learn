@@ -86,7 +86,7 @@ const HelpSupport = () => {
   };
 
   const uploadAttachment = async (file: File): Promise<{ url: string; name: string } | null> => {
-    const safe = await scanFileWithToast(file, toast, { allowedTypes: "image+pdf+document", maxSize: 10 * 1024 * 1024 });
+    const safe = await scanFileWithToast(file, toast, { allowedTypes: "image+pdf+document", maxSize: 50 * 1024 * 1024 });
     if (!safe) return null;
     const ext = file.name.split(".").pop() || "bin";
     const path = `${user!.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
