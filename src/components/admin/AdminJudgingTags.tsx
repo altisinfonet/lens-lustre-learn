@@ -101,33 +101,53 @@ const AdminJudgingTags = ({ adminId }: Props) => {
       </div>
 
       {/* Add new tag */}
-      <div className="flex items-center gap-3 border border-border p-4">
-        <input
-          type="color"
-          value={newColor}
-          onChange={(e) => setNewColor(e.target.value)}
-          className="w-8 h-8 cursor-pointer border border-border bg-transparent"
-          title="Tag color"
-        />
-        <input
-          type="text"
-          value={newLabel}
-          onChange={(e) => setNewLabel(e.target.value)}
-          placeholder="New tag name (e.g. Best Composition)"
-          className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm transition-colors duration-500"
-          style={{ fontFamily: "var(--font-body)" }}
-          maxLength={100}
-          onKeyDown={(e) => e.key === "Enter" && addTag()}
-        />
-        <button
-          onClick={addTag}
-          disabled={!newLabel.trim() || adding}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] tracking-[0.15em] uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          {adding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-          Add Tag
-        </button>
+      <div className="border border-border p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={newColor}
+            onChange={(e) => setNewColor(e.target.value)}
+            className="w-8 h-8 cursor-pointer border border-border bg-transparent"
+            title="Tag color"
+          />
+          <select
+            value={newIcon}
+            onChange={(e) => setNewIcon(e.target.value)}
+            className="bg-transparent border border-border px-2 py-1.5 text-xs outline-none focus:border-primary"
+            style={{ fontFamily: "var(--font-body)" }}
+            title="Tag icon"
+          >
+            {STAMP_ICONS.map((ic) => (
+              <option key={ic} value={ic}>{ic.charAt(0).toUpperCase() + ic.slice(1)}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+            placeholder="New tag name (e.g. Top 100 Global Photographer)"
+            className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm transition-colors duration-500"
+            style={{ fontFamily: "var(--font-body)" }}
+            maxLength={100}
+            onKeyDown={(e) => e.key === "Enter" && addTag()}
+          />
+          <button
+            onClick={addTag}
+            disabled={!newLabel.trim() || adding}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] tracking-[0.15em] uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            {adding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+            Add Tag
+          </button>
+        </div>
+        {/* Live preview */}
+        {newLabel.trim() && (
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-muted-foreground uppercase tracking-wider" style={{ fontFamily: "var(--font-heading)" }}>Preview:</span>
+            <JudgingStampBadge label={newLabel} color={newColor} icon={newIcon} size="md" />
+          </div>
+        )}
       </div>
 
       {/* Tag list */}
