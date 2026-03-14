@@ -909,12 +909,16 @@ const AdminPanel = () => {
                   </div>
                 )}
 
-                {/* Judges & Rounds (only when editing existing competition) */}
-                {editingId && user && (
-                  <div className="space-y-4 pt-2">
+                {/* Judges & Rounds */}
+                {editingId && user ? (
+                  <div className="grid md:grid-cols-2 gap-4">
                     <AdminCompetitionJudges competitionId={editingId} adminId={user.id} />
                     <AdminCompetitionRounds competitionId={editingId} />
                   </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground italic border border-dashed border-border px-4 py-3" style={{ fontFamily: "var(--font-body)" }}>
+                    Save the competition first to add judges and judging rounds.
+                  </p>
                 )}
 
                 <div className="flex gap-3 pt-2">
