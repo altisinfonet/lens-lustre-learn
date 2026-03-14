@@ -1000,6 +1000,17 @@ const AdminPanel = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>${comp.entry_fee}</td>
+                      <td className="px-4 py-3">
+                        {comp.judge_names && comp.judge_names.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {comp.judge_names.map((name, i) => (
+                              <span key={i} className="text-[9px] px-1.5 py-0.5 border border-primary/30 bg-primary/5 text-primary" style={{ fontFamily: "var(--font-body)" }}>{name}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-muted-foreground italic">None</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                         {new Date(comp.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })} – {new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </td>
