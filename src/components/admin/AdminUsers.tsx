@@ -103,7 +103,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
     setBulkLoading(false);
   };
 
-  const fetchUsers = async (query = "", by = searchBy, badge = badgeFilter) => {
+  const fetchUsers = async (query = "", by = searchBy, badge = badgeFilter, role = roleFilter) => {
     setLoading(true);
 
     // If badge filter is set, first get user IDs with that badge
@@ -122,6 +122,22 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
       }
     }
 
+    // If role filter is set, first get user IDs with that role
+    let roleUserIds: string[] | null = null;
+    if (role) {
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", role as any);
+      roleUserIds = (roleData as any[])?.map((r: any) => r.user_id) || [];
+      if (roleUserIds.length === 0) {
+        setUsers([]);
+        toast({ title: `No users found with ${ROLE_LABELS[role] || role} role` });
+        setLoading(false);
+        return;
+      }
+    }
+
     const { data, error } = await supabase.rpc("admin_search_users", {
       search_query: query,
       search_by: by,
@@ -134,16 +150,25 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
     }
 
     if (data && data.length > 0) {
-      // Filter by badge user IDs if applicable
       let filtered = data as any[];
+      // Filter by badge user IDs if applicable
       if (badgeUserIds) {
         const idSet = new Set(badgeUserIds);
+        filtered = filtered.filter((u: any) => idSet.has(u.id));
+      }
+      // Filter by role user IDs if applicable
+      if (roleUserIds) {
+        const idSet = new Set(roleUserIds);
         filtered = filtered.filter((u: any) => idSet.has(u.id));
       }
 
       if (filtered.length === 0) {
         setUsers([]);
-        toast({ title: `No users found${badge ? ` with ${BADGES[badge as BadgeType]?.label} badge` : ""}` });
+        const filters = [
+          badge ? `${BADGES[badge as BadgeType]?.label} badge` : "",
+          role ? `${ROLE_LABELS[role] || role} role` : "",
+        ].filter(Boolean).join(" & ");
+        toast({ title: `No users found${filters ? ` with ${filters}` : ""}` });
         setLoading(false);
         return;
       }
