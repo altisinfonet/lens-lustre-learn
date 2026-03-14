@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Tag, Plus, Trash2, Loader2, GripVertical, ToggleLeft, ToggleRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import JudgingStampBadge, { STAMP_ICONS } from "@/components/JudgingStampBadge";
 
 interface JudgingTag {
   id: string;
@@ -9,6 +10,7 @@ interface JudgingTag {
   color: string;
   sort_order: number;
   is_active: boolean;
+  icon: string;
 }
 
 interface Props {
@@ -19,13 +21,14 @@ const AdminJudgingTags = ({ adminId }: Props) => {
   const [tags, setTags] = useState<JudgingTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [newLabel, setNewLabel] = useState("");
-  const [newColor, setNewColor] = useState("#6366f1");
+  const [newColor, setNewColor] = useState("#d4a017");
+  const [newIcon, setNewIcon] = useState("award");
   const [adding, setAdding] = useState(false);
 
   const fetchTags = async () => {
     const { data } = await supabase
       .from("judging_tags" as any)
-      .select("id, label, color, sort_order, is_active")
+      .select("id, label, color, sort_order, is_active, icon")
       .order("sort_order", { ascending: true });
     setTags((data as any as JudgingTag[]) || []);
     setLoading(false);
@@ -42,6 +45,7 @@ const AdminJudgingTags = ({ adminId }: Props) => {
     const { error } = await supabase.from("judging_tags" as any).insert({
       label: newLabel.trim(),
       color: newColor,
+      icon: newIcon,
       sort_order: maxOrder + 1,
       created_by: adminId,
     } as any);
@@ -51,7 +55,8 @@ const AdminJudgingTags = ({ adminId }: Props) => {
     } else {
       toast({ title: "Tag created" });
       setNewLabel("");
-      setNewColor("#6366f1");
+      setNewColor("#d4a017");
+      setNewIcon("award");
       fetchTags();
     }
   };
@@ -96,33 +101,53 @@ const AdminJudgingTags = ({ adminId }: Props) => {
       </div>
 
       {/* Add new tag */}
-      <div className="flex items-center gap-3 border border-border p-4">
-        <input
-          type="color"
-          value={newColor}
-          onChange={(e) => setNewColor(e.target.value)}
-          className="w-8 h-8 cursor-pointer border border-border bg-transparent"
-          title="Tag color"
-        />
-        <input
-          type="text"
-          value={newLabel}
-          onChange={(e) => setNewLabel(e.target.value)}
-          placeholder="New tag name (e.g. Best Composition)"
-          className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm transition-colors duration-500"
-          style={{ fontFamily: "var(--font-body)" }}
-          maxLength={100}
-          onKeyDown={(e) => e.key === "Enter" && addTag()}
-        />
-        <button
-          onClick={addTag}
-          disabled={!newLabel.trim() || adding}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] tracking-[0.15em] uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          {adding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-          Add Tag
-        </button>
+      <div className="border border-border p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            value={newColor}
+            onChange={(e) => setNewColor(e.target.value)}
+            className="w-8 h-8 cursor-pointer border border-border bg-transparent"
+            title="Tag color"
+          />
+          <select
+            value={newIcon}
+            onChange={(e) => setNewIcon(e.target.value)}
+            className="bg-transparent border border-border px-2 py-1.5 text-xs outline-none focus:border-primary"
+            style={{ fontFamily: "var(--font-body)" }}
+            title="Tag icon"
+          >
+            {STAMP_ICONS.map((ic) => (
+              <option key={ic} value={ic}>{ic.charAt(0).toUpperCase() + ic.slice(1)}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+            placeholder="New tag name (e.g. Top 100 Global Photographer)"
+            className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm transition-colors duration-500"
+            style={{ fontFamily: "var(--font-body)" }}
+            maxLength={100}
+            onKeyDown={(e) => e.key === "Enter" && addTag()}
+          />
+          <button
+            onClick={addTag}
+            disabled={!newLabel.trim() || adding}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] tracking-[0.15em] uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            {adding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+            Add Tag
+          </button>
+        </div>
+        {/* Live preview */}
+        {newLabel.trim() && (
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-muted-foreground uppercase tracking-wider" style={{ fontFamily: "var(--font-heading)" }}>Preview:</span>
+            <JudgingStampBadge label={newLabel} color={newColor} icon={newIcon} size="md" />
+          </div>
+        )}
       </div>
 
       {/* Tag list */}
@@ -130,13 +155,8 @@ const AdminJudgingTags = ({ adminId }: Props) => {
         {tags.map((tag) => (
           <div key={tag.id} className={`flex items-center gap-3 px-4 py-3 ${!tag.is_active ? "opacity-50" : ""}`}>
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
-            <div
-              className="w-4 h-4 rounded-full shrink-0 border border-border"
-              style={{ backgroundColor: tag.color }}
-            />
-            <span className="flex-1 text-sm" style={{ fontFamily: "var(--font-body)" }}>
-              {tag.label}
-            </span>
+            <JudgingStampBadge label={tag.label} color={tag.color} icon={tag.icon || "award"} size="sm" />
+            <span className="flex-1" />
             <button
               onClick={() => toggleActive(tag.id, tag.is_active)}
               className="p-1.5 hover:text-primary transition-colors"
