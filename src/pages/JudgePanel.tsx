@@ -693,27 +693,6 @@ const JudgePanel = () => {
               )}
             </div>
 
-            {selectedCompId && rounds.length > 0 && (
-              <div className="border-t border-border px-3 py-2 bg-muted/30">
-                <span className="text-[8px] tracking-[0.2em] uppercase text-muted-foreground flex items-center gap-1 mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                  <Layers className="h-2.5 w-2.5" /> Rounds
-                </span>
-                <div className="space-y-0.5">
-                  {rounds.map(round => (
-                    <button
-                      key={round.id}
-                      onClick={() => setSelectedRound(round.id === selectedRound ? null : round.id)}
-                      className={`w-full text-left text-[10px] px-2 py-1 rounded transition-all ${
-                        selectedRound === round.id ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted/60"
-                      }`}
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      R{round.round_number}: {round.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* ─── MIDDLE: Big Preview + Thumbnails ─── */}
