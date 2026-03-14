@@ -55,7 +55,8 @@ const AdminJudgingTags = ({ adminId }: Props) => {
     } else {
       toast({ title: "Tag created" });
       setNewLabel("");
-      setNewColor("#6366f1");
+      setNewColor("#d4a017");
+      setNewIcon("award");
       fetchTags();
     }
   };
