@@ -503,6 +503,11 @@ const JudgePanel = () => {
                 >
                   <Trophy className="h-3.5 w-3.5" />
                   {comp.title}
+                  {comp.entry_count !== undefined && (
+                    <span className="text-[8px] px-1.5 py-0.5 border border-border text-muted-foreground">
+                      {comp.entry_count} entries
+                    </span>
+                  )}
                   <span className={`text-[8px] px-1.5 py-0.5 border ${
                     comp.status === "judging" ? "border-yellow-500 text-yellow-500" : "border-primary text-primary"
                   }`}>
