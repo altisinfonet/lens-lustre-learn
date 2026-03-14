@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Trophy, Award, Medal, Eye, MessageSquare, ChevronDown, ChevronUp, Loader2, AlertTriangle, Camera, ShieldCheck } from "lucide-react";
+import { Star, Trophy, Award, Medal, Eye, MessageSquare, ChevronDown, ChevronUp, Loader2, AlertTriangle, Camera, ShieldCheck, Tag, Layers, Send } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +15,26 @@ interface Competition {
   category: string;
   status: string;
   ends_at: string;
+}
+
+interface JudgingTag {
+  id: string;
+  label: string;
+  color: string;
+}
+
+interface JudgingRound {
+  id: string;
+  round_number: number;
+  name: string;
+  status: string;
+}
+
+interface JudgeComment {
+  id: string;
+  comment: string;
+  created_at: string;
+  round_id: string | null;
 }
 
 interface JudgeEntry {
@@ -35,6 +55,9 @@ interface JudgeEntry {
   is_ai_generated: boolean;
   ai_detection_result: any[] | null;
   exif_data: any | null;
+  my_tags: string[];
+  all_tags: { tag_id: string; judge_id: string }[];
+  my_comments: JudgeComment[];
 }
 
 const PLACEMENTS = [
@@ -57,10 +80,18 @@ const JudgePanel = () => {
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
   const [scoringEntry, setScoringEntry] = useState<string | null>(null);
 
+  // Tags & rounds
+  const [availableTags, setAvailableTags] = useState<JudgingTag[]>([]);
+  const [rounds, setRounds] = useState<JudgingRound[]>([]);
+  const [selectedRound, setSelectedRound] = useState<string | null>(null);
+
   // Score form state per entry
   const [scoreInputs, setScoreInputs] = useState<Record<string, { score: string; feedback: string }>>({});
+  // Comment form per entry
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
   const isJudge = hasRole("judge") || hasRole("admin");
+  const isAdmin = hasRole("admin");
 
   useEffect(() => {
     if (!authLoading && !rolesLoading && !isJudge) {
@@ -68,20 +99,87 @@ const JudgePanel = () => {
     }
   }, [isJudge, authLoading, rolesLoading, navigate]);
 
-  // Fetch competitions (open or judging status)
+  // Fetch competitions assigned to this judge (or all for admin)
   useEffect(() => {
-    if (!isJudge) return;
+    if (!isJudge || !user) return;
     const fetchComps = async () => {
-      const { data } = await supabase
-        .from("competitions")
-        .select("id, title, category, status, ends_at")
-        .in("status", ["open", "judging"])
-        .order("ends_at", { ascending: true });
-      setCompetitions(data || []);
+      if (isAdmin) {
+        // Admin sees all open/judging competitions
+        const { data } = await supabase
+          .from("competitions")
+          .select("id, title, category, status, ends_at")
+          .in("status", ["open", "judging"])
+          .order("ends_at", { ascending: true });
+        setCompetitions(data || []);
+      } else {
+        // Judge sees only assigned competitions
+        const { data: assignments } = await supabase
+          .from("competition_judges" as any)
+          .select("competition_id")
+          .eq("judge_id", user.id);
+        
+        if (assignments && (assignments as any[]).length > 0) {
+          const compIds = (assignments as any[]).map((a: any) => a.competition_id);
+          const { data } = await supabase
+            .from("competitions")
+            .select("id, title, category, status, ends_at")
+            .in("id", compIds)
+            .in("status", ["open", "judging"])
+            .order("ends_at", { ascending: true });
+          setCompetitions(data || []);
+        } else {
+          setCompetitions([]);
+        }
+      }
       setLoading(false);
     };
     fetchComps();
-  }, [isJudge]);
+  }, [isJudge, isAdmin, user]);
+
+  // Fetch tags and rounds when competition is selected
+  useEffect(() => {
+    if (!selectedCompId) {
+      setAvailableTags([]);
+      setRounds([]);
+      return;
+    }
+
+    const fetchMeta = async () => {
+      // Fetch competition-specific tags, fall back to all global tags
+      const { data: compTags } = await supabase
+        .from("competition_judging_tags" as any)
+        .select("tag_id")
+        .eq("competition_id", selectedCompId);
+
+      if (compTags && (compTags as any[]).length > 0) {
+        const tagIds = (compTags as any[]).map((ct: any) => ct.tag_id);
+        const { data: tags } = await supabase
+          .from("judging_tags" as any)
+          .select("id, label, color")
+          .in("id", tagIds)
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        setAvailableTags((tags as any as JudgingTag[]) || []);
+      } else {
+        // No per-competition tags configured — use all active global tags
+        const { data: tags } = await supabase
+          .from("judging_tags" as any)
+          .select("id, label, color")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        setAvailableTags((tags as any as JudgingTag[]) || []);
+      }
+
+      // Fetch rounds
+      const { data: roundsData } = await supabase
+        .from("judging_rounds" as any)
+        .select("id, round_number, name, status")
+        .eq("competition_id", selectedCompId)
+        .order("round_number", { ascending: true });
+      setRounds((roundsData as any as JudgingRound[]) || []);
+    };
+    fetchMeta();
+  }, [selectedCompId]);
 
   // Fetch entries for selected competition
   useEffect(() => {
@@ -105,11 +203,13 @@ const JudgePanel = () => {
       const entryIds = rawEntries.map((e) => e.id);
       const userIds = [...new Set(rawEntries.map((e) => e.user_id))];
 
-      // Fetch in parallel: profiles, votes, scores
-      const [profilesRes, votesRes, scoresRes] = await Promise.all([
+      // Fetch in parallel: profiles, votes, scores, tag assignments, comments
+      const [profilesRes, votesRes, scoresRes, tagAssignRes, commentsRes] = await Promise.all([
         profilesPublic().select("id, full_name").in("id", userIds),
         supabase.from("competition_votes").select("entry_id").in("entry_id", entryIds),
         supabase.from("judge_scores").select("entry_id, judge_id, score, feedback").in("entry_id", entryIds),
+        supabase.from("judge_tag_assignments" as any).select("entry_id, tag_id, judge_id").in("entry_id", entryIds),
+        supabase.from("judge_comments" as any).select("id, entry_id, judge_id, comment, created_at, round_id").eq("judge_id", user.id).in("entry_id", entryIds),
       ]);
 
       const profileMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.id, p.full_name]) || []);
@@ -122,6 +222,10 @@ const JudgePanel = () => {
           ? entryScores.reduce((sum, s) => sum + s.score, 0) / entryScores.length
           : null;
 
+        const entryTagAssigns = (tagAssignRes.data as any[] || []).filter((t: any) => t.entry_id === entry.id);
+        const myTags = entryTagAssigns.filter((t: any) => t.judge_id === user.id).map((t: any) => t.tag_id);
+        const myComments = ((commentsRes.data as any[] || []).filter((c: any) => c.entry_id === entry.id) as JudgeComment[]);
+
         return {
           ...entry,
           placement: (entry as any).placement || null,
@@ -133,6 +237,9 @@ const JudgePanel = () => {
           my_score: myScore?.score ?? null,
           my_feedback: myScore?.feedback ?? null,
           avg_score: avgScore,
+          my_tags: myTags,
+          all_tags: entryTagAssigns,
+          my_comments: myComments,
         };
       });
 
@@ -168,7 +275,6 @@ const JudgePanel = () => {
     const existing = entries.find((e) => e.id === entryId)?.my_score;
 
     if (existing !== null) {
-      // Update
       const { error } = await supabase
         .from("judge_scores")
         .update({ score, feedback: input.feedback.trim() || null, updated_at: new Date().toISOString() })
@@ -180,7 +286,6 @@ const JudgePanel = () => {
         toast({ title: "Score updated" });
       }
     } else {
-      // Insert
       const { error } = await supabase
         .from("judge_scores")
         .insert({ entry_id: entryId, judge_id: user.id, score, feedback: input.feedback.trim() || null });
@@ -191,7 +296,6 @@ const JudgePanel = () => {
       }
     }
 
-    // Optimistic update
     setEntries((prev) =>
       prev.map((e) =>
         e.id === entryId ? { ...e, my_score: score, my_feedback: input.feedback.trim() || null } : e
@@ -201,7 +305,6 @@ const JudgePanel = () => {
   };
 
   const handlePlacement = async (entryId: string, placement: string | null) => {
-    // If assigning a unique placement (winner, 1st_runner_up, 2nd_runner_up), remove from others first
     if (placement && placement !== "most_viewed") {
       const existing = entries.find((e) => e.placement === placement && e.id !== entryId);
       if (existing) {
@@ -227,11 +330,81 @@ const JudgePanel = () => {
     setEntries((prev) =>
       prev.map((e) => {
         if (e.id === entryId) return { ...e, placement: newPlacement, status: newPlacement === "winner" ? "winner" : "approved" };
-        // Clear placement from others if same unique placement
         if (newPlacement && newPlacement !== "most_viewed" && e.placement === newPlacement) return { ...e, placement: null };
         return e;
       })
     );
+  };
+
+  const toggleTag = async (entryId: string, tagId: string) => {
+    if (!user) return;
+    const entry = entries.find((e) => e.id === entryId);
+    if (!entry) return;
+
+    const hasTag = entry.my_tags.includes(tagId);
+
+    if (hasTag) {
+      // Remove
+      await supabase
+        .from("judge_tag_assignments" as any)
+        .delete()
+        .eq("entry_id", entryId)
+        .eq("tag_id", tagId)
+        .eq("judge_id", user.id);
+      setEntries((prev) =>
+        prev.map((e) =>
+          e.id === entryId
+            ? { ...e, my_tags: e.my_tags.filter((t) => t !== tagId) }
+            : e
+        )
+      );
+    } else {
+      // Add
+      const { error } = await supabase.from("judge_tag_assignments" as any).insert({
+        entry_id: entryId,
+        tag_id: tagId,
+        judge_id: user.id,
+      } as any);
+      if (error) {
+        toast({ title: "Failed to assign tag", description: error.message, variant: "destructive" });
+        return;
+      }
+      setEntries((prev) =>
+        prev.map((e) =>
+          e.id === entryId
+            ? { ...e, my_tags: [...e.my_tags, tagId] }
+            : e
+        )
+      );
+    }
+  };
+
+  const addComment = async (entryId: string) => {
+    if (!user) return;
+    const text = commentInputs[entryId]?.trim();
+    if (!text) return;
+
+    const { data, error } = await supabase.from("judge_comments" as any).insert({
+      entry_id: entryId,
+      judge_id: user.id,
+      comment: text,
+      round_id: selectedRound || null,
+    } as any).select("id, comment, created_at, round_id").single();
+
+    if (error) {
+      toast({ title: "Failed to add comment", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    setCommentInputs((prev) => ({ ...prev, [entryId]: "" }));
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id === entryId
+          ? { ...e, my_comments: [...e.my_comments, data as any as JudgeComment] }
+          : e
+      )
+    );
+    toast({ title: "Private note saved" });
   };
 
   if (authLoading || rolesLoading || loading) {
@@ -243,6 +416,8 @@ const JudgePanel = () => {
   }
 
   if (!isJudge) return null;
+
+  const activeRound = rounds.find((r) => r.status === "active");
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -264,7 +439,7 @@ const JudgePanel = () => {
           </span>
           {competitions.length === 0 ? (
             <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-              No active competitions available for judging.
+              No competitions assigned to you for judging.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -292,6 +467,39 @@ const JudgePanel = () => {
           )}
         </div>
 
+        {/* Round selector (if rounds exist) */}
+        {selectedCompId && rounds.length > 0 && (
+          <div className="mb-6">
+            <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>
+              <Layers className="h-3 w-3 inline mr-1" />
+              Judging Round
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {rounds.map((round) => (
+                <button
+                  key={round.id}
+                  onClick={() => setSelectedRound(round.id === selectedRound ? null : round.id)}
+                  className={`inline-flex items-center gap-2 text-[10px] tracking-[0.15em] uppercase px-4 py-2 border transition-all duration-500 ${
+                    selectedRound === round.id
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-foreground/50"
+                  }`}
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  R{round.round_number}: {round.name}
+                  <span className={`text-[8px] px-1.5 py-0.5 border ${
+                    round.status === "active" ? "border-primary text-primary" :
+                    round.status === "completed" ? "border-muted-foreground/40 text-muted-foreground" :
+                    "border-yellow-500 text-yellow-500"
+                  }`}>
+                    {round.status}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Entries list */}
         {selectedCompId && (
           <div>
@@ -310,6 +518,7 @@ const JudgePanel = () => {
               <div className="space-y-4">
                 <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground block" style={{ fontFamily: "var(--font-heading)" }}>
                   {entries.length} entr{entries.length !== 1 ? "ies" : "y"} to judge
+                  {activeRound && <> · Round: <span className="text-primary">{activeRound.name}</span></>}
                 </span>
 
                 {entries.map((entry) => {
@@ -321,7 +530,6 @@ const JudgePanel = () => {
                         className="flex items-start gap-4 p-5 cursor-pointer hover:bg-muted/30 transition-colors duration-300"
                         onClick={() => setExpandedEntry(isExpanded ? null : entry.id)}
                       >
-                        {/* Thumbnail */}
                         {entry.photos.length > 0 && (
                           <img src={entry.photos[0]} alt={entry.title} className="w-20 h-20 object-cover shrink-0 border border-border" />
                         )}
@@ -339,6 +547,13 @@ const JudgePanel = () => {
                             {entry.is_ai_generated && (
                               <span className="text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 border border-orange-500 text-orange-500 bg-orange-500/10" style={{ fontFamily: "var(--font-heading)" }}>
                                 🤖 AI Generated
+                              </span>
+                            )}
+                            {/* Show tag count */}
+                            {entry.my_tags.length > 0 && (
+                              <span className="text-[8px] tracking-[0.15em] uppercase px-2 py-0.5 border border-primary/30 text-primary bg-primary/5" style={{ fontFamily: "var(--font-heading)" }}>
+                                <Tag className="h-2.5 w-2.5 inline mr-0.5" />
+                                {entry.my_tags.length} tag{entry.my_tags.length !== 1 ? "s" : ""}
                               </span>
                             )}
                           </div>
@@ -389,7 +604,6 @@ const JudgePanel = () => {
                                 AI & Authenticity Info
                               </span>
 
-                              {/* User declaration */}
                               <div className={`flex items-center gap-2 mb-3 text-[10px] px-3 py-2 border ${
                                 entry.is_ai_generated
                                   ? "border-destructive/40 bg-destructive/5 text-destructive"
@@ -402,7 +616,6 @@ const JudgePanel = () => {
                                 )}
                               </div>
 
-                              {/* Auto-detection results */}
                               {entry.ai_detection_result && Array.isArray(entry.ai_detection_result) && entry.ai_detection_result.length > 0 && (
                                 <div className="space-y-2 mb-3">
                                   <span className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
@@ -439,7 +652,6 @@ const JudgePanel = () => {
                                 </div>
                               )}
 
-                              {/* EXIF Data (shown when user overrode AI detection) */}
                               {entry.exif_data && (
                                 <div className="border border-primary/30 bg-primary/5 p-3 space-y-2">
                                   <div className="flex items-center gap-2 mb-1">
@@ -476,6 +688,48 @@ const JudgePanel = () => {
                                   </div>
                                 </div>
                               )}
+                            </div>
+                          )}
+
+                          {/* Tag Marking */}
+                          {availableTags.length > 0 && (
+                            <div className="px-5 pb-5 border-t border-border pt-5">
+                              <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>
+                                <Tag className="h-3 w-3 inline mr-1" />
+                                Tag This Entry
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                {availableTags.map((tag) => {
+                                  const isActive = entry.my_tags.includes(tag.id);
+                                  // Count how many judges assigned this tag
+                                  const totalCount = entry.all_tags.filter((t) => t.tag_id === tag.id).length;
+                                  return (
+                                    <button
+                                      key={tag.id}
+                                      onClick={() => toggleTag(entry.id, tag.id)}
+                                      className={`inline-flex items-center gap-1.5 text-[10px] tracking-[0.1em] px-3 py-1.5 border transition-all duration-300 ${
+                                        isActive
+                                          ? "border-current bg-current/10"
+                                          : "border-border text-muted-foreground hover:border-foreground/50"
+                                      }`}
+                                      style={{
+                                        fontFamily: "var(--font-heading)",
+                                        color: isActive ? tag.color : undefined,
+                                        borderColor: isActive ? tag.color : undefined,
+                                      }}
+                                    >
+                                      <span
+                                        className="w-2 h-2 rounded-full shrink-0"
+                                        style={{ backgroundColor: tag.color }}
+                                      />
+                                      {tag.label}
+                                      {totalCount > 0 && (
+                                        <span className="text-[8px] opacity-60">({totalCount})</span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
 
@@ -554,11 +808,59 @@ const JudgePanel = () => {
                             </div>
                           </div>
 
-                          {/* Comments */}
+                          {/* Private Judge Notes */}
                           <div className="px-5 pb-5 border-t border-border pt-5">
                             <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>
                               <MessageSquare className="h-3 w-3 inline mr-1" />
-                              Comments
+                              Private Notes (visible to you & admins only)
+                            </span>
+
+                            {/* Existing comments */}
+                            {entry.my_comments.length > 0 && (
+                              <div className="space-y-2 mb-3">
+                                {entry.my_comments.map((c) => {
+                                  const roundName = rounds.find((r) => r.id === c.round_id)?.name;
+                                  return (
+                                    <div key={c.id} className="text-xs px-3 py-2 border border-border/50 bg-muted/20" style={{ fontFamily: "var(--font-body)" }}>
+                                      <p className="text-foreground">{c.comment}</p>
+                                      <p className="text-[9px] text-muted-foreground mt-1">
+                                        {new Date(c.created_at).toLocaleString()}
+                                        {roundName && <> · <span className="text-primary">{roundName}</span></>}
+                                      </p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Add new comment */}
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={commentInputs[entry.id] || ""}
+                                onChange={(e) => setCommentInputs((prev) => ({ ...prev, [entry.id]: e.target.value }))}
+                                placeholder="Add a private note..."
+                                className="flex-1 bg-transparent border border-border focus:border-primary outline-none px-3 py-2 text-sm transition-colors duration-500"
+                                style={{ fontFamily: "var(--font-body)" }}
+                                maxLength={500}
+                                onKeyDown={(e) => e.key === "Enter" && addComment(entry.id)}
+                              />
+                              <button
+                                onClick={() => addComment(entry.id)}
+                                disabled={!commentInputs[entry.id]?.trim()}
+                                className="px-4 py-2 bg-primary text-primary-foreground text-[10px] tracking-[0.15em] uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+                                style={{ fontFamily: "var(--font-heading)" }}
+                              >
+                                <Send className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Public Comments */}
+                          <div className="px-5 pb-5 border-t border-border pt-5">
+                            <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground block mb-3" style={{ fontFamily: "var(--font-heading)" }}>
+                              <MessageSquare className="h-3 w-3 inline mr-1" />
+                              Public Comments
                             </span>
                             <CommentsSection entryId={entry.id} />
                           </div>
