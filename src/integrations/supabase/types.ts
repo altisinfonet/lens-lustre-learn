@@ -1242,6 +1242,7 @@ export type Database = {
           created_by: string
           icon: string | null
           id: string
+          image_url: string | null
           is_active: boolean
           label: string
           sort_order: number
@@ -1252,6 +1253,7 @@ export type Database = {
           created_by: string
           icon?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           label: string
           sort_order?: number
@@ -1262,6 +1264,7 @@ export type Database = {
           created_by?: string
           icon?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           label?: string
           sort_order?: number

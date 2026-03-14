@@ -19,13 +19,36 @@ interface StampBadgeProps {
   label: string;
   color: string;
   icon?: string;
+  imageUrl?: string | null;
   size?: "sm" | "md";
   className?: string;
 }
 
-const JudgingStampBadge = ({ label, color, icon = "award", size = "sm", className = "" }: StampBadgeProps) => {
+const JudgingStampBadge = ({ label, color, icon = "award", imageUrl, size = "sm", className = "" }: StampBadgeProps) => {
   const IconComp = ICON_MAP[icon] || Award;
   const isSm = size === "sm";
+
+  // If a custom image is uploaded, render image-based badge
+  if (imageUrl) {
+    return (
+      <div
+        className={`
+          inline-flex items-center gap-1.5 select-none pointer-events-none
+          ${isSm ? "px-1.5 py-0.5" : "px-2 py-1"}
+          rounded-sm
+          ${className}
+        `}
+        title={label}
+      >
+        <img
+          src={imageUrl}
+          alt={label}
+          className={`${isSm ? "h-6" : "h-10"} w-auto object-contain`}
+          draggable={false}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
