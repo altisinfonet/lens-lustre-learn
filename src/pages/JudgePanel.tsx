@@ -540,8 +540,8 @@ const JudgePanel = () => {
                               <Maximize2 className="h-4 w-4 text-white" />
                             </div>
                           </div>
-                        )}
-                        )}
+                         )}
+
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
