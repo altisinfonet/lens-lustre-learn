@@ -72,6 +72,17 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
         { icon: Scale, label: "Judge Panel", to: "/judge", show: true, tooltip: "Review entries" },
       ],
     },
+    {
+      title: "Account",
+      items: [
+        { icon: User, label: "Profile", to: "/profile", show: true, tooltip: "View your profile" },
+        { icon: Edit2, label: "Edit Profile", to: "/edit-profile", show: true, tooltip: "Update your info" },
+        { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard?tab=overview", show: true, tooltip: "Your home base" },
+        { icon: ImageIcon, label: "My Submissions", to: "/dashboard?tab=submissions", show: true, tooltip: "Competition entries" },
+        { icon: Trophy, label: "Competitions", to: "/competitions", show: true, tooltip: "Browse & enter" },
+        { icon: HelpCircle, label: "Help & Support", to: "/help-support", show: true, tooltip: "Get assistance" },
+      ],
+    },
   ] : [
     {
       title: "Main",

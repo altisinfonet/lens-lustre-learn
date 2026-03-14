@@ -74,7 +74,7 @@ const CompetitionDetail = () => {
 
       const { data: rawEntries } = await supabase
         .from("competition_entries")
-        .select("id, title, description, photos, user_id, status, created_at")
+        .select("id, title, description, photos, user_id, status, created_at, placement")
         .eq("competition_id", id)
         .in("status", ["submitted", "approved", "winner"])
         .order("created_at", { ascending: false });
