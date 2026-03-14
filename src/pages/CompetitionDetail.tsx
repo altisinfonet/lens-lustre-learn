@@ -287,17 +287,17 @@ const CompetitionDetail = () => {
                               🏆 <T>Winner</T>
                             </span>
                           )}
-                          {(entry as any).placement === "1st_runner_up" && (
+                          {entry.placement === "1st_runner_up" && (
                             <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-muted-foreground/90 text-background" style={{ fontFamily: "var(--font-heading)" }}>
                               🥈 <T>1st Runner Up</T>
                             </span>
                           )}
-                          {(entry as any).placement === "2nd_runner_up" && (
+                          {entry.placement === "2nd_runner_up" && (
                             <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-amber-700/90 text-background" style={{ fontFamily: "var(--font-heading)" }}>
                               🥉 <T>2nd Runner Up</T>
                             </span>
                           )}
-                          {(entry as any).placement === "most_viewed" && (
+                          {entry.placement === "most_viewed" && (
                             <span className="absolute top-2 left-2 text-[9px] tracking-[0.2em] uppercase px-3 py-1 bg-primary/90 text-primary-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                               👁 <T>Most Viewed</T>
                             </span>
