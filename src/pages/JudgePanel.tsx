@@ -178,7 +178,13 @@ const JudgePanel = () => {
         setAvailableTags((tags as any as JudgingTag[]) || []);
       }
       const { data: roundsData } = await supabase.from("judging_rounds" as any).select("id, round_number, name, status").eq("competition_id", selectedCompId).order("round_number", { ascending: true });
-      setRounds((roundsData as any as JudgingRound[]) || []);
+      const fetchedRounds = (roundsData as any as JudgingRound[]) || [];
+      setRounds(fetchedRounds);
+      // Auto-select the active round, or first round if none active
+      const active = fetchedRounds.find(r => r.status === "active");
+      if (active) setSelectedRound(active.id);
+      else if (fetchedRounds.length > 0) setSelectedRound(fetchedRounds[0].id);
+      else setSelectedRound(null);
     };
     fetchMeta();
   }, [selectedCompId]);
@@ -452,7 +458,12 @@ const JudgePanel = () => {
             </button>
             <div>
               <h3 className="text-sm text-white font-medium" style={{ fontFamily: "var(--font-display)" }}>{selectedEntry.title}</h3>
-              <p className="text-[11px] text-white/50">by {selectedEntry.photographer_name || "Anonymous"}</p>
+              <p className="text-[11px] text-white/50">
+                by {selectedEntry.photographer_name || "Anonymous"}
+                {selectedRound && rounds.length > 0 && (
+                  <> · <span className="text-green-400">{rounds.find(r => r.id === selectedRound)?.name || "Round"}</span></>
+                )}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -635,9 +646,15 @@ const JudgePanel = () => {
           Judge <em className="italic text-primary">Panel</em>
         </h1>
 
-        {/* Progress bar */}
+        {/* Progress bar with round info */}
         {selectedCompId && totalEntries > 0 && (
           <div className="mb-3 flex items-center gap-3">
+            {activeRound && (
+              <span className="shrink-0 text-[10px] px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-semibold flex items-center gap-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                {activeRound.name}
+              </span>
+            )}
             <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
               <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${(scoredEntries / totalEntries) * 100}%` }} transition={{ duration: 0.5 }} />
             </div>
@@ -687,27 +704,6 @@ const JudgePanel = () => {
               )}
             </div>
 
-            {selectedCompId && rounds.length > 0 && (
-              <div className="border-t border-border px-3 py-2 bg-muted/30">
-                <span className="text-[8px] tracking-[0.2em] uppercase text-muted-foreground flex items-center gap-1 mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                  <Layers className="h-2.5 w-2.5" /> Rounds
-                </span>
-                <div className="space-y-0.5">
-                  {rounds.map(round => (
-                    <button
-                      key={round.id}
-                      onClick={() => setSelectedRound(round.id === selectedRound ? null : round.id)}
-                      className={`w-full text-left text-[10px] px-2 py-1 rounded transition-all ${
-                        selectedRound === round.id ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted/60"
-                      }`}
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      R{round.round_number}: {round.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* ─── MIDDLE: Big Preview + Thumbnails ─── */}
@@ -726,6 +722,88 @@ const JudgePanel = () => {
               </div>
             ) : (
               <>
+                {/* ── ROUND SELECTOR BANNER ── */}
+                {rounds.length > 0 && (
+                  <div className="px-3 py-2.5 border-b border-border bg-primary/5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-[10px] tracking-[0.2em] uppercase text-primary font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                          Judging Round
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                        {rounds.map(round => {
+                          const isActive = selectedRound === round.id;
+                          const isRoundActive = round.status === "active";
+                          const isCompleted = round.status === "completed";
+                          return (
+                            <button
+                              key={round.id}
+                              onClick={() => setSelectedRound(round.id)}
+                              className={`relative inline-flex items-center gap-1.5 text-[11px] font-medium px-4 py-2 rounded-full whitespace-nowrap transition-all duration-200 border-2 ${
+                                isActive
+                                  ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
+                                  : isCompleted
+                                  ? "bg-muted/40 text-muted-foreground border-muted-foreground/20 opacity-60"
+                                  : "bg-background text-foreground border-border hover:border-primary/50 hover:scale-105"
+                              }`}
+                              style={{ fontFamily: "var(--font-heading)" }}
+                            >
+                              {isRoundActive && !isActive && (
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
+                              )}
+                              {isCompleted && <CheckCircle className="h-3 w-3 shrink-0" />}
+                              R{round.round_number}: {round.name}
+                              {isRoundActive && (
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/25" : "bg-green-500/15 text-green-600 dark:text-green-400"}`}>
+                                  LIVE
+                                </span>
+                              )}
+                              {isCompleted && (
+                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/25" : "bg-muted-foreground/10"}`}>
+                                  DONE
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {/* Active round info */}
+                    {selectedRound && (
+                      <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground ml-6" style={{ fontFamily: "var(--font-body)" }}>
+                        {(() => {
+                          const r = rounds.find(r => r.id === selectedRound);
+                          if (!r) return null;
+                          return (
+                            <>
+                              <span>You are scoring for <strong className="text-foreground">{r.name}</strong></span>
+                              <span className={`inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full border ${
+                                r.status === "active" ? "border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/5" :
+                                r.status === "completed" ? "border-muted-foreground/30 text-muted-foreground bg-muted/30" :
+                                "border-yellow-500/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5"
+                              }`} style={{ fontFamily: "var(--font-heading)" }}>
+                                {r.status === "active" ? "🟢" : r.status === "completed" ? "✅" : "⏳"} {r.status}
+                              </span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* No rounds warning for admin */}
+                {rounds.length === 0 && isAdmin && (
+                  <div className="px-3 py-2 border-b border-border bg-yellow-500/5 flex items-center gap-2">
+                    <AlertTriangle className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
+                    <span className="text-[10px] text-yellow-600 dark:text-yellow-400" style={{ fontFamily: "var(--font-body)" }}>
+                      No judging rounds created. Go to <strong>Admin → Competitions</strong> to add rounds for this competition.
+                    </span>
+                  </div>
+                )}
+
                 {/* ── Modern Filter Pills ── */}
                 <div className="px-3 py-2.5 border-b border-border bg-muted/10">
                   <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
