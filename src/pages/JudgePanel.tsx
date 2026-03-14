@@ -22,6 +22,7 @@ interface JudgingTag {
   id: string;
   label: string;
   color: string;
+  image_url?: string | null;
 }
 
 interface JudgingRound {
@@ -177,7 +178,7 @@ const JudgePanel = () => {
         const tagIds = (compTags as any[]).map((ct: any) => ct.tag_id);
         const { data: tags } = await supabase
           .from("judging_tags" as any)
-          .select("id, label, color")
+          .select("id, label, color, image_url")
           .in("id", tagIds)
           .eq("is_active", true)
           .order("sort_order", { ascending: true });
@@ -186,7 +187,7 @@ const JudgePanel = () => {
         // No per-competition tags configured — use all active global tags
         const { data: tags } = await supabase
           .from("judging_tags" as any)
-          .select("id, label, color")
+          .select("id, label, color, image_url")
           .eq("is_active", true)
           .order("sort_order", { ascending: true });
         setAvailableTags((tags as any as JudgingTag[]) || []);
@@ -785,10 +786,14 @@ const JudgePanel = () => {
                                         borderColor: isActive ? tag.color : undefined,
                                       }}
                                     >
-                                      <span
-                                        className="w-2 h-2 rounded-full shrink-0"
-                                        style={{ backgroundColor: tag.color }}
-                                      />
+                                      {tag.image_url ? (
+                                        <img src={tag.image_url} alt={tag.label} className="h-4 w-auto object-contain" />
+                                      ) : (
+                                        <span
+                                          className="w-2 h-2 rounded-full shrink-0"
+                                          style={{ backgroundColor: tag.color }}
+                                        />
+                                      )}
                                       {tag.label}
                                       {totalCount > 0 && (
                                         <span className="text-[8px] opacity-60">({totalCount})</span>
