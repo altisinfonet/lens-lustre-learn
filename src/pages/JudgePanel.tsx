@@ -139,8 +139,17 @@ const JudgePanel = () => {
             .in("id", compIds)
             .in("status", ["open", "judging"])
             .order("ends_at", { ascending: true });
-          setCompetitions(data || []);
-        } else {
+          if (data && data.length > 0) {
+            const { data: entryCounts } = await supabase
+              .from("competition_entries")
+              .select("competition_id")
+              .in("competition_id", data.map(c => c.id));
+            const countMap: Record<string, number> = {};
+            (entryCounts || []).forEach(e => { countMap[e.competition_id] = (countMap[e.competition_id] || 0) + 1; });
+            setCompetitions(data.map(c => ({ ...c, entry_count: countMap[c.id] || 0 })));
+          } else {
+            setCompetitions([]);
+          }
           setCompetitions([]);
         }
       }

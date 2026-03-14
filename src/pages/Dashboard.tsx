@@ -98,8 +98,8 @@ const Dashboard = () => {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
 
-  // Recent wall posts state
   const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
+  const [myEntries, setMyEntries] = useState<MyCompEntry[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
