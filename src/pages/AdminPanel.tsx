@@ -916,9 +916,20 @@ const AdminPanel = () => {
                     <AdminCompetitionRounds competitionId={editingId} />
                   </div>
                 ) : (
-                  <p className="text-[10px] text-muted-foreground italic border border-dashed border-border px-4 py-3" style={{ fontFamily: "var(--font-body)" }}>
-                    Save the competition first to add judges and judging rounds.
-                  </p>
+                  <div className="border border-dashed border-border px-4 py-3 flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground italic" style={{ fontFamily: "var(--font-body)" }}>
+                      Judges & rounds will be available after saving.
+                    </span>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving || !form.title.trim() || !form.starts_at || !form.ends_at}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-[9px] tracking-[0.15em] uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                      Save & Add Judges/Rounds
+                    </button>
+                  </div>
                 )}
 
                 <div className="flex gap-3 pt-2">
