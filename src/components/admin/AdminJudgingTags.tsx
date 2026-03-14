@@ -21,7 +21,8 @@ const AdminJudgingTags = ({ adminId }: Props) => {
   const [tags, setTags] = useState<JudgingTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [newLabel, setNewLabel] = useState("");
-  const [newColor, setNewColor] = useState("#6366f1");
+  const [newColor, setNewColor] = useState("#d4a017");
+  const [newIcon, setNewIcon] = useState("award");
   const [adding, setAdding] = useState(false);
 
   const fetchTags = async () => {
