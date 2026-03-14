@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Trophy, Award, Medal, Eye, MessageSquare, ChevronDown, ChevronUp, Loader2, AlertTriangle, Camera, ShieldCheck, Tag, Layers, Send } from "lucide-react";
+import { Star, Trophy, Award, Medal, Eye, MessageSquare, ChevronDown, ChevronUp, Loader2, AlertTriangle, Camera, ShieldCheck, Tag, Layers, Send, Maximize2 } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
+import JuryImageViewer from "@/components/JuryImageViewer";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,6 +90,8 @@ const JudgePanel = () => {
   const [scoreInputs, setScoreInputs] = useState<Record<string, { score: string; feedback: string }>>({});
   // Comment form per entry
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  // Image viewer
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const isJudge = hasRole("judge") || hasRole("admin");
   const isAdmin = hasRole("admin");
@@ -407,6 +410,40 @@ const JudgePanel = () => {
     toast({ title: "Private note saved" });
   };
 
+  // Viewer-compatible handlers
+  const handleViewerScore = async (entryId: string, score: number, feedback: string) => {
+    if (!user) return;
+    const existing = entries.find((e) => e.id === entryId)?.my_score;
+    if (existing !== null) {
+      await supabase.from("judge_scores").update({ score, feedback: feedback || null, updated_at: new Date().toISOString() }).eq("entry_id", entryId).eq("judge_id", user.id);
+    } else {
+      await supabase.from("judge_scores").insert({ entry_id: entryId, judge_id: user.id, score, feedback: feedback || null });
+    }
+    setEntries((prev) => prev.map((e) => e.id === entryId ? { ...e, my_score: score, my_feedback: feedback || null } : e));
+    toast({ title: existing !== null ? "Score updated" : "Score saved" });
+  };
+
+  const handleViewerComment = async (entryId: string, text: string) => {
+    if (!user) return;
+    const { data, error } = await supabase.from("judge_comments" as any).insert({
+      entry_id: entryId, judge_id: user.id, comment: text, round_id: selectedRound || null,
+    } as any).select("id, comment, created_at, round_id").single();
+    if (error) { toast({ title: "Failed", variant: "destructive" }); return; }
+    setEntries((prev) => prev.map((e) => e.id === entryId ? { ...e, my_comments: [...e.my_comments, data as any as JudgeComment] } : e));
+    toast({ title: "Note saved" });
+  };
+
+  const handleViewerStatus = async (entryId: string, status: "rejected" | "approved") => {
+    const newStatus = status === "rejected" ? "rejected" : "approved";
+    await supabase.from("competition_entries").update({ status: newStatus, updated_at: new Date().toISOString() }).eq("id", entryId);
+    if (status === "rejected") {
+      setEntries((prev) => prev.filter((e) => e.id !== entryId));
+      toast({ title: "Entry rejected" });
+    } else {
+      toast({ title: "Entry shortlisted" });
+    }
+  };
+
   if (authLoading || rolesLoading || loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
@@ -531,8 +568,14 @@ const JudgePanel = () => {
                         onClick={() => setExpandedEntry(isExpanded ? null : entry.id)}
                       >
                         {entry.photos.length > 0 && (
-                          <img src={entry.photos[0]} alt={entry.title} className="w-20 h-20 object-cover shrink-0 border border-border" />
-                        )}
+                          <div className="relative group cursor-pointer" onClick={(e) => { e.stopPropagation(); setViewerIndex(entries.indexOf(entry)); }}>
+                            <img src={entry.photos[0]} alt={entry.title} className="w-20 h-20 object-cover shrink-0 border border-border" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Maximize2 className="h-4 w-4 text-white" />
+                            </div>
+                          </div>
+                         )}
+
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -872,6 +915,22 @@ const JudgePanel = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* Jury Image Viewer */}
+        {viewerIndex !== null && (
+          <JuryImageViewer
+            entries={entries}
+            currentIndex={viewerIndex}
+            availableTags={availableTags}
+            rounds={rounds}
+            onClose={() => setViewerIndex(null)}
+            onNavigate={(i) => setViewerIndex(i)}
+            onToggleTag={toggleTag}
+            onScore={handleViewerScore}
+            onAddComment={handleViewerComment}
+            onStatusChange={handleViewerStatus}
+          />
         )}
       </div>
     </main>
