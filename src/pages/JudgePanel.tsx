@@ -178,7 +178,13 @@ const JudgePanel = () => {
         setAvailableTags((tags as any as JudgingTag[]) || []);
       }
       const { data: roundsData } = await supabase.from("judging_rounds" as any).select("id, round_number, name, status").eq("competition_id", selectedCompId).order("round_number", { ascending: true });
-      setRounds((roundsData as any as JudgingRound[]) || []);
+      const fetchedRounds = (roundsData as any as JudgingRound[]) || [];
+      setRounds(fetchedRounds);
+      // Auto-select the active round, or first round if none active
+      const active = fetchedRounds.find(r => r.status === "active");
+      if (active) setSelectedRound(active.id);
+      else if (fetchedRounds.length > 0) setSelectedRound(fetchedRounds[0].id);
+      else setSelectedRound(null);
     };
     fetchMeta();
   }, [selectedCompId]);
