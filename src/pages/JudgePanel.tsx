@@ -187,7 +187,7 @@ const JudgePanel = () => {
         // No per-competition tags configured — use all active global tags
         const { data: tags } = await supabase
           .from("judging_tags" as any)
-          .select("id, label, color")
+          .select("id, label, color, image_url")
           .eq("is_active", true)
           .order("sort_order", { ascending: true });
         setAvailableTags((tags as any as JudgingTag[]) || []);
