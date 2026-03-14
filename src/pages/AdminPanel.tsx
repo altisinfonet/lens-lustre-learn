@@ -791,6 +791,9 @@ const AdminPanel = () => {
         {/* Users Tab */}
         {tab === "users" && <AdminUsers user={user} />}
 
+        {/* Judging Tags Tab */}
+        {tab === "judging_tags" && user && <AdminJudgingTags adminId={user.id} />}
+
         {/* Competitions Tab */}
         {tab === "competitions" && (
           <div>
