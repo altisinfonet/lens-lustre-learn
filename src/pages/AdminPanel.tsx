@@ -984,7 +984,7 @@ const AdminPanel = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Title", "Category", "Status", "Fee", "Dates", "Actions"].map((h) => (
+                    {["Title", "Category", "Status", "Fee", "Judges", "Dates", "Actions"].map((h) => (
                       <th key={h} className="px-4 py-3 text-[9px] tracking-[0.2em] uppercase text-muted-foreground font-normal" style={{ fontFamily: "var(--font-heading)" }}>{h}</th>
                     ))}
                   </tr>
