@@ -917,6 +917,22 @@ const JudgePanel = () => {
             )}
           </div>
         )}
+
+        {/* Jury Image Viewer */}
+        {viewerIndex !== null && (
+          <JuryImageViewer
+            entries={entries}
+            currentIndex={viewerIndex}
+            availableTags={availableTags}
+            rounds={rounds}
+            onClose={() => setViewerIndex(null)}
+            onNavigate={(i) => setViewerIndex(i)}
+            onToggleTag={toggleTag}
+            onScore={handleViewerScore}
+            onAddComment={handleViewerComment}
+            onStatusChange={handleViewerStatus}
+          />
+        )}
       </div>
     </main>
   );
