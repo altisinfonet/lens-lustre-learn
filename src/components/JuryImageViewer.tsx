@@ -71,14 +71,13 @@ const JuryImageViewer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
-  const entry = entries[currentIndex];
-  if (!entry) return null;
-
-  const currentPhoto = entry.photos[photoIndex] || entry.photos[0];
-  const totalPhotos = entry.photos.length;
+  const entry = entries[currentIndex] ?? null;
+  const currentPhoto = entry?.photos[photoIndex] || entry?.photos[0] || "";
+  const totalPhotos = entry?.photos.length || 0;
 
   // Reset state on entry change
   useEffect(() => {
+    if (!entry) return;
     setZoom(1);
     setPan({ x: 0, y: 0 });
     setPhotoIndex(0);
@@ -86,7 +85,7 @@ const JuryImageViewer = ({
     setScoreInput(entry.my_score !== null ? String(entry.my_score) : "");
     setFeedbackInput(entry.my_feedback || "");
     setCommentInput("");
-  }, [currentIndex, entry.id]);
+  }, [currentIndex, entry?.id]);
 
   // Keyboard shortcuts
   useEffect(() => {
