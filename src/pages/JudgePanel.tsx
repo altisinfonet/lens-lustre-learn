@@ -22,6 +22,7 @@ interface JudgingTag {
   id: string;
   label: string;
   color: string;
+  image_url?: string | null;
 }
 
 interface JudgingRound {
