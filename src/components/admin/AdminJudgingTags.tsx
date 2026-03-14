@@ -153,9 +153,21 @@ const AdminJudgingTags = ({ adminId }: Props) => {
       {/* Tag list */}
       <div className="border border-border divide-y divide-border">
         {tags.map((tag) => (
-          <div key={tag.id} className={`flex items-center gap-3 px-4 py-3 ${!tag.is_active ? "opacity-50" : ""}`}>
+          <div key={tag.id} className={`relative flex items-center gap-3 px-4 py-3 group ${!tag.is_active ? "opacity-50" : ""}`}>
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
-            <JudgingStampBadge label={tag.label} color={tag.color} icon={tag.icon || "award"} size="sm" />
+            <div className="relative">
+              <JudgingStampBadge label={tag.label} color={tag.color} icon={tag.icon || "award"} size="sm" />
+              {/* Hover preview - large version */}
+              <div className="absolute left-0 bottom-full mb-3 z-50 hidden group-hover:flex flex-col items-start pointer-events-none">
+                <div className="bg-card border border-border shadow-lg p-4 rounded-sm">
+                  <span className="text-[8px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                    Preview
+                  </span>
+                  <JudgingStampBadge label={tag.label} color={tag.color} icon={tag.icon || "award"} size="md" className="scale-150 origin-top-left" />
+                </div>
+                <div className="w-3 h-3 bg-card border-b border-r border-border rotate-45 -mt-1.5 ml-4" />
+              </div>
+            </div>
             <span className="flex-1" />
             <button
               onClick={() => toggleActive(tag.id, tag.is_active)}
