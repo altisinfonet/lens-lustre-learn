@@ -925,7 +925,7 @@ const JudgePanel = () => {
                                 Complete This Round
                               </button>
                             )}
-                            {isAdmin && activeRound.status === "pending" && (
+                            {activeRound.status === "pending" && (
                               <button
                                 onClick={() => handleActivateRound(activeRound.id)}
                                 className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
