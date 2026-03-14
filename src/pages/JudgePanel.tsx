@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Trophy, Eye, MessageSquare, Loader2, AlertTriangle, Camera, Tag, Layers, Send, ChevronRight, ChevronLeft, CheckCircle, Zap, Maximize2, Minimize2 } from "lucide-react";
+import { Star, Trophy, Eye, MessageSquare, Loader2, AlertTriangle, Camera, Tag, Layers, Send, ChevronRight, ChevronLeft, CheckCircle, Zap, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Keyboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import JudgingStampBadge from "@/components/JudgingStampBadge";
@@ -105,12 +105,25 @@ const JudgePanel = () => {
   const [feedbackInput, setFeedbackInput] = useState("");
   const [commentInput, setCommentInput] = useState("");
 
+  // Zoom & Pan for fullscreen
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
   const isJudge = hasRole("judge") || hasRole("admin");
   const isAdmin = hasRole("admin");
 
   useEffect(() => {
     if (!authLoading && !rolesLoading && !isJudge) navigate("/");
   }, [isJudge, authLoading, rolesLoading, navigate]);
+
+  // Reset zoom on photo change
+  useEffect(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, [selectedPhotoKey]);
 
   // Fetch competitions
   useEffect(() => {
@@ -282,11 +295,26 @@ const JudgePanel = () => {
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); goNext(); }
       if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); goPrev(); }
-      if (e.key === "Escape" && fullscreen) setFullscreen(false);
+      if (e.key === "Escape") {
+        if (fullscreen) setFullscreen(false);
+        else if (selectedPhotoKey) setSelectedPhotoKey(null);
+      }
+      // Number keys 1-9 for quick score, 0 for 10
+      if (selectedEntry && !fullscreen) {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 9) { e.preventDefault(); handleQuickScore(selectedEntry.id, num); }
+        if (e.key === "0") { e.preventDefault(); handleQuickScore(selectedEntry.id, 10); }
+      }
+      // Zoom shortcuts in fullscreen
+      if (fullscreen) {
+        if (e.key === "+" || e.key === "=") { e.preventDefault(); setZoom(z => Math.min(5, z + 0.5)); }
+        if (e.key === "-") { e.preventDefault(); setZoom(z => Math.max(0.5, z - 0.5)); }
+        if (e.key === "r" || e.key === "R") { e.preventDefault(); setZoom(1); setPan({ x: 0, y: 0 }); }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [goNext, goPrev, fullscreen]);
+  }, [goNext, goPrev, fullscreen, selectedEntry, selectedPhotoKey]);
 
   const handleQuickScore = async (entryId: string, score: number) => {
     if (!user) return;
@@ -303,18 +331,39 @@ const JudgePanel = () => {
     setTimeout(() => goNext(), 300);
   };
 
+  // BUG FIX: Only ONE tag per entry per judge. Last marked tag is final.
+  // When toggling a tag: if it's the same tag, remove it. If different, remove all previous and set new one.
   const toggleTag = async (entryId: string, tagId: string) => {
     if (!user) return;
     const entry = entries.find(e => e.id === entryId);
     if (!entry) return;
     const hasTag = entry.my_tags.includes(tagId);
+
     if (hasTag) {
+      // Remove this tag (untoggle)
       await supabase.from("judge_tag_assignments" as any).delete().eq("entry_id", entryId).eq("tag_id", tagId).eq("judge_id", user.id);
-      setEntries(prev => prev.map(e => e.id === entryId ? { ...e, my_tags: e.my_tags.filter(t => t !== tagId) } : e));
+      setEntries(prev => prev.map(e => e.id === entryId ? {
+        ...e,
+        my_tags: [],
+        all_tags: e.all_tags.filter(t => !(t.tag_id === tagId && t.judge_id === user!.id)),
+      } : e));
     } else {
+      // Remove ALL previous tags for this entry by this judge, then insert new one
+      if (entry.my_tags.length > 0) {
+        await supabase.from("judge_tag_assignments" as any).delete().eq("entry_id", entryId).eq("judge_id", user.id);
+      }
       const { error } = await supabase.from("judge_tag_assignments" as any).insert({ entry_id: entryId, tag_id: tagId, judge_id: user.id } as any);
       if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
-      setEntries(prev => prev.map(e => e.id === entryId ? { ...e, my_tags: [...e.my_tags, tagId] } : e));
+      setEntries(prev => prev.map(e => e.id === entryId ? {
+        ...e,
+        my_tags: [tagId],
+        all_tags: [
+          ...e.all_tags.filter(t => t.judge_id !== user!.id),
+          { tag_id: tagId, judge_id: user!.id },
+        ],
+      } : e));
+      const tagLabel = availableTags.find(t => t.id === tagId)?.label;
+      toast({ title: `Tagged: ${tagLabel} ✓` });
     }
   };
 
@@ -344,6 +393,26 @@ const JudgePanel = () => {
     toast({ title: "Note saved ✓" });
   };
 
+  // Zoom handlers for fullscreen
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.25 : 0.25;
+    setZoom(z => Math.max(0.5, Math.min(5, z + delta)));
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (zoom <= 1) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  }, [zoom, pan]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  }, [isDragging, dragStart]);
+
+  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+
   if (authLoading || rolesLoading || loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
@@ -360,9 +429,9 @@ const JudgePanel = () => {
   const totalEntries = entries.length;
 
   const filterOptions: { key: string; label: string; color?: string; count: number; icon?: string }[] = [
-    { key: "all", label: "All", count: totalPhotos, icon: "📸" },
+    { key: "all", label: "All Photos", count: totalPhotos, icon: "📸" },
     { key: "scored", label: "Scored", count: allPhotos.filter(p => p.entry.my_score !== null).length, icon: "✅" },
-    { key: "unscored", label: "Unscored", count: allPhotos.filter(p => p.entry.my_score === null).length, icon: "⏳" },
+    { key: "unscored", label: "Pending", count: allPhotos.filter(p => p.entry.my_score === null).length, icon: "⏳" },
     ...availableTags.map(tag => ({
       key: tag.id,
       label: tag.label,
@@ -371,14 +440,14 @@ const JudgePanel = () => {
     })),
   ];
 
-  // ── FULLSCREEN BIG PREVIEW MODE ──
+  // ── FULLSCREEN BIG PREVIEW MODE with ZOOM ──
   if (fullscreen && selectedEntry && selectedPhoto) {
     return (
-      <div className="fixed inset-0 z-50 bg-black flex flex-col">
+      <div className="fixed inset-0 z-50 bg-black flex flex-col select-none">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-2 bg-black/80 border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-2 bg-black/80 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={() => setFullscreen(false)} className="text-white/70 hover:text-white transition-colors">
+            <button onClick={() => setFullscreen(false)} className="text-white/70 hover:text-white transition-colors p-1">
               <Minimize2 className="h-5 w-5" />
             </button>
             <div>
@@ -386,24 +455,63 @@ const JudgePanel = () => {
               <p className="text-[11px] text-white/50">by {selectedEntry.photographer_name || "Anonymous"}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {selectedEntry.is_ai_generated && (
               <span className="text-[10px] px-2 py-1 bg-orange-500/80 text-white rounded-full flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3" /> AI
               </span>
             )}
+            {/* Zoom controls */}
+            <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
+              <button onClick={() => setZoom(z => Math.max(0.5, z - 0.5))} className="p-1 text-white/70 hover:text-white">
+                <ZoomOut className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-[10px] text-white/70 w-12 text-center tabular-nums" style={{ fontFamily: "var(--font-heading)" }}>
+                {Math.round(zoom * 100)}%
+              </span>
+              <button onClick={() => setZoom(z => Math.min(5, z + 0.5))} className="p-1 text-white/70 hover:text-white">
+                <ZoomIn className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="p-1 text-white/70 hover:text-white ml-0.5">
+                <RotateCcw className="h-3 w-3" />
+              </button>
+            </div>
             <span className="text-sm text-white/60 tabular-nums" style={{ fontFamily: "var(--font-heading)" }}>
               {currentPhotoIdx + 1} / {filteredPhotos.length}
             </span>
+            <button onClick={() => setShowShortcuts(!showShortcuts)} className="p-1 text-white/50 hover:text-white">
+              <Keyboard className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
-        {/* Big image + nav */}
-        <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+        {/* Shortcuts overlay */}
+        {showShortcuts && (
+          <div className="absolute top-14 right-4 z-50 bg-black/95 border border-white/20 rounded-lg p-4 text-white/80 text-[11px] space-y-1" style={{ fontFamily: "var(--font-heading)" }}>
+            <p className="text-white font-bold mb-2 text-xs">Keyboard Shortcuts</p>
+            <p><span className="text-white/50 mr-2">← →</span> Previous / Next photo</p>
+            <p><span className="text-white/50 mr-2">1-9, 0</span> Score 1-10</p>
+            <p><span className="text-white/50 mr-2">+ / -</span> Zoom in / out</p>
+            <p><span className="text-white/50 mr-2">R</span> Reset zoom</p>
+            <p><span className="text-white/50 mr-2">ESC</span> Exit fullscreen</p>
+          </div>
+        )}
+
+        {/* Big image with zoom & pan */}
+        <div
+          className="flex-1 relative overflow-hidden"
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          style={{ cursor: zoom > 1 ? (isDragging ? "grabbing" : "grab") : "default" }}
+        >
+          {/* Nav arrows */}
           <button
-            onClick={goPrev}
+            onClick={(e) => { e.stopPropagation(); goPrev(); }}
             disabled={currentPhotoIdx <= 0}
-            className="absolute left-4 z-10 w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-20 flex items-center justify-center text-white transition-all"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-white/10 hover:bg-white/25 disabled:opacity-10 flex items-center justify-center text-white transition-all backdrop-blur-sm"
           >
             <ChevronLeft className="h-7 w-7" />
           </button>
@@ -413,28 +521,50 @@ const JudgePanel = () => {
               key={selectedPhotoKey}
               src={selectedPhoto.photoUrl}
               alt={selectedEntry.title}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              transition={{ duration: 0.15 }}
-              className="max-w-[90vw] max-h-[70vh] object-contain"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.12 }}
+              className="absolute top-1/2 left-1/2 max-w-[90vw] max-h-[80vh] object-contain"
+              style={{
+                transform: `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                transition: isDragging ? "none" : "transform 0.15s ease-out",
+              }}
+              draggable={false}
             />
           </AnimatePresence>
 
           <button
-            onClick={goNext}
+            onClick={(e) => { e.stopPropagation(); goNext(); }}
             disabled={currentPhotoIdx >= filteredPhotos.length - 1}
-            className="absolute right-4 z-10 w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-20 flex items-center justify-center text-white transition-all"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-white/10 hover:bg-white/25 disabled:opacity-10 flex items-center justify-center text-white transition-all backdrop-blur-sm"
           >
             <ChevronRight className="h-7 w-7" />
           </button>
+
+          {/* Current tag stamp on image */}
+          {selectedEntry.my_tags.length > 0 && zoom <= 1 && (
+            <div className="absolute bottom-0 left-0 right-0 flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-t from-black/80 to-transparent z-10">
+              {selectedEntry.my_tags.map(tagId => {
+                const tag = availableTags.find(t => t.id === tagId);
+                return tag ? <JudgingStampBadge key={tagId} label={tag.label} color={tag.color} icon={tag.icon || "award"} imageUrl={tag.image_url} size="md" /> : null;
+              })}
+            </div>
+          )}
+
+          {/* Zoom indicator */}
+          {zoom > 1 && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-black/70 text-white/80 text-[10px] px-3 py-1 rounded-full backdrop-blur-sm" style={{ fontFamily: "var(--font-heading)" }}>
+              {Math.round(zoom * 100)}% — scroll to zoom, drag to pan
+            </div>
+          )}
         </div>
 
-        {/* Bottom scoring bar */}
-        <div className="bg-black/90 border-t border-white/10 px-4 py-3">
-          <div className="max-w-3xl mx-auto">
-            {/* Score buttons */}
-            <div className="flex items-center justify-center gap-2 mb-2">
+        {/* Bottom: Score + Tag bar */}
+        <div className="bg-black/90 border-t border-white/10 px-4 py-3 shrink-0">
+          <div className="max-w-4xl mx-auto">
+            {/* Score buttons - LARGE for easy tapping */}
+            <div className="flex items-center justify-center gap-2.5 mb-2.5">
               <span className="text-[10px] text-white/40 uppercase tracking-widest mr-2" style={{ fontFamily: "var(--font-heading)" }}>Score</span>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => {
                 const isActive = selectedEntry.my_score === n;
@@ -443,10 +573,10 @@ const JudgePanel = () => {
                     key={n}
                     onClick={() => handleQuickScore(selectedEntry.id, n)}
                     disabled={scoringEntry === selectedEntry.id}
-                    className={`w-11 h-11 rounded-full flex items-center justify-center text-base font-bold transition-all duration-200 ${
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold transition-all duration-200 ${
                       isActive
-                        ? `${SCORE_COLORS[n]} text-white scale-110 ring-2 ring-white/40 shadow-lg`
-                        : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white hover:scale-105"
+                        ? `${SCORE_COLORS[n]} text-white scale-110 ring-2 ring-white/50 shadow-lg shadow-white/10`
+                        : "bg-white/10 text-white/70 hover:bg-white/25 hover:text-white hover:scale-105"
                     } disabled:opacity-40`}
                     style={{ fontFamily: "var(--font-heading)" }}
                   >
@@ -455,30 +585,31 @@ const JudgePanel = () => {
                 );
               })}
             </div>
-            {/* Tags row */}
+            {/* Tags row - single selection with visual indicator */}
             {availableTags.length > 0 && (
               <div className="flex items-center justify-center gap-2">
+                <span className="text-[9px] text-white/30 uppercase tracking-widest mr-1" style={{ fontFamily: "var(--font-heading)" }}>Tag</span>
                 {availableTags.map(tag => {
                   const isActive = selectedEntry.my_tags.includes(tag.id);
                   return (
                     <button
                       key={tag.id}
                       onClick={() => toggleTag(selectedEntry.id, tag.id)}
-                      className={`inline-flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-full border transition-all ${
-                        isActive ? "ring-1 ring-white/30 text-white" : "border-white/20 text-white/50 hover:text-white/80 hover:border-white/40"
+                      className={`inline-flex items-center gap-1.5 text-[11px] px-4 py-2 rounded-xl border-2 transition-all duration-200 ${
+                        isActive ? "ring-1 ring-white/30 text-white scale-105 shadow-lg" : "border-white/15 text-white/50 hover:text-white/80 hover:border-white/30 hover:scale-105"
                       }`}
                       style={{
                         fontFamily: "var(--font-heading)",
-                        ...(isActive ? { borderColor: tag.color, backgroundColor: `${tag.color}30`, color: tag.color } : {}),
+                        ...(isActive ? { borderColor: tag.color, backgroundColor: `${tag.color}35`, color: "#fff" } : {}),
                       }}
                     >
                       {tag.image_url ? (
                         <img src={tag.image_url} alt="" className="h-4 w-auto" />
                       ) : (
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tag.color }} />
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
                       )}
                       {tag.label}
-                      {isActive && <CheckCircle className="h-3.5 w-3.5" />}
+                      {isActive && <CheckCircle className="h-4 w-4" />}
                     </button>
                   );
                 })}
@@ -507,11 +638,11 @@ const JudgePanel = () => {
         {/* Progress bar */}
         {selectedCompId && totalEntries > 0 && (
           <div className="mb-3 flex items-center gap-3">
-            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+            <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
               <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${(scoredEntries / totalEntries) * 100}%` }} transition={{ duration: 0.5 }} />
             </div>
-            <span className="text-[10px] text-muted-foreground whitespace-nowrap" style={{ fontFamily: "var(--font-heading)" }}>
-              {scoredEntries}/{totalEntries} scored
+            <span className="text-xs text-muted-foreground whitespace-nowrap font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+              ✅ {scoredEntries} / {totalEntries} scored ({totalEntries > 0 ? Math.round((scoredEntries / totalEntries) * 100) : 0}%)
             </span>
           </div>
         )}
@@ -519,10 +650,10 @@ const JudgePanel = () => {
         {/* 3-Column Layout */}
         <div className="flex gap-0 border border-border rounded-lg overflow-hidden" style={{ height: "calc(100vh - 200px)", minHeight: 500 }}>
           {/* ─── LEFT: Competition List ─── */}
-          <div className="w-52 shrink-0 border-r border-border flex flex-col bg-muted/20 overflow-hidden">
+          <div className="w-56 shrink-0 border-r border-border flex flex-col bg-muted/20 overflow-hidden">
             <div className="px-3 py-2.5 border-b border-border bg-muted/40">
               <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-                Competitions
+                🏆 Competitions
               </span>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -533,12 +664,12 @@ const JudgePanel = () => {
                   <button
                     key={comp.id}
                     onClick={() => setSelectedCompId(comp.id === selectedCompId ? null : comp.id)}
-                    className={`w-full text-left px-3 py-2.5 border-b border-border/50 transition-all duration-300 group ${
-                      selectedCompId === comp.id ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-muted/40 border-l-2 border-l-transparent"
+                    className={`w-full text-left px-3 py-3 border-b border-border/50 transition-all duration-300 group ${
+                      selectedCompId === comp.id ? "bg-primary/10 border-l-3 border-l-primary" : "hover:bg-muted/40 border-l-3 border-l-transparent"
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <Trophy className={`h-3 w-3 shrink-0 ${selectedCompId === comp.id ? "text-primary" : "text-muted-foreground"}`} />
+                    <div className="flex items-center gap-2 mb-1">
+                      <Trophy className={`h-3.5 w-3.5 shrink-0 ${selectedCompId === comp.id ? "text-primary" : "text-muted-foreground"}`} />
                       <span className={`text-[11px] font-medium truncate ${selectedCompId === comp.id ? "text-primary" : "text-foreground"}`} style={{ fontFamily: "var(--font-heading)" }} title={comp.title}>
                         {comp.title}
                       </span>
@@ -548,7 +679,7 @@ const JudgePanel = () => {
                         {comp.status}
                       </span>
                       {comp.entry_count !== undefined && (
-                        <span className="text-[8px] text-muted-foreground">{comp.entry_count} entries</span>
+                        <span className="text-[9px] text-muted-foreground font-medium">{comp.entry_count} entries</span>
                       )}
                     </div>
                   </button>
@@ -584,8 +715,9 @@ const JudgePanel = () => {
             {!selectedCompId ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
-                  <Trophy className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>← Select a competition to begin</p>
+                  <Trophy className="h-12 w-12 text-muted-foreground/15 mx-auto mb-4" />
+                  <p className="text-base text-muted-foreground mb-1" style={{ fontFamily: "var(--font-display)" }}>Select a Competition</p>
+                  <p className="text-xs text-muted-foreground/60" style={{ fontFamily: "var(--font-body)" }}>← Choose from the left panel to start judging</p>
                 </div>
               </div>
             ) : loadingEntries ? (
@@ -595,17 +727,17 @@ const JudgePanel = () => {
             ) : (
               <>
                 {/* ── Modern Filter Pills ── */}
-                <div className="px-3 py-2 border-b border-border bg-muted/10">
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
+                <div className="px-3 py-2.5 border-b border-border bg-muted/10">
+                  <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
                     {filterOptions.map(opt => {
                       const isActive = activeFilter === opt.key;
                       return (
                         <button
                           key={opt.key}
                           onClick={() => setActiveFilter(opt.key)}
-                          className={`relative inline-flex items-center gap-1.5 text-[11px] font-medium px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all duration-200 ${
+                          className={`relative inline-flex items-center gap-1.5 text-[11px] font-medium px-4 py-2 rounded-full whitespace-nowrap transition-all duration-200 ${
                             isActive
-                              ? "bg-primary text-primary-foreground shadow-md"
+                              ? "bg-primary text-primary-foreground shadow-md scale-105"
                               : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
                           }`}
                           style={{
@@ -613,10 +745,10 @@ const JudgePanel = () => {
                             ...(opt.color && isActive ? { backgroundColor: opt.color, color: "#fff" } : {}),
                           }}
                         >
-                          {opt.icon && <span className="text-xs">{opt.icon}</span>}
-                          {opt.color && !opt.icon && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isActive ? "#fff" : opt.color }} />}
+                          {opt.icon && <span className="text-sm">{opt.icon}</span>}
+                          {opt.color && !opt.icon && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: isActive ? "#fff" : opt.color }} />}
                           {opt.label}
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20" : "bg-muted-foreground/10"}`}>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full ml-0.5 ${isActive ? "bg-white/25" : "bg-muted-foreground/10"}`}>
                             {opt.count}
                           </span>
                         </button>
@@ -629,8 +761,8 @@ const JudgePanel = () => {
                 {selectedEntry && selectedPhoto ? (
                   <div className="flex-1 flex flex-col overflow-hidden">
                     {/* Preview header */}
-                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50 bg-background">
-                      <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-background">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className="min-w-0">
                           <h3 className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-display)" }}>{selectedEntry.title}</h3>
                           <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
@@ -643,6 +775,15 @@ const JudgePanel = () => {
                             <AlertTriangle className="h-3 w-3" /> AI
                           </span>
                         )}
+                        {/* Active tag badge */}
+                        {selectedEntry.my_tags.length > 0 && (
+                          <div className="shrink-0 flex gap-1">
+                            {selectedEntry.my_tags.map(tagId => {
+                              const tag = availableTags.find(t => t.id === tagId);
+                              return tag ? <JudgingStampBadge key={tagId} label={tag.label} color={tag.color} icon={tag.icon || "award"} imageUrl={tag.image_url} size="sm" /> : null;
+                            })}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button onClick={goPrev} disabled={currentPhotoIdx <= 0} className="p-1.5 hover:bg-muted rounded-full disabled:opacity-20 transition-colors">
@@ -654,7 +795,7 @@ const JudgePanel = () => {
                         <button onClick={goNext} disabled={currentPhotoIdx >= filteredPhotos.length - 1} className="p-1.5 hover:bg-muted rounded-full disabled:opacity-20 transition-colors">
                           <ChevronRight className="h-5 w-5" />
                         </button>
-                        <button onClick={() => setFullscreen(true)} className="p-1.5 hover:bg-muted rounded-full transition-colors ml-1" title="Fullscreen">
+                        <button onClick={() => setFullscreen(true)} className="p-1.5 hover:bg-muted rounded-full transition-colors ml-1" title="Fullscreen (zoom up to 500%)">
                           <Maximize2 className="h-4 w-4 text-muted-foreground" />
                         </button>
                       </div>
@@ -692,7 +833,7 @@ const JudgePanel = () => {
                         <ChevronRight className="h-5 w-5" />
                       </button>
 
-                      {/* Entry tag stamps on photo */}
+                      {/* Tag stamp overlay */}
                       {selectedEntry.my_tags.length > 0 && (
                         <div className="absolute bottom-0 left-0 right-0 flex items-center gap-1.5 px-3 py-2 bg-gradient-to-t from-black/70 to-transparent">
                           {selectedEntry.my_tags.map(tagId => {
@@ -701,6 +842,11 @@ const JudgePanel = () => {
                           })}
                         </div>
                       )}
+
+                      {/* Click to fullscreen hint */}
+                      <div className="absolute bottom-2 right-3 text-[9px] text-white/30 flex items-center gap-1" style={{ fontFamily: "var(--font-heading)" }}>
+                        <Maximize2 className="h-3 w-3" /> Click image for 500% zoom
+                      </div>
                     </div>
 
                     {/* Thumbnail filmstrip at bottom */}
@@ -714,7 +860,7 @@ const JudgePanel = () => {
                             key={key}
                             onClick={() => setSelectedPhotoKey(key)}
                             className={`relative shrink-0 w-14 h-14 cursor-pointer overflow-hidden rounded transition-all duration-150 ${
-                              isCurrent ? "ring-2 ring-primary scale-105" : "opacity-60 hover:opacity-100 hover:ring-1 hover:ring-primary/40"
+                              isCurrent ? "ring-2 ring-primary scale-110" : "opacity-50 hover:opacity-100 hover:ring-1 hover:ring-primary/40"
                             }`}
                           >
                             <img src={photo.photoUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -730,17 +876,20 @@ const JudgePanel = () => {
                   </div>
                 ) : (
                   /* No photo selected — show grid */
-                  <div className="flex-1 overflow-y-auto p-2">
+                  <div className="flex-1 overflow-y-auto p-3">
                     {filteredPhotos.length === 0 ? (
                       <div className="flex items-center justify-center h-full">
-                        <p className="text-xs text-muted-foreground">No photos match this filter.</p>
+                        <div className="text-center">
+                          <Camera className="h-10 w-10 text-muted-foreground/15 mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">No photos match this filter.</p>
+                        </div>
                       </div>
                     ) : (
                       <>
-                        <p className="text-[10px] text-muted-foreground mb-2 px-1" style={{ fontFamily: "var(--font-heading)" }}>
-                          {filteredPhotos.length} photos · Click any to start judging
+                        <p className="text-xs text-muted-foreground mb-3 px-1" style={{ fontFamily: "var(--font-heading)" }}>
+                          📸 {filteredPhotos.length} photos · Click any photo to start judging · Use number keys <span className="px-1 py-0.5 bg-muted rounded text-[9px]">1-9</span> to score
                         </p>
-                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-1">
+                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-1.5">
                           {filteredPhotos.map((photo) => {
                             const key = `${photo.entryId}-${photo.photoIndex}`;
                             const hasScore = photo.entry.my_score !== null;
@@ -749,30 +898,30 @@ const JudgePanel = () => {
                               <div
                                 key={key}
                                 onClick={() => setSelectedPhotoKey(key)}
-                                className="relative group cursor-pointer aspect-square overflow-hidden rounded border border-transparent hover:border-primary/50 transition-all"
-                                title={photo.entry.title}
+                                className="relative group cursor-pointer aspect-square overflow-hidden rounded-lg border-2 border-transparent hover:border-primary/50 transition-all duration-200 hover:scale-[1.03] hover:shadow-lg"
+                                title={`${photo.entry.title} by ${photo.entry.photographer_name || "Anonymous"}`}
                               >
                                 <img src={photo.photoUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
                                 {hasScore && (
-                                  <div className={`absolute top-0.5 right-0.5 w-5 h-5 rounded-full ${SCORE_COLORS[photo.entry.my_score!] || 'bg-primary'} text-white flex items-center justify-center text-[8px] font-bold shadow`}>
+                                  <div className={`absolute top-1 right-1 w-6 h-6 rounded-full ${SCORE_COLORS[photo.entry.my_score!] || 'bg-primary'} text-white flex items-center justify-center text-[9px] font-bold shadow-md`}>
                                     {photo.entry.my_score}
                                   </div>
                                 )}
                                 {hasTags && (
-                                  <div className="absolute bottom-0 left-0 right-0 flex gap-0.5 p-0.5 bg-black/50">
-                                    {photo.entry.my_tags.slice(0, 3).map(tagId => {
+                                  <div className="absolute bottom-0 left-0 right-0 flex gap-0.5 p-1 bg-gradient-to-t from-black/60 to-transparent">
+                                    {photo.entry.my_tags.map(tagId => {
                                       const tag = availableTags.find(t => t.id === tagId);
-                                      return tag ? <span key={tagId} className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} title={tag.label} /> : null;
+                                      return tag ? <span key={tagId} className="w-2.5 h-2.5 rounded-full border border-white/30" style={{ backgroundColor: tag.color }} title={tag.label} /> : null;
                                     })}
                                   </div>
                                 )}
                                 {photo.entry.placement && photo.photoIndex === 0 && (
-                                  <div className="absolute top-0.5 left-0.5 text-[10px]">
+                                  <div className="absolute top-1 left-1 text-sm drop-shadow-lg">
                                     {photo.entry.placement === "winner" ? "🏆" : photo.entry.placement === "1st_runner_up" ? "🥈" : photo.entry.placement === "2nd_runner_up" ? "🥉" : "👁"}
                                   </div>
                                 )}
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1">
-                                  <p className="text-[7px] text-white truncate w-full">{photo.entry.title}</p>
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
+                                  <p className="text-[8px] text-white truncate w-full" style={{ fontFamily: "var(--font-heading)" }}>{photo.entry.title}</p>
                                 </div>
                               </div>
                             );
@@ -800,7 +949,7 @@ const JudgePanel = () => {
                 {/* ★ BIG SCORE BUTTONS ★ */}
                 <div className="px-3 py-3 border-b border-border">
                   <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground flex items-center gap-1 mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                    <Zap className="h-3 w-3" /> Tap to Score
+                    <Zap className="h-3 w-3" /> Tap to Score (auto-advances)
                   </span>
                   <div className="grid grid-cols-5 gap-1.5">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => {
@@ -810,7 +959,7 @@ const JudgePanel = () => {
                           key={n}
                           onClick={() => handleQuickScore(selectedEntry.id, n)}
                           disabled={scoringEntry === selectedEntry.id}
-                          className={`aspect-square flex items-center justify-center text-lg font-bold rounded-lg transition-all duration-200 ${
+                          className={`aspect-square flex items-center justify-center text-lg font-bold rounded-xl transition-all duration-200 ${
                             isActive
                               ? `${SCORE_COLORS[n]} text-white scale-105 ring-2 ring-offset-1 ring-offset-background ring-current shadow-lg`
                               : "bg-muted hover:bg-muted/80 text-foreground hover:scale-105"
@@ -827,7 +976,7 @@ const JudgePanel = () => {
                     value={feedbackInput}
                     onChange={(e) => setFeedbackInput(e.target.value)}
                     placeholder="Optional feedback..."
-                    className="w-full mt-2 bg-transparent border border-border focus:border-primary outline-none px-2 py-1.5 text-xs rounded transition-colors"
+                    className="w-full mt-2 bg-transparent border border-border focus:border-primary outline-none px-2 py-1.5 text-xs rounded-lg transition-colors"
                     style={{ fontFamily: "var(--font-body)" }}
                   />
                 </div>
@@ -846,13 +995,13 @@ const JudgePanel = () => {
                   </span>
                 </div>
 
-                {/* Tags */}
+                {/* Tags - Single selection mode */}
                 {availableTags.length > 0 && (
-                  <div className="px-3 py-2 border-b border-border">
-                    <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground flex items-center gap-1 mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-                      <Tag className="h-3 w-3" /> Tags
+                  <div className="px-3 py-2.5 border-b border-border">
+                    <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground flex items-center gap-1 mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                      <Tag className="h-3 w-3" /> Tag (select one)
                     </span>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {availableTags.map(tag => {
                         const isActive = selectedEntry.my_tags.includes(tag.id);
                         const totalCount = selectedEntry.all_tags.filter(t => t.tag_id === tag.id).length;
@@ -860,8 +1009,8 @@ const JudgePanel = () => {
                           <button
                             key={tag.id}
                             onClick={() => toggleTag(selectedEntry.id, tag.id)}
-                            className={`inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border transition-all duration-200 ${
-                              isActive ? "ring-1 ring-offset-1" : "border-border/60 text-muted-foreground hover:border-foreground/40"
+                            className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg border-2 transition-all duration-200 ${
+                              isActive ? "ring-1 ring-offset-1 shadow-md scale-105" : "border-border/60 text-muted-foreground hover:border-foreground/40 hover:scale-105"
                             }`}
                             style={{
                               fontFamily: "var(--font-heading)",
@@ -869,20 +1018,21 @@ const JudgePanel = () => {
                             }}
                           >
                             {tag.image_url ? (
-                              <img src={tag.image_url} alt="" className="h-3.5 w-auto object-contain" />
+                              <img src={tag.image_url} alt="" className="h-4 w-auto object-contain" />
                             ) : (
-                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tag.color }} />
                             )}
                             {tag.label}
-                            {isActive && <CheckCircle className="h-3 w-3" />}
+                            {isActive && <CheckCircle className="h-3.5 w-3.5" />}
                             {totalCount > 0 && <span className="text-[7px] opacity-50">({totalCount})</span>}
                           </button>
                         );
                       })}
                     </div>
+                    {/* Active stamp preview */}
                     {selectedEntry.my_tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border/30">
-                        <span className="text-[8px] text-muted-foreground mr-1">Stamps:</span>
+                      <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-border/30">
+                        <span className="text-[8px] text-muted-foreground mr-1">Stamp on photo:</span>
                         {selectedEntry.my_tags.map(tagId => {
                           const tag = availableTags.find(t => t.id === tagId);
                           return tag ? <JudgingStampBadge key={tagId} label={tag.label} color={tag.color} icon={tag.icon || "award"} imageUrl={tag.image_url} size="sm" /> : null;
@@ -941,7 +1091,7 @@ const JudgePanel = () => {
                       {selectedEntry.my_comments.map(c => {
                         const roundName = rounds.find(r => r.id === c.round_id)?.name;
                         return (
-                          <div key={c.id} className="text-[10px] px-2 py-1 border border-border/50 bg-muted/20 rounded" style={{ fontFamily: "var(--font-body)" }}>
+                          <div key={c.id} className="text-[10px] px-2 py-1 border border-border/50 bg-muted/20 rounded-lg" style={{ fontFamily: "var(--font-body)" }}>
                             <p>{c.comment}</p>
                             <p className="text-[8px] text-muted-foreground mt-0.5">
                               {new Date(c.created_at).toLocaleDateString()}
@@ -958,12 +1108,12 @@ const JudgePanel = () => {
                       value={commentInput}
                       onChange={e => setCommentInput(e.target.value)}
                       placeholder="Add note..."
-                      className="flex-1 bg-transparent border border-border focus:border-primary outline-none px-2 py-1 text-xs rounded transition-colors"
+                      className="flex-1 bg-transparent border border-border focus:border-primary outline-none px-2 py-1 text-xs rounded-lg transition-colors"
                       style={{ fontFamily: "var(--font-body)" }}
                       maxLength={500}
                       onKeyDown={e => e.key === "Enter" && addComment(selectedEntry.id)}
                     />
-                    <button onClick={() => addComment(selectedEntry.id)} disabled={!commentInput.trim()} className="px-2 py-1 bg-primary text-primary-foreground rounded hover:opacity-90 disabled:opacity-50">
+                    <button onClick={() => addComment(selectedEntry.id)} disabled={!commentInput.trim()} className="px-2 py-1 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50">
                       <Send className="h-3 w-3" />
                     </button>
                   </div>
@@ -976,9 +1126,13 @@ const JudgePanel = () => {
           {!selectedEntry && selectedCompId && !loadingEntries && entries.length > 0 && (
             <div className="w-72 xl:w-80 shrink-0 border-l border-border flex items-center justify-center bg-muted/10">
               <div className="text-center p-6">
-                <Camera className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
-                <p className="text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>Click any photo to judge</p>
-                <p className="text-[9px] text-muted-foreground/60 mt-1">Arrow keys ← → to navigate</p>
+                <Camera className="h-10 w-10 text-muted-foreground/15 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground mb-1" style={{ fontFamily: "var(--font-display)" }}>Click any photo</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-1.5 space-y-1" style={{ fontFamily: "var(--font-heading)" }}>
+                  <span className="block">← → Arrow keys to navigate</span>
+                  <span className="block">1-9, 0 = Score 1-10</span>
+                  <span className="block">ESC = Back to grid</span>
+                </p>
               </div>
             </div>
           )}
