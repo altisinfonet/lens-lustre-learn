@@ -274,6 +274,8 @@ const CompetitionDetail = () => {
                             onContextMenu={(e) => e.preventDefault()}
                             draggable={false}
                           />
+                          {/* Judging tag stamps */}
+                          <EntryTagStamps entryId={entry.id} />
                           {entry.photos.length > 1 && (
                             <span className="absolute bottom-2 right-2 text-[9px] bg-background/80 backdrop-blur-sm px-2 py-1 text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
                               +{entry.photos.length - 1} <T>more</T>
