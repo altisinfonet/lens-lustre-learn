@@ -155,6 +155,57 @@ const Dashboard = () => {
         })));
       }
 
+      // Fetch my competition entries with votes and judge tags
+      const { data: myEntriesData } = await supabase
+        .from("competition_entries")
+        .select("id, title, photos, status, created_at, competition_id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (myEntriesData && myEntriesData.length > 0) {
+        const entryIds = myEntriesData.map(e => e.id);
+        const compIds = [...new Set(myEntriesData.map(e => e.competition_id))];
+
+        const [compsRes, votesRes, tagAssignRes] = await Promise.all([
+          supabase.from("competitions").select("id, title").in("id", compIds),
+          supabase.from("competition_votes").select("entry_id").in("entry_id", entryIds),
+          supabase.from("judge_tag_assignments").select("entry_id, tag_id").in("entry_id", entryIds),
+        ]);
+
+        const compMap = new Map((compsRes.data || []).map(c => [c.id, c.title]));
+        const voteMap: Record<string, number> = {};
+        (votesRes.data || []).forEach(v => { voteMap[v.entry_id] = (voteMap[v.entry_id] || 0) + 1; });
+
+        // Get unique tag IDs for label lookup
+        const uniqueTagIds = [...new Set((tagAssignRes.data || []).map((t: any) => t.tag_id))];
+        let tagInfoMap = new Map<string, { label: string; color: string }>();
+        if (uniqueTagIds.length > 0) {
+          const { data: tagsData } = await supabase
+            .from("judging_tags" as any)
+            .select("id, label, color")
+            .in("id", uniqueTagIds);
+          (tagsData as any[] || []).forEach((t: any) => tagInfoMap.set(t.id, { label: t.label, color: t.color }));
+        }
+
+        // Map tags per entry
+        const entryTagMap: Record<string, { label: string; color: string }[]> = {};
+        (tagAssignRes.data || []).forEach((t: any) => {
+          if (!entryTagMap[t.entry_id]) entryTagMap[t.entry_id] = [];
+          const info = tagInfoMap.get(t.tag_id);
+          if (info && !entryTagMap[t.entry_id].some(x => x.label === info.label)) {
+            entryTagMap[t.entry_id].push(info);
+          }
+        });
+
+        setMyEntries(myEntriesData.map(e => ({
+          ...e,
+          competition_title: compMap.get(e.competition_id) || "Unknown",
+          vote_count: voteMap[e.id] || 0,
+          tags: entryTagMap[e.id] || [],
+        })));
+      }
+
       setLoading(false);
     };
 
