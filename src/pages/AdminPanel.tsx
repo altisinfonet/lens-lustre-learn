@@ -180,7 +180,29 @@ const AdminPanel = () => {
       .from("competitions")
       .select("id, title, category, status, entry_fee, starts_at, ends_at, created_at")
       .order("created_at", { ascending: false });
-    setCompetitions(data || []);
+    if (!data || data.length === 0) { setCompetitions([]); return; }
+
+    // Fetch assigned judges for all competitions
+    const compIds = data.map(c => c.id);
+    const { data: judges } = await supabase
+      .from("competition_judges")
+      .select("competition_id, judge_id")
+      .in("competition_id", compIds);
+
+    let profileMap = new Map<string, string>();
+    if (judges && judges.length > 0) {
+      const judgeIds = [...new Set(judges.map(j => j.judge_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", judgeIds);
+      profileMap = new Map(profiles?.map(p => [p.id, p.full_name || "Unknown"]) || []);
+    }
+
+    setCompetitions(data.map(c => ({
+      ...c,
+      judge_names: judges?.filter(j => j.competition_id === c.id).map(j => profileMap.get(j.judge_id) || "Unknown") || [],
+    })));
   };
 
   const fetchEntries = async () => {
