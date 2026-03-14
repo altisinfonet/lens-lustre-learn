@@ -7,6 +7,7 @@ interface TagInfo {
   label: string;
   color: string;
   icon: string;
+  image_url: string | null;
 }
 
 interface Props {
@@ -38,7 +39,7 @@ const EntryTagStamps = ({ entryId, className = "" }: Props) => {
 
     const { data: tagData } = await supabase
       .from("judging_tags" as any)
-      .select("id, label, color, icon")
+      .select("id, label, color, icon, image_url")
       .in("id", uniqueTagIds);
 
     setTags(
@@ -47,6 +48,7 @@ const EntryTagStamps = ({ entryId, className = "" }: Props) => {
         label: t.label,
         color: t.color,
         icon: t.icon || "award",
+        image_url: t.image_url || null,
       }))
     );
   };
@@ -84,6 +86,7 @@ const EntryTagStamps = ({ entryId, className = "" }: Props) => {
           label={tag.label}
           color={tag.color}
           icon={tag.icon}
+          imageUrl={tag.image_url}
           size="sm"
         />
       ))}

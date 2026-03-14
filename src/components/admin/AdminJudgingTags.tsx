@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from "react";
-import { Tag, Plus, Trash2, Loader2, GripVertical, ToggleLeft, ToggleRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Tag, Plus, Trash2, Loader2, GripVertical, ToggleLeft, ToggleRight, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { storageUpload } from "@/lib/storageUpload";
 import JudgingStampBadge, { STAMP_ICONS } from "@/components/JudgingStampBadge";
 
 interface JudgingTag {
@@ -11,6 +12,7 @@ interface JudgingTag {
   sort_order: number;
   is_active: boolean;
   icon: string;
+  image_url: string | null;
 }
 
 interface Props {
@@ -23,12 +25,15 @@ const AdminJudgingTags = ({ adminId }: Props) => {
   const [newLabel, setNewLabel] = useState("");
   const [newColor, setNewColor] = useState("#d4a017");
   const [newIcon, setNewIcon] = useState("award");
+  const [newImageUrl, setNewImageUrl] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadingTagId, setUploadingTagId] = useState<string | null>(null);
 
   const fetchTags = async () => {
     const { data } = await supabase
       .from("judging_tags" as any)
-      .select("id, label, color, sort_order, is_active, icon")
+      .select("id, label, color, sort_order, is_active, icon, image_url")
       .order("sort_order", { ascending: true });
     setTags((data as any as JudgingTag[]) || []);
     setLoading(false);
@@ -38,6 +43,58 @@ const AdminJudgingTags = ({ adminId }: Props) => {
     fetchTags();
   }, []);
 
+  const handleImageUpload = async (file: File, tagId?: string) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Only image files allowed", variant: "destructive" });
+      return null;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image must be under 5MB", variant: "destructive" });
+      return null;
+    }
+
+    const ext = file.name.split(".").pop() || "png";
+    const path = `judging-tags/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+    try {
+      const result = await storageUpload("competition-photos", path, file);
+      return result.url;
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      return null;
+    }
+  };
+
+  const handleNewTagImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = await handleImageUpload(file);
+    if (url) setNewImageUrl(url);
+    setUploading(false);
+    e.target.value = "";
+  };
+
+  const handleExistingTagImage = async (tagId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingTagId(tagId);
+    const url = await handleImageUpload(file, tagId);
+    if (url) {
+      await supabase.from("judging_tags" as any).update({ image_url: url } as any).eq("id", tagId);
+      setTags((prev) => prev.map((t) => (t.id === tagId ? { ...t, image_url: url } : t)));
+      toast({ title: "Tag image updated" });
+    }
+    setUploadingTagId(null);
+    e.target.value = "";
+  };
+
+  const removeExistingTagImage = async (tagId: string) => {
+    await supabase.from("judging_tags" as any).update({ image_url: null } as any).eq("id", tagId);
+    setTags((prev) => prev.map((t) => (t.id === tagId ? { ...t, image_url: null } : t)));
+    toast({ title: "Tag image removed" });
+  };
+
   const addTag = async () => {
     if (!newLabel.trim()) return;
     setAdding(true);
@@ -46,6 +103,7 @@ const AdminJudgingTags = ({ adminId }: Props) => {
       label: newLabel.trim(),
       color: newColor,
       icon: newIcon,
+      image_url: newImageUrl,
       sort_order: maxOrder + 1,
       created_by: adminId,
     } as any);
@@ -57,6 +115,7 @@ const AdminJudgingTags = ({ adminId }: Props) => {
       setNewLabel("");
       setNewColor("#d4a017");
       setNewIcon("award");
+      setNewImageUrl(null);
       fetchTags();
     }
   };
@@ -96,13 +155,13 @@ const AdminJudgingTags = ({ adminId }: Props) => {
           Judging <em className="italic text-primary">Tags</em>
         </h2>
         <p className="text-xs text-muted-foreground mt-2 max-w-md" style={{ fontFamily: "var(--font-body)" }}>
-          Create tags that judges can assign to competition entries. These are reusable across all competitions.
+          Create tags that judges can assign to competition entries. Upload custom tag images or use built-in icons.
         </p>
       </div>
 
       {/* Add new tag */}
       <div className="border border-border p-4 space-y-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <input
             type="color"
             value={newColor}
@@ -126,7 +185,7 @@ const AdminJudgingTags = ({ adminId }: Props) => {
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
             placeholder="New tag name (e.g. Top 100 Global Photographer)"
-            className="flex-1 bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm transition-colors duration-500"
+            className="flex-1 min-w-[200px] bg-transparent border-b border-border focus:border-primary outline-none py-2 text-sm transition-colors duration-500"
             style={{ fontFamily: "var(--font-body)" }}
             maxLength={100}
             onKeyDown={(e) => e.key === "Enter" && addTag()}
@@ -141,11 +200,43 @@ const AdminJudgingTags = ({ adminId }: Props) => {
             Add Tag
           </button>
         </div>
+
+        {/* Image upload for new tag */}
+        <div className="flex items-center gap-3">
+          <span className="text-[9px] text-muted-foreground uppercase tracking-wider shrink-0" style={{ fontFamily: "var(--font-heading)" }}>
+            Custom Image:
+          </span>
+          {newImageUrl ? (
+            <div className="flex items-center gap-2">
+              <img src={newImageUrl} alt="Tag preview" className="h-8 w-auto object-contain border border-border rounded-sm" />
+              <button
+                onClick={() => setNewImageUrl(null)}
+                className="p-1 hover:text-destructive transition-colors"
+                title="Remove image"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-border text-[10px] tracking-[0.1em] uppercase text-muted-foreground hover:border-primary hover:text-primary cursor-pointer transition-colors"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+              {uploading ? "Uploading…" : "Upload Tag Image"}
+              <input type="file" accept="image/*" className="hidden" onChange={handleNewTagImage} disabled={uploading} />
+            </label>
+          )}
+          <span className="text-[9px] text-muted-foreground italic" style={{ fontFamily: "var(--font-body)" }}>
+            (overrides icon if set)
+          </span>
+        </div>
+
         {/* Live preview */}
         {newLabel.trim() && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="text-[9px] text-muted-foreground uppercase tracking-wider" style={{ fontFamily: "var(--font-heading)" }}>Preview:</span>
-            <JudgingStampBadge label={newLabel} color={newColor} icon={newIcon} size="md" />
+            <JudgingStampBadge label={newLabel} color={newColor} icon={newIcon} imageUrl={newImageUrl} size="sm" />
+            <JudgingStampBadge label={newLabel} color={newColor} icon={newIcon} imageUrl={newImageUrl} size="md" />
           </div>
         )}
       </div>
@@ -156,18 +247,39 @@ const AdminJudgingTags = ({ adminId }: Props) => {
           <div key={tag.id} className={`relative flex items-center gap-3 px-4 py-3 group ${!tag.is_active ? "opacity-50" : ""}`}>
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
             <div className="relative">
-              <JudgingStampBadge label={tag.label} color={tag.color} icon={tag.icon || "award"} size="sm" />
+              <JudgingStampBadge label={tag.label} color={tag.color} icon={tag.icon || "award"} imageUrl={tag.image_url} size="sm" />
               {/* Hover preview - large version */}
               <div className="absolute left-0 bottom-full mb-3 z-50 hidden group-hover:flex flex-col items-start pointer-events-none">
                 <div className="bg-card border border-border shadow-lg p-4 rounded-sm">
                   <span className="text-[8px] tracking-[0.2em] uppercase text-muted-foreground block mb-2" style={{ fontFamily: "var(--font-heading)" }}>
                     Preview
                   </span>
-                  <JudgingStampBadge label={tag.label} color={tag.color} icon={tag.icon || "award"} size="md" className="scale-150 origin-top-left" />
+                  <JudgingStampBadge label={tag.label} color={tag.color} icon={tag.icon || "award"} imageUrl={tag.image_url} size="md" className={tag.image_url ? "scale-[2] origin-top-left" : "scale-150 origin-top-left"} />
                 </div>
                 <div className="w-3 h-3 bg-card border-b border-r border-border rotate-45 -mt-1.5 ml-4" />
               </div>
             </div>
+
+            {/* Upload / change image for existing tag */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {tag.image_url ? (
+                <>
+                  <img src={tag.image_url} alt="" className="h-5 w-auto object-contain opacity-60" />
+                  <button
+                    onClick={() => removeExistingTagImage(tag.id)}
+                    className="p-1 hover:text-destructive transition-colors"
+                    title="Remove custom image"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </>
+              ) : null}
+              <label className={`p-1.5 cursor-pointer transition-colors ${uploadingTagId === tag.id ? "text-primary" : "text-muted-foreground/50 hover:text-primary"}`} title="Upload custom image">
+                {uploadingTagId === tag.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleExistingTagImage(tag.id, e)} disabled={uploadingTagId === tag.id} />
+              </label>
+            </div>
+
             <span className="flex-1" />
             <button
               onClick={() => toggleActive(tag.id, tag.is_active)}
