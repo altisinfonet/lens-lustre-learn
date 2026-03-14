@@ -81,11 +81,14 @@ const AdminCompetitionJudges = ({ competitionId, adminId }: Props) => {
   const assignJudge = async () => {
     if (!selectedJudge) return;
     setAdding(true);
-    const { error } = await supabase.from("competition_judges").insert({
+    const payload = {
       competition_id: competitionId,
       judge_id: selectedJudge,
       assigned_by: adminId,
-    });
+    };
+    console.log("[AdminCompetitionJudges] Inserting:", payload);
+    const { data, error } = await supabase.from("competition_judges").insert(payload).select();
+    console.log("[AdminCompetitionJudges] Result:", { data, error });
     setAdding(false);
     if (error) {
       if (error.message.includes("duplicate")) {
