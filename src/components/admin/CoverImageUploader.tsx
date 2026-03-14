@@ -268,7 +268,7 @@ const CoverImageUploader = ({
                   </span>
                   <span className="text-[9px] text-muted-foreground/50 flex items-center justify-center gap-1">
                     <Info className="h-3 w-3" />
-                    Best at {recommendedWidth} × {recommendedHeight}px · Max 10MB · JPG, PNG, WebP
+                    Best at {recommendedWidth} × {recommendedHeight}px · Max 50MB · JPG, PNG, WebP
                   </span>
                 </div>
               </>

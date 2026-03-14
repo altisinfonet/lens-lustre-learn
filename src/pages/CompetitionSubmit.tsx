@@ -405,7 +405,7 @@ const CompetitionSubmit = () => {
               className="hidden"
             />
             <p className="text-[10px] text-muted-foreground mt-2" style={{ fontFamily: "var(--font-body)" }}>
-              <T>Max 10MB per photo. JPG, PNG, or WebP. Each photo is auto-scanned for AI generation.</T>
+              <T>Max 50MB per photo. JPG, PNG, or WebP. Auto-compressed & scanned for AI generation.</T>
             </p>
           </div>
 

@@ -290,7 +290,7 @@ const HelpSupport = () => {
                     bucket="support-attachments"
                     folder={user?.id || "uploads"}
                     allowedTypes="image+pdf+document"
-                    maxSize={10 * 1024 * 1024}
+                    maxSize={50 * 1024 * 1024}
                     compressImages={false}
                     showGallery={false}
                     compact

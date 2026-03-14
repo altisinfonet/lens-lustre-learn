@@ -61,7 +61,7 @@ const FileUploadDropZone = ({
   bucket,
   folder,
   allowedTypes = "image+pdf+document",
-  maxSize = 10 * 1024 * 1024,
+  maxSize = 50 * 1024 * 1024,
   compressImages = true,
   onFileUploaded,
   showGallery = true,

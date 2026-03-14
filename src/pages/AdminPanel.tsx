@@ -355,8 +355,8 @@ const AdminPanel = () => {
   };
 
   const handleCoverFileSelect = (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 10MB", variant: "destructive" });
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 50MB", variant: "destructive" });
       return;
     }
     if (!file.type.startsWith("image/")) {
