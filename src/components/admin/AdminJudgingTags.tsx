@@ -45,6 +45,7 @@ const AdminJudgingTags = ({ adminId }: Props) => {
     const { error } = await supabase.from("judging_tags" as any).insert({
       label: newLabel.trim(),
       color: newColor,
+      icon: newIcon,
       sort_order: maxOrder + 1,
       created_by: adminId,
     } as any);
