@@ -28,6 +28,9 @@ interface CompressOptions {
   jpegQuality?: number;
 }
 
+/** Target output size in bytes (default ~1MB) */
+const TARGET_SIZE = 1_000_000;
+
 const DEFAULT_OPTIONS: Required<CompressOptions> = {
   maxDimension: 1920,
   webpQuality: 0.75,
