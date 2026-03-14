@@ -54,6 +54,7 @@ interface Competition {
   starts_at: string;
   ends_at: string;
   created_at: string;
+  judge_names?: string[];
 }
 
 interface EntryRow {
@@ -179,7 +180,29 @@ const AdminPanel = () => {
       .from("competitions")
       .select("id, title, category, status, entry_fee, starts_at, ends_at, created_at")
       .order("created_at", { ascending: false });
-    setCompetitions(data || []);
+    if (!data || data.length === 0) { setCompetitions([]); return; }
+
+    // Fetch assigned judges for all competitions
+    const compIds = data.map(c => c.id);
+    const { data: judges } = await supabase
+      .from("competition_judges")
+      .select("competition_id, judge_id")
+      .in("competition_id", compIds);
+
+    let profileMap = new Map<string, string>();
+    if (judges && judges.length > 0) {
+      const judgeIds = [...new Set(judges.map(j => j.judge_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", judgeIds);
+      profileMap = new Map(profiles?.map(p => [p.id, p.full_name || "Unknown"]) || []);
+    }
+
+    setCompetitions(data.map(c => ({
+      ...c,
+      judge_names: judges?.filter(j => j.competition_id === c.id).map(j => profileMap.get(j.judge_id) || "Unknown") || [],
+    })));
   };
 
   const fetchEntries = async () => {
@@ -961,7 +984,7 @@ const AdminPanel = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Title", "Category", "Status", "Fee", "Dates", "Actions"].map((h) => (
+                    {["Title", "Category", "Status", "Fee", "Judges", "Dates", "Actions"].map((h) => (
                       <th key={h} className="px-4 py-3 text-[9px] tracking-[0.2em] uppercase text-muted-foreground font-normal" style={{ fontFamily: "var(--font-heading)" }}>{h}</th>
                     ))}
                   </tr>
@@ -977,6 +1000,17 @@ const AdminPanel = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-[11px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>${comp.entry_fee}</td>
+                      <td className="px-4 py-3">
+                        {comp.judge_names && comp.judge_names.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {comp.judge_names.map((name, i) => (
+                              <span key={i} className="text-[9px] px-1.5 py-0.5 border border-primary/30 bg-primary/5 text-primary" style={{ fontFamily: "var(--font-body)" }}>{name}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-muted-foreground italic">None</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
                         {new Date(comp.starts_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })} – {new Date(comp.ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </td>
@@ -990,7 +1024,7 @@ const AdminPanel = () => {
                     </tr>
                   ))}
                   {competitions.length === 0 && (
-                    <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>No competitions yet</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>No competitions yet</td></tr>
                   )}
                 </tbody>
               </table>
