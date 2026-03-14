@@ -54,6 +54,7 @@ interface Competition {
   starts_at: string;
   ends_at: string;
   created_at: string;
+  judge_names?: string[];
 }
 
 interface EntryRow {
