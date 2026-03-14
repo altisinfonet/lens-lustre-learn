@@ -1,6 +1,10 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Trophy, Eye, MessageSquare, Loader2, AlertTriangle, Camera, Tag, Layers, Send, ChevronRight, ChevronLeft, CheckCircle, Zap, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Keyboard } from "lucide-react";
+import {
+  Star, Trophy, Eye, MessageSquare, Loader2, AlertTriangle, Camera, Tag, Layers, Send,
+  ChevronRight, ChevronLeft, CheckCircle, Zap, Maximize2, Minimize2, ZoomIn, ZoomOut,
+  RotateCcw, Keyboard, ThumbsUp, ThumbsDown, Clock, Bookmark, Flag, ShieldCheck,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import JudgingStampBadge from "@/components/JudgingStampBadge";
@@ -70,6 +74,13 @@ interface FlatPhoto {
   entry: JudgeEntry;
 }
 
+const DECISIONS = [
+  { value: "approved", label: "Accept", icon: ThumbsUp, color: "text-green-600 border-green-500/50 bg-green-500/8 hover:bg-green-500/15", activeColor: "bg-green-600 text-white border-green-600" },
+  { value: "rejected", label: "Reject", icon: ThumbsDown, color: "text-red-500 border-red-500/50 bg-red-500/8 hover:bg-red-500/15", activeColor: "bg-red-600 text-white border-red-600" },
+  { value: "shortlisted", label: "Shortlist", icon: Bookmark, color: "text-blue-500 border-blue-500/50 bg-blue-500/8 hover:bg-blue-500/15", activeColor: "bg-blue-600 text-white border-blue-600" },
+  { value: "hold", label: "Hold", icon: Clock, color: "text-yellow-600 border-yellow-500/50 bg-yellow-500/8 hover:bg-yellow-500/15", activeColor: "bg-yellow-600 text-white border-yellow-600" },
+];
+
 const PLACEMENTS = [
   { value: "winner", label: "🏆 Winner", color: "text-yellow-500 border-yellow-500" },
   { value: "1st_runner_up", label: "🥈 1st Runner Up", color: "text-muted-foreground border-muted-foreground" },
@@ -119,7 +130,6 @@ const JudgePanel = () => {
     if (!authLoading && !rolesLoading && !isJudge) navigate("/");
   }, [isJudge, authLoading, rolesLoading, navigate]);
 
-  // Reset zoom on photo change
   useEffect(() => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
@@ -180,7 +190,6 @@ const JudgePanel = () => {
       const { data: roundsData } = await supabase.from("judging_rounds" as any).select("id, round_number, name, status").eq("competition_id", selectedCompId).order("round_number", { ascending: true });
       const fetchedRounds = (roundsData as any as JudgingRound[]) || [];
       setRounds(fetchedRounds);
-      // Auto-select the active round, or first round if none active
       const active = fetchedRounds.find(r => r.status === "active");
       if (active) setSelectedRound(active.id);
       else if (fetchedRounds.length > 0) setSelectedRound(fetchedRounds[0].id);
@@ -201,7 +210,7 @@ const JudgePanel = () => {
         .from("competition_entries")
         .select("id, title, description, photos, user_id, status, created_at, competition_id, placement, is_ai_generated, ai_detection_result, exif_data")
         .eq("competition_id", selectedCompId)
-        .in("status", ["submitted", "approved", "winner"])
+        .in("status", ["submitted", "approved", "winner", "rejected", "shortlisted", "hold"])
         .order("created_at", { ascending: false });
 
       if (!rawEntries || rawEntries.length === 0) { setEntries([]); setLoadingEntries(false); return; }
@@ -266,6 +275,10 @@ const JudgePanel = () => {
     if (activeFilter === "all") return allPhotos;
     if (activeFilter === "scored") return allPhotos.filter(p => p.entry.my_score !== null);
     if (activeFilter === "unscored") return allPhotos.filter(p => p.entry.my_score === null);
+    if (activeFilter === "accepted") return allPhotos.filter(p => p.entry.status === "approved");
+    if (activeFilter === "rejected") return allPhotos.filter(p => p.entry.status === "rejected");
+    if (activeFilter === "shortlisted") return allPhotos.filter(p => p.entry.status === "shortlisted");
+    if (activeFilter === "hold") return allPhotos.filter(p => p.entry.status === "hold");
     return allPhotos.filter(p => p.entry.all_tags.some(t => t.tag_id === activeFilter));
   }, [allPhotos, activeFilter]);
 
@@ -311,6 +324,13 @@ const JudgePanel = () => {
         if (num >= 1 && num <= 9) { e.preventDefault(); handleQuickScore(selectedEntry.id, num); }
         if (e.key === "0") { e.preventDefault(); handleQuickScore(selectedEntry.id, 10); }
       }
+      // Decision shortcuts: A=accept, R=reject, S=shortlist, H=hold
+      if (selectedEntry && !fullscreen) {
+        if (e.key === "a" || e.key === "A") { e.preventDefault(); handleDecision(selectedEntry.id, "approved"); }
+        if (e.key === "x" || e.key === "X") { e.preventDefault(); handleDecision(selectedEntry.id, "rejected"); }
+        if (e.key === "s" || e.key === "S") { e.preventDefault(); handleDecision(selectedEntry.id, "shortlisted"); }
+        if (e.key === "h" || e.key === "H") { e.preventDefault(); handleDecision(selectedEntry.id, "hold"); }
+      }
       // Zoom shortcuts in fullscreen
       if (fullscreen) {
         if (e.key === "+" || e.key === "=") { e.preventDefault(); setZoom(z => Math.min(5, z + 0.5)); }
@@ -337,8 +357,60 @@ const JudgePanel = () => {
     setTimeout(() => goNext(), 300);
   };
 
-  // BUG FIX: Only ONE tag per entry per judge. Last marked tag is final.
-  // When toggling a tag: if it's the same tag, remove it. If different, remove all previous and set new one.
+  // Decision: Accept / Reject / Shortlist / Hold
+  const handleDecision = async (entryId: string, status: string) => {
+    const entry = entries.find(e => e.id === entryId);
+    if (!entry) return;
+    // Toggle off if same status
+    const newStatus = entry.status === status ? "submitted" : status;
+    const { error } = await supabase.from("competition_entries").update({ status: newStatus }).eq("id", entryId);
+    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    setEntries(prev => prev.map(e => e.id === entryId ? { ...e, status: newStatus } : e));
+    const label = newStatus === "submitted" ? "Reset to Pending" : DECISIONS.find(d => d.value === newStatus)?.label || newStatus;
+    toast({ title: `${label} ✓` });
+    // Auto-advance on decision
+    if (newStatus !== "submitted") setTimeout(() => goNext(), 300);
+  };
+
+  // Mark round as completed
+  const handleCompleteRound = async (roundId: string) => {
+    const { error } = await supabase.from("judging_rounds" as any).update({ status: "completed" } as any).eq("id", roundId);
+    if (error) { toast({ title: "Failed to complete round", variant: "destructive" }); return; }
+    setRounds(prev => prev.map(r => r.id === roundId ? { ...r, status: "completed" } : r));
+    // Auto-activate next round
+    const currentRound = rounds.find(r => r.id === roundId);
+    if (currentRound) {
+      const nextRound = rounds.find(r => r.round_number > currentRound.round_number && r.status === "pending");
+      if (nextRound) {
+        await supabase.from("judging_rounds" as any).update({ status: "active" } as any).eq("id", nextRound.id);
+        setRounds(prev => prev.map(r => r.id === nextRound.id ? { ...r, status: "active" } : r));
+        setSelectedRound(nextRound.id);
+        toast({ title: `${currentRound.name} completed → ${nextRound.name} is now active` });
+      } else {
+        toast({ title: `${currentRound.name} completed! All rounds done.` });
+      }
+    }
+  };
+
+  // Activate a round (admin)
+  const handleActivateRound = async (roundId: string) => {
+    // Deactivate current active round
+    const currentActive = rounds.find(r => r.status === "active");
+    if (currentActive) {
+      await supabase.from("judging_rounds" as any).update({ status: "pending" } as any).eq("id", currentActive.id);
+    }
+    await supabase.from("judging_rounds" as any).update({ status: "active" } as any).eq("id", roundId);
+    setRounds(prev => prev.map(r => {
+      if (r.id === roundId) return { ...r, status: "active" };
+      if (r.id === currentActive?.id) return { ...r, status: "pending" };
+      return r;
+    }));
+    setSelectedRound(roundId);
+    const roundName = rounds.find(r => r.id === roundId)?.name;
+    toast({ title: `${roundName} is now LIVE` });
+  };
+
+  // BUG FIX: Only ONE tag per entry per judge
   const toggleTag = async (entryId: string, tagId: string) => {
     if (!user) return;
     const entry = entries.find(e => e.id === entryId);
@@ -346,7 +418,6 @@ const JudgePanel = () => {
     const hasTag = entry.my_tags.includes(tagId);
 
     if (hasTag) {
-      // Remove this tag (untoggle)
       await supabase.from("judge_tag_assignments" as any).delete().eq("entry_id", entryId).eq("tag_id", tagId).eq("judge_id", user.id);
       setEntries(prev => prev.map(e => e.id === entryId ? {
         ...e,
@@ -354,7 +425,6 @@ const JudgePanel = () => {
         all_tags: e.all_tags.filter(t => !(t.tag_id === tagId && t.judge_id === user!.id)),
       } : e));
     } else {
-      // Remove ALL previous tags for this entry by this judge, then insert new one
       if (entry.my_tags.length > 0) {
         await supabase.from("judge_tag_assignments" as any).delete().eq("entry_id", entryId).eq("judge_id", user.id);
       }
@@ -399,7 +469,7 @@ const JudgePanel = () => {
     toast({ title: "Note saved ✓" });
   };
 
-  // Zoom handlers for fullscreen
+  // Zoom handlers
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.25 : 0.25;
@@ -433,11 +503,19 @@ const JudgePanel = () => {
   const totalPhotos = allPhotos.length;
   const scoredEntries = entries.filter(e => e.my_score !== null).length;
   const totalEntries = entries.length;
+  const acceptedCount = entries.filter(e => e.status === "approved").length;
+  const rejectedCount = entries.filter(e => e.status === "rejected").length;
+  const shortlistedCount = entries.filter(e => e.status === "shortlisted").length;
+  const holdCount = entries.filter(e => e.status === "hold").length;
 
   const filterOptions: { key: string; label: string; color?: string; count: number; icon?: string }[] = [
-    { key: "all", label: "All Photos", count: totalPhotos, icon: "📸" },
-    { key: "scored", label: "Scored", count: allPhotos.filter(p => p.entry.my_score !== null).length, icon: "✅" },
+    { key: "all", label: "All", count: totalPhotos, icon: "📸" },
     { key: "unscored", label: "Pending", count: allPhotos.filter(p => p.entry.my_score === null).length, icon: "⏳" },
+    { key: "scored", label: "Scored", count: allPhotos.filter(p => p.entry.my_score !== null).length, icon: "✅" },
+    { key: "accepted", label: "Accepted", count: allPhotos.filter(p => p.entry.status === "approved").length, icon: "👍" },
+    { key: "rejected", label: "Rejected", count: allPhotos.filter(p => p.entry.status === "rejected").length, icon: "👎" },
+    { key: "shortlisted", label: "Shortlisted", count: allPhotos.filter(p => p.entry.status === "shortlisted").length, icon: "⭐" },
+    { key: "hold", label: "On Hold", count: allPhotos.filter(p => p.entry.status === "hold").length, icon: "⏸" },
     ...availableTags.map(tag => ({
       key: tag.id,
       label: tag.label,
@@ -446,7 +524,25 @@ const JudgePanel = () => {
     })),
   ];
 
-  // ── FULLSCREEN BIG PREVIEW MODE with ZOOM ──
+  // Status badge for entry
+  const StatusBadge = ({ status }: { status: string }) => {
+    const config: Record<string, { bg: string; text: string; label: string }> = {
+      approved: { bg: "bg-green-500/15", text: "text-green-600", label: "Accepted" },
+      rejected: { bg: "bg-red-500/15", text: "text-red-500", label: "Rejected" },
+      shortlisted: { bg: "bg-blue-500/15", text: "text-blue-500", label: "Shortlisted" },
+      hold: { bg: "bg-yellow-500/15", text: "text-yellow-600", label: "On Hold" },
+      submitted: { bg: "bg-muted", text: "text-muted-foreground", label: "Pending" },
+      winner: { bg: "bg-yellow-500/20", text: "text-yellow-500", label: "Winner" },
+    };
+    const c = config[status] || config.submitted;
+    return (
+      <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${c.bg} ${c.text} font-semibold uppercase tracking-wider`} style={{ fontFamily: "var(--font-heading)" }}>
+        {c.label}
+      </span>
+    );
+  };
+
+  // ── FULLSCREEN BIG PREVIEW MODE ──
   if (fullscreen && selectedEntry && selectedPhoto) {
     return (
       <div className="fixed inset-0 z-50 bg-black flex flex-col select-none">
@@ -461,7 +557,7 @@ const JudgePanel = () => {
               <p className="text-[11px] text-white/50">
                 by {selectedEntry.photographer_name || "Anonymous"}
                 {selectedRound && rounds.length > 0 && (
-                  <> · <span className="text-green-400">{rounds.find(r => r.id === selectedRound)?.name || "Round"}</span></>
+                  <> · <span className="text-green-400">{rounds.find(r => r.id === selectedRound)?.name}</span></>
                 )}
               </p>
             </div>
@@ -472,7 +568,7 @@ const JudgePanel = () => {
                 <AlertTriangle className="h-3 w-3" /> AI
               </span>
             )}
-            {/* Zoom controls */}
+            <StatusBadge status={selectedEntry.status} />
             <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
               <button onClick={() => setZoom(z => Math.max(0.5, z - 0.5))} className="p-1 text-white/70 hover:text-white">
                 <ZoomOut className="h-3.5 w-3.5" />
@@ -496,19 +592,22 @@ const JudgePanel = () => {
           </div>
         </div>
 
-        {/* Shortcuts overlay */}
         {showShortcuts && (
           <div className="absolute top-14 right-4 z-50 bg-black/95 border border-white/20 rounded-lg p-4 text-white/80 text-[11px] space-y-1" style={{ fontFamily: "var(--font-heading)" }}>
             <p className="text-white font-bold mb-2 text-xs">Keyboard Shortcuts</p>
-            <p><span className="text-white/50 mr-2">← →</span> Previous / Next photo</p>
+            <p><span className="text-white/50 mr-2">← →</span> Navigate</p>
             <p><span className="text-white/50 mr-2">1-9, 0</span> Score 1-10</p>
-            <p><span className="text-white/50 mr-2">+ / -</span> Zoom in / out</p>
+            <p><span className="text-white/50 mr-2">A</span> Accept</p>
+            <p><span className="text-white/50 mr-2">X</span> Reject</p>
+            <p><span className="text-white/50 mr-2">S</span> Shortlist</p>
+            <p><span className="text-white/50 mr-2">H</span> Hold</p>
+            <p><span className="text-white/50 mr-2">+ / -</span> Zoom</p>
             <p><span className="text-white/50 mr-2">R</span> Reset zoom</p>
-            <p><span className="text-white/50 mr-2">ESC</span> Exit fullscreen</p>
+            <p><span className="text-white/50 mr-2">ESC</span> Exit</p>
           </div>
         )}
 
-        {/* Big image with zoom & pan */}
+        {/* Image area */}
         <div
           className="flex-1 relative overflow-hidden"
           onWheel={handleWheel}
@@ -518,7 +617,6 @@ const JudgePanel = () => {
           onMouseLeave={handleMouseUp}
           style={{ cursor: zoom > 1 ? (isDragging ? "grabbing" : "grab") : "default" }}
         >
-          {/* Nav arrows */}
           <button
             onClick={(e) => { e.stopPropagation(); goPrev(); }}
             disabled={currentPhotoIdx <= 0}
@@ -553,7 +651,6 @@ const JudgePanel = () => {
             <ChevronRight className="h-7 w-7" />
           </button>
 
-          {/* Current tag stamp on image */}
           {selectedEntry.my_tags.length > 0 && zoom <= 1 && (
             <div className="absolute bottom-0 left-0 right-0 flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-t from-black/80 to-transparent z-10">
               {selectedEntry.my_tags.map(tagId => {
@@ -563,7 +660,6 @@ const JudgePanel = () => {
             </div>
           )}
 
-          {/* Zoom indicator */}
           {zoom > 1 && (
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-black/70 text-white/80 text-[10px] px-3 py-1 rounded-full backdrop-blur-sm" style={{ fontFamily: "var(--font-heading)" }}>
               {Math.round(zoom * 100)}% — scroll to zoom, drag to pan
@@ -571,11 +667,32 @@ const JudgePanel = () => {
           )}
         </div>
 
-        {/* Bottom: Score + Tag bar */}
+        {/* Bottom action bar */}
         <div className="bg-black/90 border-t border-white/10 px-4 py-3 shrink-0">
-          <div className="max-w-4xl mx-auto">
-            {/* Score buttons - LARGE for easy tapping */}
-            <div className="flex items-center justify-center gap-2.5 mb-2.5">
+          <div className="max-w-5xl mx-auto flex flex-col gap-2.5">
+            {/* Decision buttons */}
+            <div className="flex items-center justify-center gap-3">
+              {DECISIONS.map(d => {
+                const isActive = selectedEntry.status === d.value;
+                const Icon = d.icon;
+                return (
+                  <button
+                    key={d.value}
+                    onClick={() => handleDecision(selectedEntry.id, d.value)}
+                    className={`inline-flex items-center gap-2 text-[12px] font-semibold px-5 py-2.5 rounded-xl border-2 transition-all duration-200 ${
+                      isActive ? d.activeColor : `${d.color} border-white/15`
+                    }`}
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {d.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Score buttons */}
+            <div className="flex items-center justify-center gap-2">
               <span className="text-[10px] text-white/40 uppercase tracking-widest mr-2" style={{ fontFamily: "var(--font-heading)" }}>Score</span>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => {
                 const isActive = selectedEntry.my_score === n;
@@ -584,7 +701,7 @@ const JudgePanel = () => {
                     key={n}
                     onClick={() => handleQuickScore(selectedEntry.id, n)}
                     disabled={scoringEntry === selectedEntry.id}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold transition-all duration-200 ${
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-base font-bold transition-all duration-200 ${
                       isActive
                         ? `${SCORE_COLORS[n]} text-white scale-110 ring-2 ring-white/50 shadow-lg shadow-white/10`
                         : "bg-white/10 text-white/70 hover:bg-white/25 hover:text-white hover:scale-105"
@@ -596,7 +713,8 @@ const JudgePanel = () => {
                 );
               })}
             </div>
-            {/* Tags row - single selection with visual indicator */}
+
+            {/* Tags row */}
             {availableTags.length > 0 && (
               <div className="flex items-center justify-center gap-2">
                 <span className="text-[9px] text-white/30 uppercase tracking-widest mr-1" style={{ fontFamily: "var(--font-heading)" }}>Tag</span>
@@ -646,26 +764,38 @@ const JudgePanel = () => {
           Judge <em className="italic text-primary">Panel</em>
         </h1>
 
-        {/* Progress bar with round info */}
+        {/* Progress & Stats Bar */}
         {selectedCompId && totalEntries > 0 && (
-          <div className="mb-3 flex items-center gap-3">
-            {activeRound && (
-              <span className="shrink-0 text-[10px] px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-semibold flex items-center gap-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                {activeRound.name}
+          <div className="mb-3 space-y-2">
+            {/* Progress */}
+            <div className="flex items-center gap-3">
+              {activeRound && (
+                <span className="shrink-0 text-[10px] px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-semibold flex items-center gap-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  {activeRound.name}
+                </span>
+              )}
+              <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+                <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${(scoredEntries / totalEntries) * 100}%` }} transition={{ duration: 0.5 }} />
+              </div>
+              <span className="text-xs text-muted-foreground whitespace-nowrap font-medium" style={{ fontFamily: "var(--font-heading)" }}>
+                {scoredEntries}/{totalEntries} scored
               </span>
-            )}
-            <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
-              <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${(scoredEntries / totalEntries) * 100}%` }} transition={{ duration: 0.5 }} />
             </div>
-            <span className="text-xs text-muted-foreground whitespace-nowrap font-medium" style={{ fontFamily: "var(--font-heading)" }}>
-              ✅ {scoredEntries} / {totalEntries} scored ({totalEntries > 0 ? Math.round((scoredEntries / totalEntries) * 100) : 0}%)
-            </span>
+            {/* Decision stats */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[9px] text-muted-foreground uppercase tracking-wider" style={{ fontFamily: "var(--font-heading)" }}>Decisions:</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 font-medium">✓ {acceptedCount} accepted</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 font-medium">✗ {rejectedCount} rejected</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 font-medium">★ {shortlistedCount} shortlisted</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600 font-medium">⏸ {holdCount} on hold</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">⏳ {totalEntries - acceptedCount - rejectedCount - shortlistedCount - holdCount} pending</span>
+            </div>
           </div>
         )}
 
         {/* 3-Column Layout */}
-        <div className="flex gap-0 border border-border rounded-lg overflow-hidden" style={{ height: "calc(100vh - 200px)", minHeight: 500 }}>
+        <div className="flex gap-0 border border-border rounded-lg overflow-hidden" style={{ height: "calc(100vh - 240px)", minHeight: 500 }}>
           {/* ─── LEFT: Competition List ─── */}
           <div className="w-56 shrink-0 border-r border-border flex flex-col bg-muted/20 overflow-hidden">
             <div className="px-3 py-2.5 border-b border-border bg-muted/40">
@@ -673,7 +803,7 @@ const JudgePanel = () => {
                 🏆 Competitions
               </span>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
               {competitions.length === 0 ? (
                 <p className="text-[10px] text-muted-foreground p-3" style={{ fontFamily: "var(--font-body)" }}>No competitions assigned.</p>
               ) : (
@@ -703,17 +833,16 @@ const JudgePanel = () => {
                 ))
               )}
             </div>
-
           </div>
 
-          {/* ─── MIDDLE: Big Preview + Thumbnails ─── */}
+          {/* ─── MIDDLE: Preview + Thumbnails ─── */}
           <div className="flex-1 flex flex-col overflow-hidden min-w-0">
             {!selectedCompId ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                   <Trophy className="h-12 w-12 text-muted-foreground/15 mx-auto mb-4" />
                   <p className="text-base text-muted-foreground mb-1" style={{ fontFamily: "var(--font-display)" }}>Select a Competition</p>
-                  <p className="text-xs text-muted-foreground/60" style={{ fontFamily: "var(--font-body)" }}>← Choose from the left panel to start judging</p>
+                  <p className="text-xs text-muted-foreground/60" style={{ fontFamily: "var(--font-body)" }}>← Choose from the left panel</p>
                 </div>
               </div>
             ) : loadingEntries ? (
@@ -722,111 +851,102 @@ const JudgePanel = () => {
               </div>
             ) : (
               <>
-                {/* ── ROUND SELECTOR BANNER ── */}
+                {/* ── ROUND SELECTOR ── */}
                 {rounds.length > 0 && (
-                  <div className="px-3 py-2.5 border-b border-border bg-primary/5">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <Layers className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-[10px] tracking-[0.2em] uppercase text-primary font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-                          Judging Round
-                        </span>
+                  <div className="px-3 py-2 border-b border-border bg-card">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="text-[9px] tracking-[0.15em] uppercase text-primary font-semibold" style={{ fontFamily: "var(--font-heading)" }}>Round</span>
                       </div>
-                      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                      <div className="flex items-center gap-1.5">
                         {rounds.map(round => {
-                          const isActive = selectedRound === round.id;
+                          const isSelected = selectedRound === round.id;
                           const isRoundActive = round.status === "active";
                           const isCompleted = round.status === "completed";
                           return (
-                            <button
-                              key={round.id}
-                              onClick={() => setSelectedRound(round.id)}
-                              className={`relative inline-flex items-center gap-1.5 text-[11px] font-medium px-4 py-2 rounded-full whitespace-nowrap transition-all duration-200 border-2 ${
-                                isActive
-                                  ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
-                                  : isCompleted
-                                  ? "bg-muted/40 text-muted-foreground border-muted-foreground/20 opacity-60"
-                                  : "bg-background text-foreground border-border hover:border-primary/50 hover:scale-105"
-                              }`}
-                              style={{ fontFamily: "var(--font-heading)" }}
-                            >
-                              {isRoundActive && !isActive && (
-                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
+                            <div key={round.id} className="flex items-center gap-0.5">
+                              <button
+                                onClick={() => setSelectedRound(round.id)}
+                                className={`inline-flex items-center gap-1 text-[10px] font-medium px-3 py-1.5 rounded-md whitespace-nowrap transition-all duration-200 ${
+                                  isSelected
+                                    ? "bg-primary text-primary-foreground shadow-sm"
+                                    : isCompleted
+                                    ? "bg-muted/60 text-muted-foreground"
+                                    : "bg-muted/30 text-foreground hover:bg-muted/60"
+                                }`}
+                                style={{ fontFamily: "var(--font-heading)" }}
+                              >
+                                {isRoundActive && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />}
+                                {isCompleted && <CheckCircle className="h-3 w-3 shrink-0 opacity-60" />}
+                                {round.name}
+                              </button>
+                              {/* Complete round button for admin/judge on active round */}
+                              {isRoundActive && isSelected && (
+                                <button
+                                  onClick={() => handleCompleteRound(round.id)}
+                                  className="text-[8px] px-1.5 py-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-0.5"
+                                  style={{ fontFamily: "var(--font-heading)" }}
+                                  title="Mark this round as completed"
+                                >
+                                  <ShieldCheck className="h-3 w-3" />
+                                  Done
+                                </button>
                               )}
-                              {isCompleted && <CheckCircle className="h-3 w-3 shrink-0" />}
-                              R{round.round_number}: {round.name}
-                              {isRoundActive && (
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/25" : "bg-green-500/15 text-green-600 dark:text-green-400"}`}>
-                                  LIVE
-                                </span>
+                              {/* Activate button for admin on pending rounds */}
+                              {isAdmin && round.status === "pending" && !isRoundActive && (
+                                <button
+                                  onClick={() => handleActivateRound(round.id)}
+                                  className="text-[8px] px-1.5 py-1 rounded bg-primary/80 text-primary-foreground hover:bg-primary transition-colors"
+                                  style={{ fontFamily: "var(--font-heading)" }}
+                                  title="Set this round as active"
+                                >
+                                  Go Live
+                                </button>
                               )}
-                              {isCompleted && (
-                                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/25" : "bg-muted-foreground/10"}`}>
-                                  DONE
-                                </span>
-                              )}
-                            </button>
+                            </div>
                           );
                         })}
                       </div>
                     </div>
-                    {/* Active round info */}
-                    {selectedRound && (
-                      <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground ml-6" style={{ fontFamily: "var(--font-body)" }}>
-                        {(() => {
-                          const r = rounds.find(r => r.id === selectedRound);
-                          if (!r) return null;
-                          return (
-                            <>
-                              <span>You are scoring for <strong className="text-foreground">{r.name}</strong></span>
-                              <span className={`inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full border ${
-                                r.status === "active" ? "border-green-500/40 text-green-600 dark:text-green-400 bg-green-500/5" :
-                                r.status === "completed" ? "border-muted-foreground/30 text-muted-foreground bg-muted/30" :
-                                "border-yellow-500/40 text-yellow-600 dark:text-yellow-400 bg-yellow-500/5"
-                              }`} style={{ fontFamily: "var(--font-heading)" }}>
-                                {r.status === "active" ? "🟢" : r.status === "completed" ? "✅" : "⏳"} {r.status}
-                              </span>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    )}
                   </div>
                 )}
 
-                {/* No rounds warning for admin */}
                 {rounds.length === 0 && isAdmin && (
                   <div className="px-3 py-2 border-b border-border bg-yellow-500/5 flex items-center gap-2">
                     <AlertTriangle className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
                     <span className="text-[10px] text-yellow-600 dark:text-yellow-400" style={{ fontFamily: "var(--font-body)" }}>
-                      No judging rounds created. Go to <strong>Admin → Competitions</strong> to add rounds for this competition.
+                      No judging rounds created. Go to <strong>Admin → Competitions</strong> to add rounds.
                     </span>
                   </div>
                 )}
 
-                {/* ── Modern Filter Pills ── */}
-                <div className="px-3 py-2.5 border-b border-border bg-muted/10">
-                  <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+                {/* ── Filter Pills ── */}
+                <div className="px-3 py-2 border-b border-border bg-background">
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
                     {filterOptions.map(opt => {
                       const isActive = activeFilter === opt.key;
+                      const hasItems = opt.count > 0;
                       return (
                         <button
                           key={opt.key}
                           onClick={() => setActiveFilter(opt.key)}
-                          className={`relative inline-flex items-center gap-1.5 text-[11px] font-medium px-4 py-2 rounded-full whitespace-nowrap transition-all duration-200 ${
+                          className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap transition-all duration-150 ${
                             isActive
-                              ? "bg-primary text-primary-foreground shadow-md scale-105"
-                              : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : hasItems
+                              ? "bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                              : "bg-muted/20 text-muted-foreground/50"
                           }`}
                           style={{
                             fontFamily: "var(--font-heading)",
                             ...(opt.color && isActive ? { backgroundColor: opt.color, color: "#fff" } : {}),
                           }}
                         >
-                          {opt.icon && <span className="text-sm">{opt.icon}</span>}
-                          {opt.color && !opt.icon && <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: isActive ? "#fff" : opt.color }} />}
+                          {opt.icon && <span className="text-xs">{opt.icon}</span>}
+                          {opt.color && !opt.icon && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isActive ? "#fff" : opt.color }} />}
                           {opt.label}
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full ml-0.5 ${isActive ? "bg-white/25" : "bg-muted-foreground/10"}`}>
+                          <span className={`text-[8px] ${isActive ? "text-white/70" : "text-muted-foreground/60"}`}>
                             {opt.count}
                           </span>
                         </button>
@@ -839,13 +959,16 @@ const JudgePanel = () => {
                 {selectedEntry && selectedPhoto ? (
                   <div className="flex-1 flex flex-col overflow-hidden">
                     {/* Preview header */}
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-background">
-                      <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50 bg-background">
+                      <div className="flex items-center gap-2 min-w-0">
                         <div className="min-w-0">
-                          <h3 className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-display)" }}>{selectedEntry.title}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-medium truncate" style={{ fontFamily: "var(--font-display)" }}>{selectedEntry.title}</h3>
+                            <StatusBadge status={selectedEntry.status} />
+                          </div>
                           <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
-                            by {selectedEntry.photographer_name || "Anonymous"} · Photo {selectedPhoto.photoIndex + 1}/{selectedEntry.photos.length}
-                            {selectedEntry.my_score !== null && <> · Score: <span className="text-primary font-bold">{selectedEntry.my_score}/10</span></>}
+                            by {selectedEntry.photographer_name || "Anonymous"} · {selectedPhoto.photoIndex + 1}/{selectedEntry.photos.length}
+                            {selectedEntry.my_score !== null && <> · <span className="text-primary font-bold">{selectedEntry.my_score}/10</span></>}
                           </p>
                         </div>
                         {selectedEntry.is_ai_generated && (
@@ -853,27 +976,18 @@ const JudgePanel = () => {
                             <AlertTriangle className="h-3 w-3" /> AI
                           </span>
                         )}
-                        {/* Active tag badge */}
-                        {selectedEntry.my_tags.length > 0 && (
-                          <div className="shrink-0 flex gap-1">
-                            {selectedEntry.my_tags.map(tagId => {
-                              const tag = availableTags.find(t => t.id === tagId);
-                              return tag ? <JudgingStampBadge key={tagId} label={tag.label} color={tag.color} icon={tag.icon || "award"} imageUrl={tag.image_url} size="sm" /> : null;
-                            })}
-                          </div>
-                        )}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button onClick={goPrev} disabled={currentPhotoIdx <= 0} className="p-1.5 hover:bg-muted rounded-full disabled:opacity-20 transition-colors">
                           <ChevronLeft className="h-5 w-5" />
                         </button>
                         <span className="text-[11px] text-muted-foreground tabular-nums w-16 text-center" style={{ fontFamily: "var(--font-heading)" }}>
-                          {currentPhotoIdx + 1} / {filteredPhotos.length}
+                          {currentPhotoIdx + 1}/{filteredPhotos.length}
                         </span>
                         <button onClick={goNext} disabled={currentPhotoIdx >= filteredPhotos.length - 1} className="p-1.5 hover:bg-muted rounded-full disabled:opacity-20 transition-colors">
                           <ChevronRight className="h-5 w-5" />
                         </button>
-                        <button onClick={() => setFullscreen(true)} className="p-1.5 hover:bg-muted rounded-full transition-colors ml-1" title="Fullscreen (zoom up to 500%)">
+                        <button onClick={() => setFullscreen(true)} className="p-1.5 hover:bg-muted rounded-full transition-colors ml-1" title="Fullscreen (500% zoom)">
                           <Maximize2 className="h-4 w-4 text-muted-foreground" />
                         </button>
                       </div>
@@ -881,11 +995,7 @@ const JudgePanel = () => {
 
                     {/* Big image */}
                     <div className="flex-1 bg-black/95 relative flex items-center justify-center overflow-hidden min-h-0">
-                      <button
-                        onClick={goPrev}
-                        disabled={currentPhotoIdx <= 0}
-                        className="absolute left-3 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-10 flex items-center justify-center text-white transition-all"
-                      >
+                      <button onClick={goPrev} disabled={currentPhotoIdx <= 0} className="absolute left-3 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-10 flex items-center justify-center text-white transition-all">
                         <ChevronLeft className="h-5 w-5" />
                       </button>
 
@@ -903,15 +1013,10 @@ const JudgePanel = () => {
                         />
                       </AnimatePresence>
 
-                      <button
-                        onClick={goNext}
-                        disabled={currentPhotoIdx >= filteredPhotos.length - 1}
-                        className="absolute right-3 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-10 flex items-center justify-center text-white transition-all"
-                      >
+                      <button onClick={goNext} disabled={currentPhotoIdx >= filteredPhotos.length - 1} className="absolute right-3 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-10 flex items-center justify-center text-white transition-all">
                         <ChevronRight className="h-5 w-5" />
                       </button>
 
-                      {/* Tag stamp overlay */}
                       {selectedEntry.my_tags.length > 0 && (
                         <div className="absolute bottom-0 left-0 right-0 flex items-center gap-1.5 px-3 py-2 bg-gradient-to-t from-black/70 to-transparent">
                           {selectedEntry.my_tags.map(tagId => {
@@ -921,24 +1026,25 @@ const JudgePanel = () => {
                         </div>
                       )}
 
-                      {/* Click to fullscreen hint */}
                       <div className="absolute bottom-2 right-3 text-[9px] text-white/30 flex items-center gap-1" style={{ fontFamily: "var(--font-heading)" }}>
-                        <Maximize2 className="h-3 w-3" /> Click image for 500% zoom
+                        <Maximize2 className="h-3 w-3" /> Click for 500% zoom
                       </div>
                     </div>
 
-                    {/* Thumbnail filmstrip at bottom */}
-                    <div className="h-20 border-t border-border bg-muted/20 overflow-x-auto flex items-center gap-0.5 px-2 py-1.5 scrollbar-hide">
+                    {/* Thumbnail filmstrip */}
+                    <div className="h-16 border-t border-border bg-muted/20 overflow-x-auto flex items-center gap-0.5 px-2 py-1 scrollbar-hide">
                       {filteredPhotos.map((photo, i) => {
                         const key = `${photo.entryId}-${photo.photoIndex}`;
                         const isCurrent = selectedPhotoKey === key;
                         const hasScore = photo.entry.my_score !== null;
+                        const entryStatus = photo.entry.status;
+                        const statusRing = entryStatus === "approved" ? "ring-green-500" : entryStatus === "rejected" ? "ring-red-500" : entryStatus === "shortlisted" ? "ring-blue-500" : entryStatus === "hold" ? "ring-yellow-500" : "";
                         return (
                           <div
                             key={key}
                             onClick={() => setSelectedPhotoKey(key)}
-                            className={`relative shrink-0 w-14 h-14 cursor-pointer overflow-hidden rounded transition-all duration-150 ${
-                              isCurrent ? "ring-2 ring-primary scale-110" : "opacity-50 hover:opacity-100 hover:ring-1 hover:ring-primary/40"
+                            className={`relative shrink-0 w-12 h-12 cursor-pointer overflow-hidden rounded transition-all duration-150 ${
+                              isCurrent ? "ring-2 ring-primary scale-110" : statusRing ? `opacity-70 hover:opacity-100 ring-1 ${statusRing}` : "opacity-50 hover:opacity-100"
                             }`}
                           >
                             <img src={photo.photoUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -954,7 +1060,7 @@ const JudgePanel = () => {
                   </div>
                 ) : (
                   /* No photo selected — show grid */
-                  <div className="flex-1 overflow-y-auto p-3">
+                  <div className="flex-1 overflow-y-auto p-3 scrollbar-hide">
                     {filteredPhotos.length === 0 ? (
                       <div className="flex items-center justify-center h-full">
                         <div className="text-center">
@@ -965,18 +1071,19 @@ const JudgePanel = () => {
                     ) : (
                       <>
                         <p className="text-xs text-muted-foreground mb-3 px-1" style={{ fontFamily: "var(--font-heading)" }}>
-                          📸 {filteredPhotos.length} photos · Click any photo to start judging · Use number keys <span className="px-1 py-0.5 bg-muted rounded text-[9px]">1-9</span> to score
+                          📸 {filteredPhotos.length} photos · Click to judge · Keys: <span className="px-1 py-0.5 bg-muted rounded text-[9px]">1-9</span> score <span className="px-1 py-0.5 bg-muted rounded text-[9px]">A</span> accept <span className="px-1 py-0.5 bg-muted rounded text-[9px]">X</span> reject
                         </p>
                         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-1.5">
                           {filteredPhotos.map((photo) => {
                             const key = `${photo.entryId}-${photo.photoIndex}`;
                             const hasScore = photo.entry.my_score !== null;
-                            const hasTags = photo.entry.my_tags.length > 0;
+                            const entryStatus = photo.entry.status;
+                            const statusBorder = entryStatus === "approved" ? "border-green-500/60" : entryStatus === "rejected" ? "border-red-500/60" : entryStatus === "shortlisted" ? "border-blue-500/60" : entryStatus === "hold" ? "border-yellow-500/60" : "border-transparent";
                             return (
                               <div
                                 key={key}
                                 onClick={() => setSelectedPhotoKey(key)}
-                                className="relative group cursor-pointer aspect-square overflow-hidden rounded-lg border-2 border-transparent hover:border-primary/50 transition-all duration-200 hover:scale-[1.03] hover:shadow-lg"
+                                className={`relative group cursor-pointer aspect-square overflow-hidden rounded-lg border-2 ${statusBorder} hover:border-primary/50 transition-all duration-200 hover:scale-[1.03] hover:shadow-lg`}
                                 title={`${photo.entry.title} by ${photo.entry.photographer_name || "Anonymous"}`}
                               >
                                 <img src={photo.photoUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -985,17 +1092,18 @@ const JudgePanel = () => {
                                     {photo.entry.my_score}
                                   </div>
                                 )}
-                                {hasTags && (
-                                  <div className="absolute bottom-0 left-0 right-0 flex gap-0.5 p-1 bg-gradient-to-t from-black/60 to-transparent">
-                                    {photo.entry.my_tags.map(tagId => {
-                                      const tag = availableTags.find(t => t.id === tagId);
-                                      return tag ? <span key={tagId} className="w-2.5 h-2.5 rounded-full border border-white/30" style={{ backgroundColor: tag.color }} title={tag.label} /> : null;
-                                    })}
+                                {/* Status indicator */}
+                                {entryStatus !== "submitted" && (
+                                  <div className="absolute top-1 left-1">
+                                    <StatusBadge status={entryStatus} />
                                   </div>
                                 )}
-                                {photo.entry.placement && photo.photoIndex === 0 && (
-                                  <div className="absolute top-1 left-1 text-sm drop-shadow-lg">
-                                    {photo.entry.placement === "winner" ? "🏆" : photo.entry.placement === "1st_runner_up" ? "🥈" : photo.entry.placement === "2nd_runner_up" ? "🥉" : "👁"}
+                                {photo.entry.my_tags.length > 0 && (
+                                  <div className="absolute bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/60 to-transparent">
+                                    {photo.entry.my_tags.map(tagId => {
+                                      const tag = availableTags.find(t => t.id === tagId);
+                                      return tag ? <JudgingStampBadge key={tagId} label={tag.label} color={tag.color} icon={tag.icon || "award"} imageUrl={tag.image_url} size="sm" /> : null;
+                                    })}
                                   </div>
                                 )}
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
@@ -1013,7 +1121,7 @@ const JudgePanel = () => {
             )}
           </div>
 
-          {/* ─── RIGHT: Scoring Panel (when photo selected) ─── */}
+          {/* ─── RIGHT: Action Panel ─── */}
           <AnimatePresence mode="wait">
             {selectedEntry && selectedPhoto && (
               <motion.div
@@ -1022,12 +1130,41 @@ const JudgePanel = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.12 }}
-                className="w-72 xl:w-80 shrink-0 border-l border-border overflow-y-auto bg-background"
+                className="w-72 xl:w-80 shrink-0 border-l border-border overflow-y-auto scrollbar-hide bg-background"
               >
-                {/* ★ BIG SCORE BUTTONS ★ */}
+                {/* ★ DECISION BUTTONS ★ */}
+                <div className="px-3 py-3 border-b border-border">
+                  <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground flex items-center gap-1 mb-2.5" style={{ fontFamily: "var(--font-heading)" }}>
+                    <Flag className="h-3 w-3" /> Decision
+                  </span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {DECISIONS.map(d => {
+                      const isActive = selectedEntry.status === d.value;
+                      const Icon = d.icon;
+                      return (
+                        <button
+                          key={d.value}
+                          onClick={() => handleDecision(selectedEntry.id, d.value)}
+                          className={`inline-flex items-center justify-center gap-1.5 text-[10px] font-semibold px-2.5 py-2 rounded-lg border-2 transition-all duration-200 ${
+                            isActive ? d.activeColor : d.color
+                          }`}
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          {d.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-1.5 text-[8px] text-muted-foreground/60 text-center" style={{ fontFamily: "var(--font-heading)" }}>
+                    Keys: <span className="bg-muted px-1 rounded">A</span> accept <span className="bg-muted px-1 rounded">X</span> reject <span className="bg-muted px-1 rounded">S</span> shortlist <span className="bg-muted px-1 rounded">H</span> hold
+                  </div>
+                </div>
+
+                {/* ★ SCORE BUTTONS ★ */}
                 <div className="px-3 py-3 border-b border-border">
                   <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground flex items-center gap-1 mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                    <Zap className="h-3 w-3" /> Tap to Score (auto-advances)
+                    <Zap className="h-3 w-3" /> Score (auto-advances)
                   </span>
                   <div className="grid grid-cols-5 gap-1.5">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => {
@@ -1037,7 +1174,7 @@ const JudgePanel = () => {
                           key={n}
                           onClick={() => handleQuickScore(selectedEntry.id, n)}
                           disabled={scoringEntry === selectedEntry.id}
-                          className={`aspect-square flex items-center justify-center text-lg font-bold rounded-xl transition-all duration-200 ${
+                          className={`aspect-square flex items-center justify-center text-lg font-bold rounded-lg transition-all duration-200 ${
                             isActive
                               ? `${SCORE_COLORS[n]} text-white scale-105 ring-2 ring-offset-1 ring-offset-background ring-current shadow-lg`
                               : "bg-muted hover:bg-muted/80 text-foreground hover:scale-105"
@@ -1073,13 +1210,13 @@ const JudgePanel = () => {
                   </span>
                 </div>
 
-                {/* Tags - Single selection mode */}
+                {/* Tags */}
                 {availableTags.length > 0 && (
                   <div className="px-3 py-2.5 border-b border-border">
                     <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground flex items-center gap-1 mb-2" style={{ fontFamily: "var(--font-heading)" }}>
-                      <Tag className="h-3 w-3" /> Tag (select one)
+                      <Tag className="h-3 w-3" /> Award Tag
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="space-y-1">
                       {availableTags.map(tag => {
                         const isActive = selectedEntry.my_tags.includes(tag.id);
                         const totalCount = selectedEntry.all_tags.filter(t => t.tag_id === tag.id).length;
@@ -1087,36 +1224,26 @@ const JudgePanel = () => {
                           <button
                             key={tag.id}
                             onClick={() => toggleTag(selectedEntry.id, tag.id)}
-                            className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg border-2 transition-all duration-200 ${
-                              isActive ? "ring-1 ring-offset-1 shadow-md scale-105" : "border-border/60 text-muted-foreground hover:border-foreground/40 hover:scale-105"
+                            className={`w-full flex items-center gap-2 text-[11px] px-3 py-2 rounded-lg border transition-all duration-200 ${
+                              isActive ? "ring-1 ring-offset-1 shadow-sm scale-[1.02]" : "border-border/60 text-muted-foreground hover:border-foreground/40"
                             }`}
                             style={{
                               fontFamily: "var(--font-heading)",
-                              ...(isActive ? { color: tag.color, borderColor: tag.color, backgroundColor: `${tag.color}15` } : {}),
+                              ...(isActive ? { color: tag.color, borderColor: tag.color, backgroundColor: `${tag.color}12` } : {}),
                             }}
                           >
                             {tag.image_url ? (
-                              <img src={tag.image_url} alt="" className="h-4 w-auto object-contain" />
+                              <img src={tag.image_url} alt="" className="h-5 w-auto object-contain" />
                             ) : (
-                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tag.color }} />
+                              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
                             )}
-                            {tag.label}
-                            {isActive && <CheckCircle className="h-3.5 w-3.5" />}
-                            {totalCount > 0 && <span className="text-[7px] opacity-50">({totalCount})</span>}
+                            <span className="flex-1 text-left">{tag.label}</span>
+                            {isActive && <CheckCircle className="h-4 w-4 shrink-0" />}
+                            {totalCount > 0 && <span className="text-[8px] opacity-50">({totalCount})</span>}
                           </button>
                         );
                       })}
                     </div>
-                    {/* Active stamp preview */}
-                    {selectedEntry.my_tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-border/30">
-                        <span className="text-[8px] text-muted-foreground mr-1">Stamp on photo:</span>
-                        {selectedEntry.my_tags.map(tagId => {
-                          const tag = availableTags.find(t => t.id === tagId);
-                          return tag ? <JudgingStampBadge key={tagId} label={tag.label} color={tag.color} icon={tag.icon || "award"} imageUrl={tag.image_url} size="sm" /> : null;
-                        })}
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -1165,7 +1292,7 @@ const JudgePanel = () => {
                     <MessageSquare className="h-2.5 w-2.5" /> Private Notes
                   </span>
                   {selectedEntry.my_comments.length > 0 && (
-                    <div className="space-y-1 mb-1.5 max-h-[100px] overflow-y-auto">
+                    <div className="space-y-1 mb-1.5 max-h-[100px] overflow-y-auto scrollbar-hide">
                       {selectedEntry.my_comments.map(c => {
                         const roundName = rounds.find(r => r.id === c.round_id)?.name;
                         return (
@@ -1207,8 +1334,9 @@ const JudgePanel = () => {
                 <Camera className="h-10 w-10 text-muted-foreground/15 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground mb-1" style={{ fontFamily: "var(--font-display)" }}>Click any photo</p>
                 <p className="text-[10px] text-muted-foreground/60 mt-1.5 space-y-1" style={{ fontFamily: "var(--font-heading)" }}>
-                  <span className="block">← → Arrow keys to navigate</span>
-                  <span className="block">1-9, 0 = Score 1-10</span>
+                  <span className="block">← → Navigate</span>
+                  <span className="block">1-9, 0 = Score</span>
+                  <span className="block">A/X/S/H = Decision</span>
                   <span className="block">ESC = Back to grid</span>
                 </p>
               </div>
