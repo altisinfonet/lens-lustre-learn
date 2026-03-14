@@ -195,6 +195,8 @@ const JuryImageViewer = ({
     setCommentInput("");
   };
 
+  if (!entry) return null;
+
   return (
     <div
       ref={containerRef}
