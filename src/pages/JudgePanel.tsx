@@ -107,13 +107,23 @@ const JudgePanel = () => {
     if (!isJudge || !user) return;
     const fetchComps = async () => {
       if (isAdmin) {
-        // Admin sees all open/judging competitions
         const { data } = await supabase
           .from("competitions")
           .select("id, title, category, status, ends_at")
           .in("status", ["open", "judging"])
           .order("ends_at", { ascending: true });
-        setCompetitions(data || []);
+        if (data && data.length > 0) {
+          const compIds = data.map(c => c.id);
+          const { data: entryCounts } = await supabase
+            .from("competition_entries")
+            .select("competition_id")
+            .in("competition_id", compIds);
+          const countMap: Record<string, number> = {};
+          (entryCounts || []).forEach(e => { countMap[e.competition_id] = (countMap[e.competition_id] || 0) + 1; });
+          setCompetitions(data.map(c => ({ ...c, entry_count: countMap[c.id] || 0 })));
+        } else {
+          setCompetitions([]);
+        }
       } else {
         // Judge sees only assigned competitions
         const { data: assignments } = await supabase
