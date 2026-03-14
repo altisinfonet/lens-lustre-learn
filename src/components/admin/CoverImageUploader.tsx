@@ -87,8 +87,8 @@ const CoverImageUploader = ({
   });
 
   const processFile = async (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Maximum 10MB allowed", variant: "destructive" });
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum 50MB allowed", variant: "destructive" });
       return;
     }
     if (!file.type.startsWith("image/")) {
