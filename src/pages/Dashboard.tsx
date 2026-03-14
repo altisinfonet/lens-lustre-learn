@@ -103,7 +103,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
-    if (!authLoading && isAdmin) navigate("/admin");
+    const params = new URLSearchParams(window.location.search);
+    if (!authLoading && isAdmin && !params.get("tab")) navigate("/admin");
   }, [user, authLoading, isAdmin, navigate]);
 
   useEffect(() => {
