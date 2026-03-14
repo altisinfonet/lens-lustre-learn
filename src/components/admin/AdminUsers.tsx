@@ -50,6 +50,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [badgeTarget, setBadgeTarget] = useState<UserRow | null>(null);
   const [badgeFilter, setBadgeFilter] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>("");
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
