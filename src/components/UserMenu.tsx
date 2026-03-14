@@ -72,6 +72,17 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
         { icon: Scale, label: "Judge Panel", to: "/judge", show: true, tooltip: "Review entries" },
       ],
     },
+    {
+      title: "Account",
+      items: [
+        { icon: User, label: "Profile", to: "/profile", show: true, tooltip: "View your profile" },
+        { icon: Edit2, label: "Edit Profile", to: "/edit-profile", show: true, tooltip: "Update your info" },
+        { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard?tab=overview", show: true, tooltip: "Your home base" },
+        { icon: ImageIcon, label: "My Submissions", to: "/dashboard?tab=submissions", show: true, tooltip: "Competition entries" },
+        { icon: Trophy, label: "Competitions", to: "/competitions", show: true, tooltip: "Browse & enter" },
+        { icon: HelpCircle, label: "Help & Support", to: "/help-support", show: true, tooltip: "Get assistance" },
+      ],
+    },
   ] : [
     {
       title: "Main",
@@ -116,6 +127,58 @@ const UserMenu = ({ onNavigate, variant = "desktop" }: UserMenuProps) => {
     },
   ];
 
+  // Mobile variant: render items inline (no Popover)
+  if (variant === "mobile") {
+    return (
+      <div className="space-y-1">
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={avatarUrl || user.user_metadata?.avatar_url} alt={fullName} />
+            <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold tracking-wide truncate" style={{ fontFamily: "var(--font-heading)" }}>{fullName}</p>
+            <div className="mt-0.5">{roleBadge}</div>
+          </div>
+        </div>
+
+        {sections.map((section, sIdx) => (
+          <div key={section.title}>
+            {sIdx > 0 && <div className="my-1 border-t border-border" />}
+            <div className="pt-1.5 pb-0.5">
+              <span className="text-[8px] tracking-[0.25em] uppercase text-muted-foreground/60" style={{ fontFamily: "var(--font-heading)" }}>{section.title}</span>
+            </div>
+            {section.items.filter(i => i.show).map((item) => (
+              <button
+                key={item.to + item.label}
+                onClick={() => handleNav(item.to)}
+                className="w-full flex items-center gap-2.5 py-2 text-sm hover:text-primary transition-colors text-left group"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                <item.icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-[10px] tracking-[0.1em] uppercase flex-1"><T>{item.label}</T></span>
+                {item.extra}
+              </button>
+            ))}
+          </div>
+        ))}
+
+        <div className="border-t border-border pt-1 mt-1">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2.5 py-2 text-sm hover:text-destructive transition-colors text-left text-destructive"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="text-[10px] tracking-[0.1em] uppercase"><T>Logout</T></span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop variant: Popover dropdown
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

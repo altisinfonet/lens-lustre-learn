@@ -47,7 +47,6 @@ const Profile = () => {
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
-    if (!authLoading && isAdmin) navigate("/admin");
   }, [user, authLoading, isAdmin, navigate]);
 
   useEffect(() => {

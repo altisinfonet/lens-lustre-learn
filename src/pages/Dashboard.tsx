@@ -83,7 +83,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
-    if (!authLoading && isAdmin && !searchParams.get("tab")) navigate("/admin");
+    // Only auto-redirect admins to /admin when they land on Dashboard without a specific tab
+    if (!authLoading && isAdmin && !searchParams.get("tab") && window.location.pathname === "/dashboard") navigate("/admin");
   }, [user, authLoading, isAdmin, navigate, searchParams]);
 
   useEffect(() => {
