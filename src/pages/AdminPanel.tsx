@@ -903,6 +903,14 @@ const AdminPanel = () => {
                   </div>
                 )}
 
+                {/* Judges & Rounds (only when editing existing competition) */}
+                {editingId && user && (
+                  <div className="space-y-4 pt-2">
+                    <AdminCompetitionJudges competitionId={editingId} adminId={user.id} />
+                    <AdminCompetitionRounds competitionId={editingId} />
+                  </div>
+                )}
+
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={handleSave}
