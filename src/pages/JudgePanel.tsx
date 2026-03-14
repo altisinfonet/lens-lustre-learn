@@ -443,7 +443,6 @@ const JudgePanel = () => {
       toast({ title: "Entry shortlisted" });
     }
   };
-  };
 
   if (authLoading || rolesLoading || loading) {
     return (
