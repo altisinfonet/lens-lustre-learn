@@ -28,7 +28,7 @@ const AdminJudgingTags = ({ adminId }: Props) => {
   const fetchTags = async () => {
     const { data } = await supabase
       .from("judging_tags" as any)
-      .select("id, label, color, sort_order, is_active")
+      .select("id, label, color, sort_order, is_active, icon")
       .order("sort_order", { ascending: true });
     setTags((data as any as JudgingTag[]) || []);
     setLoading(false);
