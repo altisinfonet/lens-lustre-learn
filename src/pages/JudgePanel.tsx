@@ -188,10 +188,17 @@ const JudgePanel = () => {
         setAvailableTags((tags as any as JudgingTag[]) || []);
       }
       const { data: roundsData } = await supabase.from("judging_rounds" as any).select("id, round_number, name, status").eq("competition_id", selectedCompId).order("round_number", { ascending: true });
-      const fetchedRounds = (roundsData as any as JudgingRound[]) || [];
-      setRounds(fetchedRounds);
+      let fetchedRounds = (roundsData as any as JudgingRound[]) || [];
+      // Auto-activate Round 1 if all rounds are pending
       const active = fetchedRounds.find(r => r.status === "active");
-      if (active) setSelectedRound(active.id);
+      if (!active && fetchedRounds.length > 0 && fetchedRounds.every(r => r.status === "pending")) {
+        const first = fetchedRounds[0];
+        await supabase.from("judging_rounds" as any).update({ status: "active" } as any).eq("id", first.id);
+        fetchedRounds = fetchedRounds.map(r => r.id === first.id ? { ...r, status: "active" } : r);
+      }
+      setRounds(fetchedRounds);
+      const activeRound = fetchedRounds.find(r => r.status === "active");
+      if (activeRound) setSelectedRound(activeRound.id);
       else if (fetchedRounds.length > 0) setSelectedRound(fetchedRounds[0].id);
       else setSelectedRound(null);
     };
@@ -918,7 +925,7 @@ const JudgePanel = () => {
                                 Complete This Round
                               </button>
                             )}
-                            {isAdmin && activeRound.status === "pending" && (
+                            {activeRound.status === "pending" && (
                               <button
                                 onClick={() => handleActivateRound(activeRound.id)}
                                 className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
