@@ -641,9 +641,15 @@ const JudgePanel = () => {
           Judge <em className="italic text-primary">Panel</em>
         </h1>
 
-        {/* Progress bar */}
+        {/* Progress bar with round info */}
         {selectedCompId && totalEntries > 0 && (
           <div className="mb-3 flex items-center gap-3">
+            {activeRound && (
+              <span className="shrink-0 text-[10px] px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-semibold flex items-center gap-1.5" style={{ fontFamily: "var(--font-heading)" }}>
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                {activeRound.name}
+              </span>
+            )}
             <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
               <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${(scoredEntries / totalEntries) * 100}%` }} transition={{ duration: 0.5 }} />
             </div>
