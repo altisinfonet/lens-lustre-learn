@@ -155,13 +155,8 @@ const AdminJudgingTags = ({ adminId }: Props) => {
         {tags.map((tag) => (
           <div key={tag.id} className={`flex items-center gap-3 px-4 py-3 ${!tag.is_active ? "opacity-50" : ""}`}>
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
-            <div
-              className="w-4 h-4 rounded-full shrink-0 border border-border"
-              style={{ backgroundColor: tag.color }}
-            />
-            <span className="flex-1 text-sm" style={{ fontFamily: "var(--font-body)" }}>
-              {tag.label}
-            </span>
+            <JudgingStampBadge label={tag.label} color={tag.color} icon={tag.icon || "award"} size="sm" />
+            <span className="flex-1" />
             <button
               onClick={() => toggleActive(tag.id, tag.is_active)}
               className="p-1.5 hover:text-primary transition-colors"
