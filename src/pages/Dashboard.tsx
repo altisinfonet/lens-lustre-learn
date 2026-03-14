@@ -57,6 +57,18 @@ interface RecentPost {
   comment_count: number;
 }
 
+interface MyCompEntry {
+  id: string;
+  title: string;
+  photos: string[];
+  status: string;
+  created_at: string;
+  competition_title: string;
+  competition_id: string;
+  vote_count: number;
+  tags: { label: string; color: string }[];
+}
+
 interface FriendRequest {
   id: string;
   requester_id: string;
