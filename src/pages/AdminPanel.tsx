@@ -594,6 +594,7 @@ const AdminPanel = () => {
     { label: "Competitions", items: [
       ["competitions", "Competitions", Trophy],
       ["entries", "Entries", Users],
+      ["judging_tags", "Judging Tags", Tag],
       ["vote_rewards", "Vote Rewards", Vote],
     ] as const },
     { label: "Users & Community", items: [
