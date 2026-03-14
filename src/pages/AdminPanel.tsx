@@ -471,9 +471,15 @@ const AdminPanel = () => {
     if (error) {
       toast({ title: "Failed to save", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: editingId ? "Competition updated" : "Competition created" });
-      resetForm();
+      const wasNew = !editingId;
+      toast({ title: wasNew ? "Competition created — you can now add judges & rounds" : "Competition updated" });
       fetchCompetitions();
+      if (wasNew && compId) {
+        // Switch to edit mode so judges/rounds become available
+        setEditingId(compId);
+      } else {
+        resetForm();
+      }
     }
   };
 
