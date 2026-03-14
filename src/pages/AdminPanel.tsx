@@ -36,6 +36,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { storageUpload, storageRemove } from "@/lib/storageUpload";
 import { compressImageToFiles } from "@/lib/imageCompression";
 import ImageCropModal from "@/components/admin/ImageCropModal";
+import CoverImageUploader from "@/components/admin/CoverImageUploader";
 import { scanFileWithToast } from "@/lib/fileSecurityScanner";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
