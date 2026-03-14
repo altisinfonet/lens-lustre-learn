@@ -178,7 +178,7 @@ const JudgePanel = () => {
         const tagIds = (compTags as any[]).map((ct: any) => ct.tag_id);
         const { data: tags } = await supabase
           .from("judging_tags" as any)
-          .select("id, label, color")
+          .select("id, label, color, image_url")
           .in("id", tagIds)
           .eq("is_active", true)
           .order("sort_order", { ascending: true });
