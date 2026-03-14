@@ -90,6 +90,8 @@ const JudgePanel = () => {
   const [scoreInputs, setScoreInputs] = useState<Record<string, { score: string; feedback: string }>>({});
   // Comment form per entry
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  // Image viewer
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const isJudge = hasRole("judge") || hasRole("admin");
   const isAdmin = hasRole("admin");
