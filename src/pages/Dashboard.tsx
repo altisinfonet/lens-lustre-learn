@@ -467,6 +467,77 @@ const Dashboard = () => {
               </div>
             </motion.div>
 
+            {/* My Competition Entries */}
+            {myEntries.length > 0 && (
+              <motion.div variants={fadeUp} custom={2.3}>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                    <T>My Competition Entries</T>
+                    <span className="ml-2 inline-flex items-center justify-center h-4 min-w-[1rem] px-1 text-[8px] bg-primary text-primary-foreground rounded-full">
+                      {myEntries.length}
+                    </span>
+                  </span>
+                  <Link
+                    to="/competitions"
+                    className="text-[9px] tracking-[0.15em] uppercase text-primary hover:underline"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <T>View All →</T>
+                  </Link>
+                </div>
+                <div className="border border-border divide-y divide-border">
+                  {myEntries.map((entry) => (
+                    <Link key={entry.id} to={`/competitions/${entry.competition_id}`} className="flex items-start gap-4 p-4 hover:bg-muted/30 transition-colors">
+                      {entry.photos.length > 0 && (
+                        <img
+                          src={entry.photos[0]}
+                          alt={entry.title}
+                          className="w-16 h-16 object-cover shrink-0 border border-border"
+                          loading="lazy"
+                          onContextMenu={(e) => e.preventDefault()}
+                          draggable={false}
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-light tracking-tight truncate" style={{ fontFamily: "var(--font-display)" }}>{entry.title}</h4>
+                        <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                          {entry.competition_title}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                          <span className={`text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 border ${
+                            entry.status === "approved" || entry.status === "winner"
+                              ? "border-primary/40 text-primary"
+                              : entry.status === "rejected"
+                              ? "border-destructive/40 text-destructive"
+                              : "border-border text-muted-foreground"
+                          }`} style={{ fontFamily: "var(--font-heading)" }}>
+                            {entry.status}
+                          </span>
+                          {entry.vote_count > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                              <Heart className="h-3 w-3" /> {entry.vote_count}
+                            </span>
+                          )}
+                          {entry.tags.map((tag) => (
+                            <span
+                              key={tag.label}
+                              className="text-[8px] tracking-[0.1em] uppercase px-2 py-0.5 border rounded-sm font-semibold"
+                              style={{ borderColor: tag.color, color: tag.color, fontFamily: "var(--font-heading)" }}
+                            >
+                              {tag.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-[9px] text-muted-foreground shrink-0" style={{ fontFamily: "var(--font-body)" }}>
+                        {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
             {/* Friend Requests */}
             {friendRequests.length > 0 && (
               <motion.div variants={fadeUp} custom={2.5}>
