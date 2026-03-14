@@ -338,8 +338,8 @@ const JournalEditor = () => {
       toast({ title: "Only images allowed", variant: "destructive" });
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "Max 10MB", variant: "destructive" });
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "Max 50MB", variant: "destructive" });
       return;
     }
     const objectUrl = URL.createObjectURL(file);
@@ -375,7 +375,7 @@ const JournalEditor = () => {
     setUploadingGallery(true);
     const urls: string[] = [];
     for (const file of Array.from(files)) {
-      if (file.size > 10 * 1024 * 1024) continue;
+      if (file.size > 50 * 1024 * 1024) continue;
       const url = await uploadImage(file, "gallery");
       if (url) urls.push(url);
     }

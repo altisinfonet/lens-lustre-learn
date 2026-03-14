@@ -28,6 +28,9 @@ interface CompressOptions {
   jpegQuality?: number;
 }
 
+/** Target output size in bytes (default ~1MB) */
+const TARGET_SIZE = 1_000_000;
+
 const DEFAULT_OPTIONS: Required<CompressOptions> = {
   maxDimension: 1920,
   webpQuality: 0.75,
@@ -79,10 +82,44 @@ export async function compressImage(
   if (!ctx) throw new Error("Canvas 2D context unavailable");
   ctx.drawImage(img, 0, 0, w, h);
 
-  const [webp, jpeg] = await Promise.all([
-    canvasToBlob(canvas, "image/webp", opts.webpQuality),
-    canvasToBlob(canvas, "image/jpeg", opts.jpegQuality),
-  ]);
+  // Adaptive quality: try default quality first, then reduce until under TARGET_SIZE
+  let webp = await canvasToBlob(canvas, "image/webp", opts.webpQuality);
+  let jpeg = await canvasToBlob(canvas, "image/jpeg", opts.jpegQuality);
+
+  // If either blob exceeds target, iteratively reduce quality
+  let webpQ = opts.webpQuality;
+  let jpegQ = opts.jpegQuality;
+  const MIN_Q = 0.4;
+  const STEP = 0.08;
+
+  while (webp.size > TARGET_SIZE && webpQ > MIN_Q) {
+    webpQ -= STEP;
+    webp = await canvasToBlob(canvas, "image/webp", Math.max(webpQ, MIN_Q));
+  }
+
+  while (jpeg.size > TARGET_SIZE && jpegQ > MIN_Q) {
+    jpegQ -= STEP;
+    jpeg = await canvasToBlob(canvas, "image/jpeg", Math.max(jpegQ, MIN_Q));
+  }
+
+  // If still over target after quality reduction, scale down dimensions
+  if (webp.size > TARGET_SIZE || jpeg.size > TARGET_SIZE) {
+    let scale = 0.85;
+    while ((webp.size > TARGET_SIZE || jpeg.size > TARGET_SIZE) && scale > 0.4) {
+      const sw = Math.round(w * scale);
+      const sh = Math.round(h * scale);
+      canvas.width = sw;
+      canvas.height = sh;
+      ctx.drawImage(img, 0, 0, sw, sh);
+      [webp, jpeg] = await Promise.all([
+        canvasToBlob(canvas, "image/webp", Math.max(webpQ, MIN_Q)),
+        canvasToBlob(canvas, "image/jpeg", Math.max(jpegQ, MIN_Q)),
+      ]);
+      w = sw;
+      h = sh;
+      scale -= 0.1;
+    }
+  }
 
   return { webp, jpeg, width: w, height: h };
 }

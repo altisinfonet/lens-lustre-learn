@@ -259,8 +259,8 @@ export default function EmailRichTextToolbar({ editorRef, onInput }: Props) {
       toast({ title: "Only images allowed", variant: "destructive" });
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "Max 5MB for email images", variant: "destructive" });
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "Max 50MB for email images", variant: "destructive" });
       return;
     }
     saveSelection();

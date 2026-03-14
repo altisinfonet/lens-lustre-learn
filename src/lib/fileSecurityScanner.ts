@@ -65,7 +65,7 @@ const PDF_DANGEROUS_PATTERNS = [
   /\/EmbeddedFile/i,
 ];
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB default
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB default
 const MAX_SCAN_BYTES = 64 * 1024; // Scan first 64KB for patterns
 
 /**
