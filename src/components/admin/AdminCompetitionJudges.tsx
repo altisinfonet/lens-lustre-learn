@@ -52,10 +52,12 @@ const AdminCompetitionJudges = ({ competitionId, adminId }: Props) => {
   };
 
   const fetchJuryUsers = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("user_id")
       .eq("role", "judge");
+
+    console.log("[AdminCompetitionJudges] Jury users query:", { data, error, competitionId, adminId });
 
     if (data && data.length > 0) {
       const userIds = data.map((r) => r.user_id);
@@ -81,11 +83,14 @@ const AdminCompetitionJudges = ({ competitionId, adminId }: Props) => {
   const assignJudge = async () => {
     if (!selectedJudge) return;
     setAdding(true);
-    const { error } = await supabase.from("competition_judges").insert({
+    const payload = {
       competition_id: competitionId,
       judge_id: selectedJudge,
       assigned_by: adminId,
-    });
+    };
+    console.log("[AdminCompetitionJudges] Inserting:", payload);
+    const { data, error } = await supabase.from("competition_judges").insert(payload).select();
+    console.log("[AdminCompetitionJudges] Result:", { data, error });
     setAdding(false);
     if (error) {
       if (error.message.includes("duplicate")) {
