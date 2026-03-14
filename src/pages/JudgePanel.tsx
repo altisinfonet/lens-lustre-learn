@@ -151,7 +151,6 @@ const JudgePanel = () => {
           } else {
             setCompetitions([]);
           }
-          setCompetitions([]);
         }
       }
       setLoading(false);
