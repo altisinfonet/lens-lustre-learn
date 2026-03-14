@@ -25,7 +25,7 @@ interface FileUploadDropZoneProps {
   folder: string;
   /** Allowed file types */
   allowedTypes?: AllowedFileType;
-  /** Max file size in bytes (default 10MB) */
+  /** Max file size in bytes (default 50MB) */
   maxSize?: number;
   /** Whether to compress images (default true for images) */
   compressImages?: boolean;

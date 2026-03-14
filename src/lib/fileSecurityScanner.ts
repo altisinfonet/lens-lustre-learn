@@ -158,7 +158,7 @@ export type AllowedFileType = "image" | "pdf" | "image+pdf" | "document" | "imag
 interface ScanOptions {
   /** Which file types to allow. Default: "image" */
   allowedTypes?: AllowedFileType;
-  /** Max file size in bytes. Default: 10MB */
+  /** Max file size in bytes. Default: 50MB */
   maxSize?: number;
   /** Skip the image decode check (faster but less thorough). Default: false */
   skipDecodeCheck?: boolean;
