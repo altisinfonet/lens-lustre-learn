@@ -73,7 +73,7 @@ const JudgePanel = () => {
   const { hasRole, loading: rolesLoading } = useUserRoles();
   const navigate = useNavigate();
 
-  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [competitions, setCompetitions] = useState<(Competition & { entry_count?: number })[]>([]);
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
   const [entries, setEntries] = useState<JudgeEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,13 +107,23 @@ const JudgePanel = () => {
     if (!isJudge || !user) return;
     const fetchComps = async () => {
       if (isAdmin) {
-        // Admin sees all open/judging competitions
         const { data } = await supabase
           .from("competitions")
           .select("id, title, category, status, ends_at")
           .in("status", ["open", "judging"])
           .order("ends_at", { ascending: true });
-        setCompetitions(data || []);
+        if (data && data.length > 0) {
+          const compIds = data.map(c => c.id);
+          const { data: entryCounts } = await supabase
+            .from("competition_entries")
+            .select("competition_id")
+            .in("competition_id", compIds);
+          const countMap: Record<string, number> = {};
+          (entryCounts || []).forEach(e => { countMap[e.competition_id] = (countMap[e.competition_id] || 0) + 1; });
+          setCompetitions(data.map(c => ({ ...c, entry_count: countMap[c.id] || 0 })));
+        } else {
+          setCompetitions([]);
+        }
       } else {
         // Judge sees only assigned competitions
         const { data: assignments } = await supabase
@@ -129,8 +139,17 @@ const JudgePanel = () => {
             .in("id", compIds)
             .in("status", ["open", "judging"])
             .order("ends_at", { ascending: true });
-          setCompetitions(data || []);
-        } else {
+          if (data && data.length > 0) {
+            const { data: entryCounts } = await supabase
+              .from("competition_entries")
+              .select("competition_id")
+              .in("competition_id", data.map(c => c.id));
+            const countMap: Record<string, number> = {};
+            (entryCounts || []).forEach(e => { countMap[e.competition_id] = (countMap[e.competition_id] || 0) + 1; });
+            setCompetitions(data.map(c => ({ ...c, entry_count: countMap[c.id] || 0 })));
+          } else {
+            setCompetitions([]);
+          }
           setCompetitions([]);
         }
       }
@@ -194,7 +213,7 @@ const JudgePanel = () => {
         .from("competition_entries")
         .select("id, title, description, photos, user_id, status, created_at, competition_id, placement, is_ai_generated, ai_detection_result, exif_data")
         .eq("competition_id", selectedCompId)
-        .in("status", ["approved", "winner"])
+        .in("status", ["submitted", "approved", "winner"])
         .order("created_at", { ascending: false });
 
       if (!rawEntries || rawEntries.length === 0) {
@@ -493,6 +512,11 @@ const JudgePanel = () => {
                 >
                   <Trophy className="h-3.5 w-3.5" />
                   {comp.title}
+                  {comp.entry_count !== undefined && (
+                    <span className="text-[8px] px-1.5 py-0.5 border border-border text-muted-foreground">
+                      {comp.entry_count} entries
+                    </span>
+                  )}
                   <span className={`text-[8px] px-1.5 py-0.5 border ${
                     comp.status === "judging" ? "border-yellow-500 text-yellow-500" : "border-primary text-primary"
                   }`}>

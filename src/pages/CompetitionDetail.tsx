@@ -76,7 +76,7 @@ const CompetitionDetail = () => {
         .from("competition_entries")
         .select("id, title, description, photos, user_id, status, created_at")
         .eq("competition_id", id)
-        .in("status", ["approved", "winner"])
+        .in("status", ["submitted", "approved", "winner"])
         .order("created_at", { ascending: false });
 
       if (rawEntries && rawEntries.length > 0) {

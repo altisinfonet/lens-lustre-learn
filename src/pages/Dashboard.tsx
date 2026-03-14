@@ -57,6 +57,18 @@ interface RecentPost {
   comment_count: number;
 }
 
+interface MyCompEntry {
+  id: string;
+  title: string;
+  photos: string[];
+  status: string;
+  created_at: string;
+  competition_title: string;
+  competition_id: string;
+  vote_count: number;
+  tags: { label: string; color: string }[];
+}
+
 interface FriendRequest {
   id: string;
   requester_id: string;
@@ -86,8 +98,8 @@ const Dashboard = () => {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [friendActionLoading, setFriendActionLoading] = useState<string | null>(null);
 
-  // Recent wall posts state
   const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
+  const [myEntries, setMyEntries] = useState<MyCompEntry[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
@@ -140,6 +152,57 @@ const Dashboard = () => {
           ...p,
           like_count: likeCounts[p.id] || 0,
           comment_count: commentCounts[p.id] || 0,
+        })));
+      }
+
+      // Fetch my competition entries with votes and judge tags
+      const { data: myEntriesData } = await supabase
+        .from("competition_entries")
+        .select("id, title, photos, status, created_at, competition_id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (myEntriesData && myEntriesData.length > 0) {
+        const entryIds = myEntriesData.map(e => e.id);
+        const compIds = [...new Set(myEntriesData.map(e => e.competition_id))];
+
+        const [compsRes, votesRes, tagAssignRes] = await Promise.all([
+          supabase.from("competitions").select("id, title").in("id", compIds),
+          supabase.from("competition_votes").select("entry_id").in("entry_id", entryIds),
+          supabase.from("judge_tag_assignments").select("entry_id, tag_id").in("entry_id", entryIds),
+        ]);
+
+        const compMap = new Map((compsRes.data || []).map(c => [c.id, c.title]));
+        const voteMap: Record<string, number> = {};
+        (votesRes.data || []).forEach(v => { voteMap[v.entry_id] = (voteMap[v.entry_id] || 0) + 1; });
+
+        // Get unique tag IDs for label lookup
+        const uniqueTagIds = [...new Set((tagAssignRes.data || []).map((t: any) => t.tag_id))];
+        let tagInfoMap = new Map<string, { label: string; color: string }>();
+        if (uniqueTagIds.length > 0) {
+          const { data: tagsData } = await supabase
+            .from("judging_tags" as any)
+            .select("id, label, color")
+            .in("id", uniqueTagIds);
+          (tagsData as any[] || []).forEach((t: any) => tagInfoMap.set(t.id, { label: t.label, color: t.color }));
+        }
+
+        // Map tags per entry
+        const entryTagMap: Record<string, { label: string; color: string }[]> = {};
+        (tagAssignRes.data || []).forEach((t: any) => {
+          if (!entryTagMap[t.entry_id]) entryTagMap[t.entry_id] = [];
+          const info = tagInfoMap.get(t.tag_id);
+          if (info && !entryTagMap[t.entry_id].some(x => x.label === info.label)) {
+            entryTagMap[t.entry_id].push(info);
+          }
+        });
+
+        setMyEntries(myEntriesData.map(e => ({
+          ...e,
+          competition_title: compMap.get(e.competition_id) || "Unknown",
+          vote_count: voteMap[e.id] || 0,
+          tags: entryTagMap[e.id] || [],
         })));
       }
 
@@ -403,6 +466,77 @@ const Dashboard = () => {
                 ))}
               </div>
             </motion.div>
+
+            {/* My Competition Entries */}
+            {myEntries.length > 0 && (
+              <motion.div variants={fadeUp} custom={2.3}>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[9px] tracking-[0.3em] uppercase text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                    <T>My Competition Entries</T>
+                    <span className="ml-2 inline-flex items-center justify-center h-4 min-w-[1rem] px-1 text-[8px] bg-primary text-primary-foreground rounded-full">
+                      {myEntries.length}
+                    </span>
+                  </span>
+                  <Link
+                    to="/competitions"
+                    className="text-[9px] tracking-[0.15em] uppercase text-primary hover:underline"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    <T>View All →</T>
+                  </Link>
+                </div>
+                <div className="border border-border divide-y divide-border">
+                  {myEntries.map((entry) => (
+                    <Link key={entry.id} to={`/competitions/${entry.competition_id}`} className="flex items-start gap-4 p-4 hover:bg-muted/30 transition-colors">
+                      {entry.photos.length > 0 && (
+                        <img
+                          src={entry.photos[0]}
+                          alt={entry.title}
+                          className="w-16 h-16 object-cover shrink-0 border border-border"
+                          loading="lazy"
+                          onContextMenu={(e) => e.preventDefault()}
+                          draggable={false}
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-light tracking-tight truncate" style={{ fontFamily: "var(--font-display)" }}>{entry.title}</h4>
+                        <p className="text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
+                          {entry.competition_title}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                          <span className={`text-[9px] tracking-[0.15em] uppercase px-2 py-0.5 border ${
+                            entry.status === "approved" || entry.status === "winner"
+                              ? "border-primary/40 text-primary"
+                              : entry.status === "rejected"
+                              ? "border-destructive/40 text-destructive"
+                              : "border-border text-muted-foreground"
+                          }`} style={{ fontFamily: "var(--font-heading)" }}>
+                            {entry.status}
+                          </span>
+                          {entry.vote_count > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                              <Heart className="h-3 w-3" /> {entry.vote_count}
+                            </span>
+                          )}
+                          {entry.tags.map((tag) => (
+                            <span
+                              key={tag.label}
+                              className="text-[8px] tracking-[0.1em] uppercase px-2 py-0.5 border rounded-sm font-semibold"
+                              style={{ borderColor: tag.color, color: tag.color, fontFamily: "var(--font-heading)" }}
+                            >
+                              {tag.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-[9px] text-muted-foreground shrink-0" style={{ fontFamily: "var(--font-body)" }}>
+                        {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
             {/* Friend Requests */}
             {friendRequests.length > 0 && (
