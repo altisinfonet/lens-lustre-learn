@@ -39,33 +39,46 @@ const Winners = () => {
 
   useEffect(() => {
     const fetchWinners = async () => {
-      const { data } = await supabase
+      const { data: rawEntries } = await supabase
         .from("competition_entries")
-        .select(`
-          id, title, description, photos,
-          competitions!inner(id, title, category, cover_image_url, ends_at),
-          profiles:user_id(full_name, avatar_url)
-        `)
+        .select("id, title, description, photos, user_id, competition_id")
         .eq("status", "winner")
         .order("created_at", { ascending: false });
 
-      if (data) {
-        const mapped: WinnerEntry[] = data.map((row: any) => ({
-          id: row.id,
-          title: row.title,
-          description: row.description,
-          photos: row.photos || [],
-          competition: {
-            id: row.competitions.id,
-            title: row.competitions.title,
-            category: row.competitions.category,
-            cover_image_url: row.competitions.cover_image_url,
-            ends_at: row.competitions.ends_at,
-          },
-          profile: row.profiles
-            ? { full_name: row.profiles.full_name, avatar_url: row.profiles.avatar_url }
-            : null,
-        }));
+      if (rawEntries && rawEntries.length > 0) {
+        const compIds = [...new Set(rawEntries.map(e => e.competition_id))];
+        const userIds = [...new Set(rawEntries.map(e => e.user_id))];
+
+        const [compsRes, profilesRes] = await Promise.all([
+          supabase.from("competitions").select("id, title, category, cover_image_url, ends_at").in("id", compIds),
+          supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds),
+        ]);
+
+        const compMap = new Map((compsRes.data || []).map(c => [c.id, c]));
+        const profileMap = new Map((profilesRes.data || []).map(p => [p.id, p]));
+
+        const mapped: WinnerEntry[] = rawEntries
+          .filter(row => compMap.has(row.competition_id))
+          .map((row) => {
+            const comp = compMap.get(row.competition_id)!;
+            const prof = profileMap.get(row.user_id);
+            return {
+              id: row.id,
+              title: row.title,
+              description: row.description,
+              photos: row.photos || [],
+              competition: {
+                id: comp.id,
+                title: comp.title,
+                category: comp.category,
+                cover_image_url: comp.cover_image_url,
+                ends_at: comp.ends_at,
+              },
+              profile: prof
+                ? { full_name: prof.full_name, avatar_url: prof.avatar_url }
+                : null,
+            };
+          });
         setWinners(mapped);
       }
       setLoading(false);
