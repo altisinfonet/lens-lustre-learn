@@ -73,7 +73,7 @@ const JudgePanel = () => {
   const { hasRole, loading: rolesLoading } = useUserRoles();
   const navigate = useNavigate();
 
-  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [competitions, setCompetitions] = useState<(Competition & { entry_count?: number })[]>([]);
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
   const [entries, setEntries] = useState<JudgeEntry[]>([]);
   const [loading, setLoading] = useState(true);
