@@ -79,7 +79,7 @@ const EntryTagStamps = ({ entryId, className = "" }: Props) => {
   if (tags.length === 0) return null;
 
   return (
-    <div className={`absolute top-2 right-2 flex flex-col gap-1 z-10 ${className}`}>
+    <div className={`absolute bottom-0 left-0 right-0 flex items-center gap-1.5 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent z-10 ${className}`}>
       {tags.map((tag) => (
         <JudgingStampBadge
           key={tag.id}
