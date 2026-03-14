@@ -40,6 +40,7 @@ interface Entry {
   user_id: string;
   status: string;
   created_at: string;
+  placement: string | null;
   profiles: { full_name: string | null } | null;
   vote_count: number;
   user_voted: boolean;
