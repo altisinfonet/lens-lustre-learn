@@ -371,13 +371,45 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
         </button>
       </div>
 
+      {/* Role Filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground shrink-0" style={{ fontFamily: "var(--font-heading)" }}>
+          <Shield className="h-3 w-3 inline mr-1" />Filter by role:
+        </span>
+        <button
+          onClick={() => { setRoleFilter(""); fetchUsers(searchQuery.trim(), searchBy, badgeFilter, ""); }}
+          className={`px-2.5 py-1 text-[9px] tracking-wider uppercase border rounded-sm transition-all ${
+            !roleFilter ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+          }`}
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          All
+        </button>
+        {ALL_ROLES.map((r) => (
+          <button
+            key={r}
+            onClick={() => {
+              const newFilter = roleFilter === r ? "" : r;
+              setRoleFilter(newFilter);
+              fetchUsers(searchQuery.trim(), searchBy, badgeFilter, newFilter);
+            }}
+            className={`px-2.5 py-1 text-[9px] tracking-wider uppercase border rounded-sm transition-all ${
+              roleFilter === r ? `${roleColor(r)} font-medium` : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+            }`}
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            {ROLE_LABELS[r]}
+          </button>
+        ))}
+      </div>
+
       {/* Badge Filter */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground shrink-0" style={{ fontFamily: "var(--font-heading)" }}>
           <Award className="h-3 w-3 inline mr-1" />Filter by badge:
         </span>
         <button
-          onClick={() => { setBadgeFilter(""); fetchUsers(searchQuery.trim(), searchBy, ""); }}
+          onClick={() => { setBadgeFilter(""); fetchUsers(searchQuery.trim(), searchBy, "", roleFilter); }}
           className={`px-2.5 py-1 text-[9px] tracking-wider uppercase border rounded-sm transition-all ${
             !badgeFilter ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary"
           }`}
@@ -393,7 +425,7 @@ const AdminUsers = ({ user }: { user: AuthUser | null }) => {
               onClick={() => {
                 const newFilter = badgeFilter === b ? "" : b;
                 setBadgeFilter(newFilter);
-                fetchUsers(searchQuery.trim(), searchBy, newFilter);
+                fetchUsers(searchQuery.trim(), searchBy, newFilter, roleFilter);
               }}
               className={`px-2.5 py-1 text-[9px] tracking-wider uppercase border rounded-sm transition-all ${
                 badgeFilter === b ? `${cfg.badgeClass} font-medium` : "border-border text-muted-foreground hover:border-primary hover:text-primary"
