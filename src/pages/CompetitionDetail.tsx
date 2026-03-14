@@ -1,6 +1,7 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Calendar, Clock, Trophy, Heart, Upload, Users, Star } from "lucide-react";
 import ImageEngagement from "@/components/ImageEngagement";
+import EntryTagStamps from "@/components/EntryTagStamps";
 import PhaseBanner from "@/components/PhaseBanner";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CommentsSection from "@/components/CommentsSection";
