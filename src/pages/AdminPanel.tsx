@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell, HeartPulse, UserPlus, HelpCircle, Mail, ClipboardList, Database, LogIn, ExternalLink, ZoomIn, ZoomOut, Move, RotateCcw } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Trophy, Users, CheckCircle, XCircle, Loader2, Briefcase, MessageSquare, Image, Upload, Wallet, Gift, ArrowDownLeft, IndianRupee, Banknote, LayoutDashboard, BookOpen, Newspaper, Award, UserCog, Vote, AlertTriangle, Star, ChevronDown, Settings, Heart, FileText, Globe, BarChart3, Megaphone, Zap, Bell, HeartPulse, UserPlus, HelpCircle, Mail, ClipboardList, Database, LogIn, ExternalLink, ZoomIn, ZoomOut, Move, RotateCcw, Tag, Gavel } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AdminGiftCredit from "@/components/AdminGiftCredit";
 import AdminBanners from "@/components/admin/AdminBanners";
@@ -31,6 +31,9 @@ import AdminAuthPages from "@/components/admin/AdminAuthPages";
 import AdminRedirects from "@/components/admin/AdminRedirects";
 import AdminMenuBuilder from "@/components/admin/AdminMenuBuilder";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import AdminCompetitionJudges from "@/components/admin/AdminCompetitionJudges";
+import AdminCompetitionRounds from "@/components/admin/AdminCompetitionRounds";
+import AdminJudgingTags from "@/components/admin/AdminJudgingTags";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { storageUpload, storageRemove } from "@/lib/storageUpload";
@@ -100,7 +103,7 @@ interface AdminComment {
   context_title: string | null;
 }
 
-type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements" | "health" | "referrals" | "support_tickets" | "email_templates" | "activity_logs" | "database" | "auth_pages" | "page_management" | "redirects" | "menu_builder";
+type Tab = "competitions" | "entries" | "applications" | "portfolio" | "comments" | "wallet" | "gifts" | "vote_rewards" | "reports" | "banners" | "courses" | "journal" | "certificates" | "users" | "potd" | "excellence" | "featured_artist" | "settings" | "engagement" | "transactions" | "seo" | "analytics" | "advertisements" | "performance" | "announcements" | "health" | "referrals" | "support_tickets" | "email_templates" | "activity_logs" | "database" | "auth_pages" | "page_management" | "redirects" | "menu_builder" | "judging_tags";
 
 const statusOptions = ["upcoming", "open", "judging", "closed"];
 const entryStatusOptions = ["submitted", "approved", "rejected", "winner"];
@@ -591,6 +594,7 @@ const AdminPanel = () => {
     { label: "Competitions", items: [
       ["competitions", "Competitions", Trophy],
       ["entries", "Entries", Users],
+      ["judging_tags", "Judging Tags", Tag],
       ["vote_rewards", "Vote Rewards", Vote],
     ] as const },
     { label: "Users & Community", items: [
@@ -787,6 +791,9 @@ const AdminPanel = () => {
         {/* Users Tab */}
         {tab === "users" && <AdminUsers user={user} />}
 
+        {/* Judging Tags Tab */}
+        {tab === "judging_tags" && user && <AdminJudgingTags adminId={user.id} />}
+
         {/* Competitions Tab */}
         {tab === "competitions" && (
           <div>
@@ -893,6 +900,14 @@ const AdminPanel = () => {
                         style={{ fontFamily: "var(--font-body)" }}
                       />
                     </div>
+                  </div>
+                )}
+
+                {/* Judges & Rounds (only when editing existing competition) */}
+                {editingId && user && (
+                  <div className="space-y-4 pt-2">
+                    <AdminCompetitionJudges competitionId={editingId} adminId={user.id} />
+                    <AdminCompetitionRounds competitionId={editingId} />
                   </div>
                 )}
 
