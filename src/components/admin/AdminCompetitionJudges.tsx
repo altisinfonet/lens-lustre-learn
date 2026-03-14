@@ -52,10 +52,12 @@ const AdminCompetitionJudges = ({ competitionId, adminId }: Props) => {
   };
 
   const fetchJuryUsers = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("user_id")
       .eq("role", "judge");
+
+    console.log("[AdminCompetitionJudges] Jury users query:", { data, error, competitionId, adminId });
 
     if (data && data.length > 0) {
       const userIds = data.map((r) => r.user_id);
